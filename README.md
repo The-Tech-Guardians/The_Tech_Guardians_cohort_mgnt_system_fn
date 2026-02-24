@@ -1,36 +1,148 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+# Cohort-Based Learning Management Platform (Frontend)
 
-First, run the development server:
+## 📌 Project Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+This project is the frontend implementation of the **Cohort-Based Learning Management Platform (LMS)**.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The platform is designed to support structured academic learning through time-bound cohorts. It enables:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Admin management of cohorts and instructors
+- Instructor-led course creation and structured content delivery
+- Learner enrollment and progress tracking
+- Strict role-based access control
+- Secure authentication with mandatory 2FA for Admins and Instructors
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This repository contains the frontend application built with **Next.js (App Router) + TypeScript + Tailwind CSS**.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🎯 Purpose of This Frontend
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The frontend is responsible for:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Authentication flows (Login, Register, 2FA verification)
+- Role-based dashboards (Admin / Instructor / Learner)
+- Cohort browsing and enrollment
+- Course structure visualization (Course > Module > Lesson)
+- Assignment and quiz interfaces
+- Profile management
+- Announcements and notifications
 
-## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+##  Project Structure
+
+src/
+├── app/
+│ ├── (auth)/ # Authentication routes
+│ │ ├── login/
+│ │ ├── register/
+│ │ └── verify-2fa/
+│ ├── (dashboard)/ # Role-based dashboards
+│ │ ├── admin/
+│ │ ├── instructor/
+│ │ └── learner/
+│ ├── cohorts/ # Cohort-related pages
+│ ├── courses/ # Course browsing and details
+│ ├── profile/ # Public profile management
+│ └── layout.tsx
+│
+├── components/
+│ ├── ui/ # Reusable UI components
+│ ├── forms/ # Form components
+│ ├── layout/ # Layout wrappers
+│ └── dashboards/ # Dashboard-specific components
+│
+├── lib/
+│ ├── api.ts # API configuration
+│ ├── auth.ts # Authentication helpers
+│ └── utils.ts # Utility functions
+│
+├── types/
+│ ├── user.ts
+│ ├── cohort.ts
+│ └── course.ts
+│
+└── hooks/
+---
+
+##  Roles & Access Model
+
+The system supports three fixed roles:
+
+- **Admin**
+- **Instructor**
+- **Learner**
+
+Constraints:
+
+- Learners cannot hold any other role.
+- Admins automatically have Instructor-level access.
+- Only Admins can promote Instructors to Admin.
+- Instructors cannot promote or demote Admins.
+
+Role-based routing will be enforced using Next.js middleware.
+
+---
+
+##  Tech Stack
+
+- Next.js (App Router)
+- TypeScript
+- Tailwind CSS
+- Axios
+- React Hook Form
+- Zod
+- JWT-based authentication (backend)
+
+---
+
+##  Branch Strategy
+
+We follow this workflow:
+
+- `main` → Production-ready code
+- `dev` → Integration branch
+- `feature/*` → Feature development branches
+
+No direct pushes to `main`.
+
+---
+
+##  Getting Started
+
+Install dependencies:
+
+Run development server: npm run dev 
+http://localhost:3000
+
+
+---
+
+##  Future Implementation Phases
+
+1. Authentication & 2FA enforcement
+2. Role-based dashboards
+3. Cohort creation & enrollment system
+4. Course management (Course > Module > Lesson)
+5. Assignments & quizzes
+6. Moderation & audit logging
+7. Notifications & announcements
+
+---
+
+##  Team
+
+- Freddy Bijanja
+- Ndiwayesu Olivier
+- Iradukunda Boris
+
+---
+
+##  License
+
+This project is developed for academic and professional training purposes.
+
+
