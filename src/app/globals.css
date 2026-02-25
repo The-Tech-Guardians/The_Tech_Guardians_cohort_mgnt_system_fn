@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "shadcn/tailwind.css";
+/* shadcn styles are not needed for this homepage; remove import to prevent resolution errors */
 
 @custom-variant dark (&:is(.dark *));
 
