@@ -1,6 +1,9 @@
+import { Button } from "../components/ui/button";
 
 export default function Home() {
   return (
-    <div>welcome to our website.</div>
+    <div >
+      home page
+      </div>
   );
 }
