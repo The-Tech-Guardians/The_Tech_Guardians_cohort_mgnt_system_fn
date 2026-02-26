@@ -1,7 +1,6 @@
 "use client";
 
-import Image from "next/image";
-import { Search, Menu, X, ChevronLeft, ChevronRight, Star, Users, BookOpen, Award, Clock, TrendingUp, Play, CheckCircle, ArrowRight } from "lucide-react";
+import { Search, Menu, X, ChevronLeft, ChevronRight, Star, Users, BookOpen, Award, Clock, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function Home() {
@@ -45,8 +44,7 @@ export default function Home() {
       students: "1,234",
       rating: 4.8,
       duration: "8 weeks",
-      level: "Intermediate",
-      image: "/course-ai.jpg"
+      level: "Intermediate"
     },
     {
       title: "Full Stack Engineering",
@@ -54,8 +52,7 @@ export default function Home() {
       students: "2,567",
       rating: 4.9,
       duration: "12 weeks",
-      level: "Advanced",
-      image: "/course-engineering.jpg"
+      level: "Advanced"
     },
     {
       title: "UX Design Fundamentals",
@@ -63,8 +60,7 @@ export default function Home() {
       students: "1,892",
       rating: 4.7,
       duration: "6 weeks",
-      level: "Beginner",
-      image: "/course-design.jpg"
+      level: "Beginner"
     },
     {
       title: "Product Leadership",
@@ -72,8 +68,7 @@ export default function Home() {
       students: "987",
       rating: 4.9,
       duration: "10 weeks",
-      level: "Advanced",
-      image: "/course-leadership.jpg"
+      level: "Advanced"
     }
   ];
 
@@ -84,7 +79,6 @@ export default function Home() {
       role: "Product Manager",
       company: "Safaricom",
       content: "The cohort structure kept me accountable. I completed the course with a real project I'm proud of.",
-      image: "/testimonial-1.jpg",
       rating: 5
     },
     {
@@ -92,7 +86,6 @@ export default function Home() {
       role: "Software Engineer",
       company: "Andela",
       content: "Learning with peers made all the difference. The instructors provided invaluable feedback throughout.",
-      image: "/testimonial-2.jpg",
       rating: 5
     },
     {
@@ -100,19 +93,18 @@ export default function Home() {
       role: "UX Designer",
       company: "Flutterwave",
       content: "The curriculum is practical and industry-relevant. I started applying concepts from week one.",
-      image: "/testimonial-3.jpg",
       rating: 5
     }
   ];
 
-  // YOUR BACKGROUND IMAGES
+  // Background images
   const backgroundImages = [
     "/bg-image-1.jpg",
     "/bg-image-2.jpg", 
     "/bg-image-3.jpg"
   ];
 
-  // Auto-slide for content (right side)
+  // Auto-slide for content
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -120,7 +112,7 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  // Auto-change background images (left side)
+  // Auto-change background images
   useEffect(() => {
     const bgTimer = setInterval(() => {
       setBgImageIndex((prev) => (prev + 1) % backgroundImages.length);
@@ -138,10 +130,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-x-hidden">
-      {/* SPLIT SCREEN LAYOUT - Only for hero section */}
-      
-      {/* LEFT SIDE - Background Images (50% width) - Only visible in hero */}
-      <div className="fixed left-0 top-0 w-1/2 h-screen">
+      {/* Background Images - Lighter overlay for brightness */}
+      <div className="fixed inset-0">
         {backgroundImages.map((img, index) => (
           <div
             key={index}
@@ -156,170 +146,87 @@ export default function Home() {
             }}
           />
         ))}
-        {/* Subtle overlay on left side only */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/40"></div>
+        {/* Light overlay - only 20% */}
+        <div className="absolute inset-0 bg-black/20"></div>
       </div>
 
-      {/* RIGHT SIDE - Content Area (50% width) - Only visible in hero */}
-      <div className="fixed right-0 top-0 w-1/2 h-screen bg-gradient-to-l from-black/80 via-black/60 to-transparent">
-        {/* Content will go here */}
-      </div>
-
-      {/* CUTTING EDGE - Now spans across both sides but more visible on right */}
-      <div className="absolute top-0 right-0 w-3/4 h-96 bg-gradient-to-r from-blue-900/30 to-blue-700/40 clip-path-edge z-10"></div>
-
-      {/* header/navigation bar - Full width but transparent */}
+      {/* Header */}
       <header className="relative z-20 bg-transparent w-full">
         <div className="container mx-auto flex items-center justify-between py-3 px-6 max-w-7xl">
-          {/* Left section - Logo */}
+          {/* Logo */}
           <div className="flex items-center">
-            <Image
-              src="/cohort-logo.jpeg"
-              alt="CohortLMS logo"
-              width={220}
-              height={80}
-              priority
-              className="h-20 w-auto object-contain brightness-0 invert"
-              quality={100}
-            />
+            <div className="w-13 h-13 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+              <svg viewBox="0 0 40 40" className="w-10 h-10" fill="none">
+                <circle cx="14" cy="10" r="5" fill="#4F46E5" />
+                <circle cx="26" cy="10" r="5" fill="#2563EB" />
+                <circle cx="20" cy="6" r="5" fill="#06B6D4" />
+                <path d="M4 28 Q20 18 36 28" stroke="#4F46E5" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <path d="M6 33 Q20 23 34 33" stroke="#2563EB" strokeWidth="2" fill="none" strokeLinecap="round" />
+                <path d="M9 38 Q20 30 31 38" stroke="#06B6D4" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+              </svg>
+            </div>
+            <span className="ml-3 text-white font-bold text-xl drop-shadow-md">CohortLMS</span>
           </div>
 
-          {/* Center section - Search */}
+          {/* Search */}
           <div className="hidden md:block flex-1 max-w-md mx-8">
             <div className="relative">
               <input
                 type="text"
                 placeholder="What do you want to learn?"
-                className="w-full border border-white/30 bg-white/10 backdrop-blur-md text-white rounded-md py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-white/50 placeholder-white/70"
+                className="w-full border border-white/40 bg-white/20 backdrop-blur-md text-white rounded-md py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-white placeholder-white/80"
               />
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-white/80" />
             </div>
           </div>
 
-          {/* Right section - Links */}
+          {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-6">
-            <a
-              href="/lightning-lessons"
-              className="text-sm text-white/90 hover:text-white transition-colors"
-            >
-              Lightning Lessons
-            </a>
-            <a
-              href="/apply-to-teach"
-              className="text-sm text-white/90 hover:text-white transition-colors"
-            >
-              Apply to teach
-            </a>
-            <a 
-              href="/login" 
-              className="text-sm bg-white text-blue-900 px-4 py-2 rounded-full hover:bg-blue-50 transition-colors font-medium"
-            >
-              Log In
-            </a>
+            <a href="#" className="text-sm text-white/90 hover:text-white transition-colors font-medium drop-shadow">Lightning Lessons</a>
+            <a href="#" className="text-sm text-white/90 hover:text-white transition-colors font-medium drop-shadow">Apply to teach</a>
+            <a href="#" className="text-sm bg-white text-blue-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-colors font-medium shadow-md">Log In</a>
           </div>
 
           {/* Mobile menu button */}
-          <button
-            className="md:hidden text-white focus:outline-none"
-            onClick={() => setMobileNavOpen((open) => !open)}
-            aria-label="Toggle navigation"
-          >
+          <button className="md:hidden text-white focus:outline-none" onClick={() => setMobileNavOpen(!mobileNavOpen)}>
             {mobileNavOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
 
-        {/* Second row - Category navigation */}
-        <div className="border-t border-white/20">
+        {/* Category Navigation */}
+        <div className="border-t border-white/30">
           <div className="container mx-auto px-6 max-w-7xl">
-            <nav className="hidden md:flex items-center space-x-8 py-3 text-sm relative">
-              <a href="#" className="text-white/90 hover:text-white transition-colors font-medium relative z-30">
-                AI
-              </a>
-              <a href="#" className="text-white/90 hover:text-white transition-colors font-medium relative z-30">
-                Product
-              </a>
-              <a href="#" className="text-white/90 hover:text-white transition-colors font-medium relative z-30">
-                Engineering
-              </a>
-              <a href="#" className="text-white/90 hover:text-white transition-colors font-medium relative z-30">
-                Design
-              </a>
-              <a href="#" className="text-white/90 hover:text-white transition-colors font-medium relative z-30">
-                Marketing
-              </a>
-              <a href="#" className="text-white/90 hover:text-white transition-colors font-medium relative z-30">
-                Leadership
-              </a>
-              <a href="#" className="text-white/90 hover:text-white transition-colors font-medium relative z-30">
-                Founders
-              </a>
-              <a href="#" className="text-white/90 hover:text-white transition-colors font-medium relative z-30">
-                More
-              </a>
+            <nav className="hidden md:flex items-center space-x-8 py-3 text-sm">
+              {['AI', 'Product', 'Engineering', 'Design', 'Marketing', 'Leadership', 'Founders', 'More'].map((item) => (
+                <a key={item} href="#" className="text-white/90 hover:text-white transition-colors font-medium drop-shadow">
+                  {item}
+                </a>
+              ))}
             </nav>
-
-            {/* Mobile navigation menu */}
-            {mobileNavOpen && (
-              <div className="md:hidden py-4 space-y-4 bg-black/60 backdrop-blur-md rounded-lg mt-2 p-4">
-                <div className="relative mb-4">
-                  <input
-                    type="text"
-                    placeholder="What do you want to learn?"
-                    className="w-full border border-white/30 bg-white/10 text-white rounded-md py-2 pl-10 pr-4 text-sm placeholder-white/70"
-                  />
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70" />
-                </div>
-                <div className="flex flex-col space-y-3">
-                  <a href="/lightning-lessons" className="text-white hover:text-blue-200">Lightning Lessons</a>
-                  <a href="/apply-to-teach" className="text-white hover:text-blue-200">Apply to teach</a>
-                  <a href="/login" className="text-white hover:text-blue-200">Log In</a>
-                </div>
-                <div className="border-t border-white/20 pt-3 flex flex-wrap gap-3">
-                  <a href="#" className="text-white hover:text-blue-200">AI</a>
-                  <a href="#" className="text-white hover:text-blue-200">Product</a>
-                  <a href="#" className="text-white hover:text-blue-200">Engineering</a>
-                  <a href="#" className="text-white hover:text-blue-200">Design</a>
-                  <a href="#" className="text-white hover:text-blue-200">Marketing</a>
-                  <a href="#" className="text-white hover:text-blue-200">Leadership</a>
-                  <a href="#" className="text-white hover:text-blue-200">Founders</a>
-                  <a href="#" className="text-white hover:text-blue-200">More</a>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </header>
 
-      {/* MAIN CONTENT - Hero Section with split screen */}
+      {/* Main Content */}
       <main className="relative z-20 flex-1">
-        {/* Hero Section - Split screen */}
+        {/* Hero Section */}
         <section className="min-h-screen flex items-center">
-          <div className="w-1/2"></div> {/* Spacer for left side */}
+          <div className="w-1/2"></div>
           <div className="w-1/2 container mx-auto px-6 py-12 relative">
-            {/* Slider container - On right side */}
-            <div className="relative overflow-hidden rounded-2xl bg-black/20 backdrop-blur-sm border border-white/10 shadow-xl">
-              {/* Slides */}
-              <div 
-                className="flex transition-transform duration-700 ease-in-out"
-                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-              >
+            <div className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-xl">
+              <div className="flex transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
                 {slides.map((slide, index) => (
                   <div key={index} className="w-full flex-shrink-0">
                     <div className="py-12 md:py-20 px-6 md:px-12">
                       <div className="max-w-3xl">
                         <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight drop-shadow-lg">
                           {slide.title}{" "}
-                          <span className="bg-gradient-to-r from-blue-300 to-sky-200 bg-clip-text text-transparent">
-                            {slide.highlight}
-                          </span>
+                          <span className="text-blue-300 drop-shadow">{slide.highlight}</span>
                         </h1>
-                        <p className="text-xl text-white/90 mb-8 leading-relaxed drop-shadow">
+                        <p className="text-xl text-white/95 mb-8 leading-relaxed drop-shadow">
                           {slide.description}
                         </p>
-                        <a
-                          href="/courses"
-                          className="inline-block bg-gradient-to-r from-blue-600 to-sky-500 text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-blue-700 hover:to-sky-600 transition-all duration-300 shadow-lg hover:shadow-xl"
-                        >
+                        <a href="/courses" className="inline-block bg-blue-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg">
                           {slide.cta} →
                         </a>
                       </div>
@@ -328,74 +235,50 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* Navigation arrows */}
-              <button
-                onClick={prevSlide}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-full p-2 shadow-lg transition-all border border-white/30"
-              >
+              {/* Navigation */}
+              <button onClick={prevSlide} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/40 text-white rounded-full p-2 backdrop-blur">
                 <ChevronLeft className="w-6 h-6" />
               </button>
-              <button
-                onClick={nextSlide}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-full p-2 shadow-lg transition-all border border-white/30"
-              >
+              <button onClick={nextSlide} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/40 text-white rounded-full p-2 backdrop-blur">
                 <ChevronRight className="w-6 h-6" />
               </button>
 
-              {/* Slide indicators */}
+              {/* Indicators */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
                 {slides.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`w-2 h-2 rounded-full transition-all ${
-                      currentSlide === index 
-                        ? "w-8 bg-white" 
-                        : "bg-white/50 hover:bg-white/80"
-                    }`}
-                  />
+                  <button key={index} onClick={() => setCurrentSlide(index)} className={`h-2 rounded-full transition-all ${
+                    currentSlide === index ? "w-8 bg-white" : "w-2 bg-white/60 hover:bg-white/80"
+                  }`} />
                 ))}
               </div>
             </div>
           </div>
         </section>
 
-        {/* SECTION 2: Trusted By / Stats Section */}
-        <section className="relative z-30 bg-white py-20">
+        {/* Stats Section - Light background */}
+        <section className="relative z-30 bg-white/80 backdrop-blur-sm py-20">
           <div className="container mx-auto px-6 max-w-7xl">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold text-gray-900 mb-4">Trusted by learners across Africa</h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">Join thousands of professionals who have transformed their careers with CohortLMS</p>
+              <p className="text-xl text-gray-700 max-w-3xl mx-auto">Join thousands of professionals who have transformed their careers with CohortLMS</p>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              <div className="text-center">
-                <div className="text-5xl font-bold text-blue-600 mb-2">15k+</div>
-                <div className="text-gray-600">Active Learners</div>
-              </div>
-              <div className="text-center">
-                <div className="text-5xl font-bold text-blue-600 mb-2">120+</div>
-                <div className="text-gray-600">Expert Instructors</div>
-              </div>
-              <div className="text-center">
-                <div className="text-5xl font-bold text-blue-600 mb-2">48</div>
-                <div className="text-gray-600">Industry Courses</div>
-              </div>
-              <div className="text-center">
-                <div className="text-5xl font-bold text-blue-600 mb-2">94%</div>
-                <div className="text-gray-600">Completion Rate</div>
-              </div>
+              <div className="text-center"><div className="text-5xl font-bold text-blue-600 mb-2">15k+</div><div className="text-gray-600">Active Learners</div></div>
+              <div className="text-center"><div className="text-5xl font-bold text-blue-600 mb-2">120+</div><div className="text-gray-600">Expert Instructors</div></div>
+              <div className="text-center"><div className="text-5xl font-bold text-blue-600 mb-2">48</div><div className="text-gray-600">Industry Courses</div></div>
+              <div className="text-center"><div className="text-5xl font-bold text-blue-600 mb-2">94%</div><div className="text-gray-600">Completion Rate</div></div>
             </div>
           </div>
         </section>
 
-        {/* SECTION 3: Featured Courses */}
-        <section className="relative z-30 bg-gray-50 py-20">
+        {/* Featured Courses - Light background */}
+        <section className="relative z-30 bg-gray-100/90 backdrop-blur-sm py-20">
           <div className="container mx-auto px-6 max-w-7xl">
             <div className="flex justify-between items-end mb-12">
               <div>
                 <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Courses</h2>
-                <p className="text-xl text-gray-600">Hand-picked courses to accelerate your career</p>
+                <p className="text-xl text-gray-700">Hand-picked courses to accelerate your career</p>
               </div>
               <a href="/courses" className="text-blue-600 hover:text-blue-700 font-medium flex items-center">
                 View all courses <ArrowRight className="w-4 h-4 ml-1" />
@@ -405,9 +288,9 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {featuredCourses.map((course, index) => (
                 <div key={index} className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-                  <div className="h-48 bg-gradient-to-br from-blue-400 to-blue-600 relative">
-                    <div className="absolute inset-0 bg-black/20"></div>
-                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-blue-600">
+                  <div className="h-48 bg-gradient-to-br from-blue-500 to-blue-700 relative">
+                    <div className="absolute inset-0 bg-black/10"></div>
+                    <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded-full text-xs font-semibold text-blue-600 shadow">
                       {course.level}
                     </div>
                   </div>
@@ -416,23 +299,12 @@ export default function Home() {
                     <p className="text-sm text-gray-600 mb-4">with {course.instructor}</p>
                     
                     <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Users className="w-4 h-4 mr-1" />
-                        {course.students}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Clock className="w-4 h-4 mr-1" />
-                        {course.duration}
-                      </div>
-                      <div className="flex items-center text-sm text-yellow-500">
-                        <Star className="w-4 h-4 mr-1 fill-current" />
-                        {course.rating}
-                      </div>
+                      <div className="flex items-center text-sm text-gray-500"><Users className="w-4 h-4 mr-1" />{course.students}</div>
+                      <div className="flex items-center text-sm text-gray-500"><Clock className="w-4 h-4 mr-1" />{course.duration}</div>
+                      <div className="flex items-center text-sm text-yellow-500"><Star className="w-4 h-4 mr-1 fill-current" />{course.rating}</div>
                     </div>
                     
-                    <a href="#" className="block text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                      Enroll Now
-                    </a>
+                    <a href="#" className="block text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">Enroll Now</a>
                   </div>
                 </div>
               ))}
@@ -440,33 +312,27 @@ export default function Home() {
           </div>
         </section>
 
-        {/* SECTION 4: How It Works */}
-        <section className="relative z-30 bg-white py-20">
+        {/* How It Works - Light background */}
+        <section className="relative z-30 bg-white/70 backdrop-blur-sm py-20">
           <div className="container mx-auto px-6 max-w-7xl">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold text-gray-900 mb-4">How Cohort Learning Works</h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">Learn better together with our structured approach</p>
+              <p className="text-xl text-gray-700 max-w-3xl mx-auto">Learn better together with our structured approach</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Users className="w-10 h-10 text-blue-600" />
-                </div>
+              <div className="text-center bg-white/80 p-8 rounded-xl shadow-lg backdrop-blur-sm">
+                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6"><Users className="w-10 h-10 text-blue-600" /></div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">Join a Cohort</h3>
                 <p className="text-gray-600">Start with a group of motivated peers at the same level. Learn together, grow together.</p>
               </div>
-              <div className="text-center">
-                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <BookOpen className="w-10 h-10 text-blue-600" />
-                </div>
+              <div className="text-center bg-white/80 p-8 rounded-xl shadow-lg backdrop-blur-sm">
+                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6"><BookOpen className="w-10 h-10 text-blue-600" /></div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">Structured Learning</h3>
                 <p className="text-gray-600">Follow a proven curriculum with weekly goals, projects, and peer reviews.</p>
               </div>
-              <div className="text-center">
-                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Award className="w-10 h-10 text-blue-600" />
-                </div>
+              <div className="text-center bg-white/80 p-8 rounded-xl shadow-lg backdrop-blur-sm">
+                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6"><Award className="w-10 h-10 text-blue-600" /></div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">Earn Certification</h3>
                 <p className="text-gray-600">Complete real-world projects and earn credentials recognized by employers.</p>
               </div>
@@ -474,37 +340,33 @@ export default function Home() {
           </div>
         </section>
 
-        {/* SECTION 5: Testimonials */}
-        <section className="relative z-30 bg-gray-50 py-20">
+        {/* Testimonials - Light background */}
+        <section className="relative z-30 bg-white/70 backdrop-blur-sm py-20">
           <div className="container mx-auto px-6 max-w-7xl">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold text-gray-900 mb-4">Success Stories</h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">Hear from graduates who transformed their careers</p>
+              <p className="text-xl text-gray-700 max-w-3xl mx-auto">Hear from graduates who transformed their careers</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {testimonials.map((testimonial, index) => (
-                <div key={index} className="bg-white p-8 rounded-xl shadow-lg">
+                <div key={index} className="bg-white/80 backdrop-blur-sm p-8 rounded-xl shadow-lg">
                   <div className="flex items-center mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full mr-4"></div>
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full mr-4 shadow"></div>
                     <div>
                       <h4 className="font-bold text-gray-900">{testimonial.name}</h4>
                       <p className="text-sm text-gray-600">{testimonial.role} at {testimonial.company}</p>
                     </div>
                   </div>
-                  <p className="text-gray-600 mb-4">"{testimonial.content}"</p>
-                  <div className="flex text-yellow-500">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-current" />
-                    ))}
-                  </div>
+                  <p className="text-gray-700 mb-4">"{testimonial.content}"</p>
+                  <div className="flex text-yellow-500">{[...Array(testimonial.rating)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-current" />))}</div>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* SECTION 6: CTA Section */}
+        {/* CTA Section */}
         <section className="relative z-30 bg-gradient-to-r from-blue-600 to-blue-800 py-20">
           <div className="container mx-auto px-6 max-w-7xl text-center">
             <h2 className="text-4xl font-bold text-white mb-4">Ready to start your learning journey?</h2>
@@ -516,59 +378,60 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="relative z-20 bg-gray-900 text-white py-12">
+      {/* Footer - Dark version (not too dark, not too light) */}
+      <footer className="relative z-20 bg-gray-900 text-gray-300 py-12 border-t border-gray-800">
         <div className="container mx-auto px-6 max-w-7xl">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <Image
-                src="/cohort-logo.jpeg"
-                alt="CohortLMS"
-                width={160}
-                height={50}
-                className="h-12 w-auto object-contain brightness-0 invert mb-4"
-              />
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center">
+                  <svg viewBox="0 0 40 40" className="w-8 h-8" fill="none">
+                    <circle cx="14" cy="10" r="5" fill="#4F46E5" />
+                    <circle cx="26" cy="10" r="5" fill="#2563EB" />
+                    <circle cx="20" cy="6" r="5" fill="#06B6D4" />
+                    <path d="M4 28 Q20 18 36 28" stroke="#4F46E5" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                    <path d="M6 33 Q20 23 34 33" stroke="#2563EB" strokeWidth="2" fill="none" strokeLinecap="round" />
+                    <path d="M9 38 Q20 30 31 38" stroke="#06B6D4" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <span className="ml-2 font-bold text-white">CohortLMS</span>
+              </div>
               <p className="text-gray-400 text-sm">Learn together, grow together.</p>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Platform</h4>
+              <h4 className="font-bold text-white mb-4">Platform</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">Courses</a></li>
-                <li><a href="#" className="hover:text-white">For Instructors</a></li>
-                <li><a href="#" className="hover:text-white">For Teams</a></li>
-                <li><a href="#" className="hover:text-white">Pricing</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Courses</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">For Instructors</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">For Teams</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Company</h4>
+              <h4 className="font-bold text-white mb-4">Company</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">About</a></li>
-                <li><a href="#" className="hover:text-white">Blog</a></li>
-                <li><a href="#" className="hover:text-white">Careers</a></li>
-                <li><a href="#" className="hover:text-white">Press</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Legal</h4>
+              <h4 className="font-bold text-white mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">Privacy</a></li>
-                <li><a href="#" className="hover:text-white">Terms</a></li>
-                <li><a href="#" className="hover:text-white">Cookie Policy</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Terms</a></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-sm text-gray-500">
+          
+          {/* Developer Credits */}
+          <div className="border-t border-gray-800 mt-8 pt-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
             <p>© 2026 CohortLMS. All rights reserved.</p>
+            <p className="mt-2 md:mt-0">
+              Developed by <span className="text-blue-400 font-medium">Freddy Bijanja</span>, <span className="text-blue-400 font-medium">IRADUKUNDA Boris</span> & <span className="text-blue-400 font-medium">Olivier Nduwayesu</span>
+            </p>
           </div>
         </div>
       </footer>
-
-      {/* Custom CSS for the cutting edge */}
-      <style jsx>{`
-        .clip-path-edge {
-          clip-path: polygon(0 0, 100% 0, 100% 60%, 70% 100%, 0 100%);
-        }
-      `}</style>
     </div>
   );
 }
