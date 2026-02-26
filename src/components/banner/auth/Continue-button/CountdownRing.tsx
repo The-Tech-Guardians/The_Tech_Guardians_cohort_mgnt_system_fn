@@ -1,6 +1,3 @@
-// components/auth/two-fa/CountdownRing.tsx
-// Animated SVG countdown ring. Turns amber at ≤20s and red at ≤10s.
-
 interface CountdownRingProps {
   timeLeft: number;
   total?: number;
@@ -14,7 +11,7 @@ export default function CountdownRing({
 }: CountdownRingProps) {
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference - (circumference * timeLeft) / total;
-  const size = (radius + 2) * 2; // svg viewport
+  const size = (radius + 2) * 2; 
 
   const color =
     timeLeft <= 10 ? "#EF4444" : timeLeft <= 20 ? "#F59E0B" : "#4F46E5";
@@ -27,7 +24,7 @@ export default function CountdownRing({
         style={{ transform: "rotate(-90deg)" }}
         aria-hidden="true"
       >
-        {/* Track */}
+        
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -36,7 +33,7 @@ export default function CountdownRing({
           stroke="#E5E7EB"
           strokeWidth="4"
         />
-        {/* Progress */}
+        
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -51,7 +48,7 @@ export default function CountdownRing({
         />
       </svg>
 
-      {/* Number */}
+     
       <div
         className="absolute inset-0 flex items-center justify-center text-sm font-extrabold"
         style={{ color }}

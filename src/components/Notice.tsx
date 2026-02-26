@@ -1,6 +1,3 @@
-// components/ui/Notice.tsx
-// Coloured notice banner for info, warning and success states.
-
 type Variant = "indigo" | "amber" | "green" | "red";
 
 interface NoticeProps {

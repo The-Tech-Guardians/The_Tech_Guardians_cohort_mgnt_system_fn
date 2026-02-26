@@ -1,6 +1,3 @@
-// components/ui/BackButton.tsx
-// A small ghost back-button. Pass href for a <Link> or onClick for a button.
-
 import Link from "next/link";
 
 interface BackButtonProps {
