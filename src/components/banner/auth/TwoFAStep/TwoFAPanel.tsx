@@ -1,8 +1,9 @@
+import { Lock, Shield, Smartphone } from "lucide-react";
 
 const TRUST_ITEMS = [
-  { icon: "🔐", title: "End-to-End Encrypted",   sub: "Your data is always protected"       },
-  { icon: "🛡️", title: "Every Login Secured",     sub: "2FA enforced on every session"       },
-  { icon: "📱", title: "App or SMS Supported",    sub: "Use your preferred 2FA method"       },
+  { icon: <Lock />, title: "End-to-End Encrypted",   sub: "Your data is always protected"       },
+  { icon: <Shield />, title: "Every Login Secured",     sub: "2FA enforced on every session"       },
+  { icon: <Smartphone />, title: "App or SMS Supported",    sub: "Use your preferred 2FA method"       },
 ];
 
 export default function TwoFAPanel() {
@@ -19,7 +20,7 @@ export default function TwoFAPanel() {
           security is our priority.
         </p>
       </div>
-      <ul className="space-y-3" role="list">
+      <ul className=" text-blue-600 space-y-3" role="list">
         {TRUST_ITEMS.map((item) => (
           <li
             key={item.title}
