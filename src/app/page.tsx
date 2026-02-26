@@ -1,162 +1,84 @@
 "use client";
 
-import { Search, Menu, X, ChevronLeft, ChevronRight, Star, Users, BookOpen, Award, Clock, ArrowRight } from "lucide-react";
+import { Search, Menu, X, ArrowRight, Users, BookOpen, Award, Target, Code, Briefcase, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function Home() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [bgImageIndex, setBgImageIndex] = useState(0);
-
-  // Slides content
-  const slides = [
-    {
-      title: "Welcome to",
-      highlight: "CohortLMS",
-      description: "A structured cohort‑based learning platform that encourages collaboration, real‑world projects, and measurable progress. Join a community of learners and instructors working together to build skills and ship products.",
-      cta: "Browse courses"
-    },
-    {
-      title: "Featured",
-      highlight: "Courses",
-      description: "Explore our most popular courses taught by industry experts. From AI to Product Management, we have something for every learner.",
-      cta: "View courses"
-    },
-    {
-      title: "Success",
-      highlight: "Stories",
-      description: "Hear from our graduates who transformed their careers through CohortLMS. Join 2,400+ active learners on their journey.",
-      cta: "Read stories"
-    },
-    {
-      title: "Next Cohort",
-      highlight: "Starts Soon",
-      description: "Our upcoming cohort begins in 2 weeks. Secure your spot and start learning with a supportive community of peers.",
-      cta: "Join now"
-    }
-  ];
-
-  // Featured courses data
-  const featuredCourses = [
-    {
-      title: "AI Product Management",
-      instructor: "Sarah Chen",
-      students: "1,234",
-      rating: 4.8,
-      duration: "8 weeks",
-      level: "Intermediate"
-    },
-    {
-      title: "Full Stack Engineering",
-      instructor: "Michael Okonkwo",
-      students: "2,567",
-      rating: 4.9,
-      duration: "12 weeks",
-      level: "Advanced"
-    },
-    {
-      title: "UX Design Fundamentals",
-      instructor: "Amina Diallo",
-      students: "1,892",
-      rating: 4.7,
-      duration: "6 weeks",
-      level: "Beginner"
-    },
-    {
-      title: "Product Leadership",
-      instructor: "David Kimani",
-      students: "987",
-      rating: 4.9,
-      duration: "10 weeks",
-      level: "Advanced"
-    }
-  ];
-
-  // Testimonials data
-  const testimonials = [
-    {
-      name: "James Mwangi",
-      role: "Product Manager",
-      company: "Safaricom",
-      content: "The cohort structure kept me accountable. I completed the course with a real project I'm proud of.",
-      rating: 5
-    },
-    {
-      name: "Grace Akinyi",
-      role: "Software Engineer",
-      company: "Andela",
-      content: "Learning with peers made all the difference. The instructors provided invaluable feedback throughout.",
-      rating: 5
-    },
-    {
-      name: "Oluwaseun Adebayo",
-      role: "UX Designer",
-      company: "Flutterwave",
-      content: "The curriculum is practical and industry-relevant. I started applying concepts from week one.",
-      rating: 5
-    }
-  ];
+  const [bgIndex, setBgIndex] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
 
   // Background images
-  const backgroundImages = [
-    "/bg-image-1.jpg",
-    "/bg-image-2.jpg", 
-    "/bg-image-3.jpg"
-  ];
-
-  // Auto-slide for content
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [slides.length]);
+  const bgImages = ["/bg-image-1.jpg", "/bg-image-2.jpg", "/bg-image-3.jpg"];
 
   // Auto-change background images
   useEffect(() => {
     const bgTimer = setInterval(() => {
-      setBgImageIndex((prev) => (prev + 1) % backgroundImages.length);
+      setBgIndex(i => (i + 1) % bgImages.length);
     }, 7000);
     return () => clearInterval(bgTimer);
-  }, [backgroundImages.length]);
+  }, [bgImages.length]);
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
-  };
+  // Track scroll for header effect
+  useEffect(() => {
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 10;
+      if (isScrolled !== scrolled) {
+        setScrolled(isScrolled);
+      }
+    };
 
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-  };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [scrolled]);
+
+  // Individual courses
+  const individualCourses = [
+    { name: "Social Media Branding", icon: Target, color: "bg-pink-500/20 text-pink-300", students: "345", slug: "social-media" },
+    { name: "Computer Programming", icon: Code, color: "bg-blue-500/20 text-blue-300", students: "567", slug: "programming" },
+    { name: "Entrepreneurship", icon: Briefcase, color: "bg-green-500/20 text-green-300", students: "234", slug: "entrepreneurship" },
+    { name: "SRHR", icon: Heart, color: "bg-purple-500/20 text-purple-300", students: "189", slug: "srhr" }
+  ];
+
+  // YOUR courses - for the Maven-style navigation
+  const categoryItems = [
+    'Social Media', 
+    'Programming', 
+    'Entrepreneurship', 
+    'SRHR', 
+    'Team Management'
+  ];
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-x-hidden">
-      {/* Background Images - Lighter overlay for brightness */}
-      <div className="fixed inset-0">
-        {backgroundImages.map((img, index) => (
-          <div
-            key={index}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-              index === bgImageIndex ? "opacity-100" : "opacity-0"
-            }`}
-            style={{
-              backgroundImage: `url(${img})`,
-              backgroundSize: 'cover',
+    <div className="min-h-screen flex flex-col">
+      {/* Background Images */}
+      <div className="fixed inset-0 -z-10">
+        {bgImages.map((img, i) => (
+          <div 
+            key={i} 
+            className={`absolute inset-0 transition-opacity duration-1000 ${i === bgIndex ? 'opacity-100' : 'opacity-0'}`}
+            style={{ 
+              backgroundImage: `url(${img})`, 
+              backgroundSize: 'cover', 
               backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat'
-            }}
+            }} 
           />
         ))}
-        {/* Light overlay - only 20% */}
-        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="absolute inset-0 bg-black/70" />
       </div>
 
-      {/* Header */}
-      <header className="relative z-20 bg-transparent w-full">
-        <div className="container mx-auto flex items-center justify-between py-3 px-6 max-w-7xl">
-          {/* Logo */}
-          <div className="flex items-center">
-            <div className="w-13 h-13 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
-              <svg viewBox="0 0 40 40" className="w-10 h-10" fill="none">
+      {/* Header - FIXED at top with darker background */}
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled 
+          ? 'bg-gray-900/95 backdrop-blur-md shadow-lg border-b border-gray-800' 
+          : 'bg-gray-900/80 backdrop-blur-sm border-b border-gray-800'
+      }`}>
+        {/* Top Row */}
+        <div className="container mx-auto flex items-center justify-between py-3 px-4 sm:px-6 lg:px-8 max-w-7xl">
+          {/* Logo - YOUR EXACT LOGO */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-13 md:h-13 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
+              <svg viewBox="0 0 40 40" className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10" fill="none">
                 <circle cx="14" cy="10" r="5" fill="#4F46E5" />
                 <circle cx="26" cy="10" r="5" fill="#2563EB" />
                 <circle cx="20" cy="6" r="5" fill="#06B6D4" />
@@ -165,227 +87,248 @@ export default function Home() {
                 <path d="M9 38 Q20 30 31 38" stroke="#06B6D4" strokeWidth="1.5" fill="none" strokeLinecap="round" />
               </svg>
             </div>
-            <span className="ml-3 text-white font-bold text-xl drop-shadow-md">CohortLMS</span>
+            <div className="flex flex-col">
+              <span className="text-white font-bold text-base sm:text-lg md:text-xl tracking-tight">CohortLMS</span>
+              <span className="text-gray-400 font-bold text-xs sm:text-sm tracking-tight">Platform</span>
+            </div>
           </div>
 
-          {/* Search */}
-          <div className="hidden md:block flex-1 max-w-md mx-8">
+          {/* Search Bar - Hidden on mobile/tablet */}
+          <div className="hidden lg:block flex-1 max-w-md mx-8">
             <div className="relative">
               <input
                 type="text"
                 placeholder="What do you want to learn?"
-                className="w-full border border-white/40 bg-white/20 backdrop-blur-md text-white rounded-md py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-white placeholder-white/80"
+                className="w-full border border-gray-700 bg-gray-800/50 text-white rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
               />
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-white/80" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-6">
-            <a href="#" className="text-sm text-white/90 hover:text-white transition-colors font-medium drop-shadow">Lightning Lessons</a>
-            <a href="#" className="text-sm text-white/90 hover:text-white transition-colors font-medium drop-shadow">Apply to teach</a>
-            <a href="#" className="text-sm bg-white text-blue-900 px-4 py-2 rounded-full hover:bg-gray-100 transition-colors font-medium shadow-md">Log In</a>
+          {/* Right Links - Hidden on mobile/tablet */}
+          <div className="hidden lg:flex items-center space-x-6">
+            <a href="#" className="text-sm text-gray-300 hover:text-white whitespace-nowrap">Lightning Lessons</a>
+            <a href="#" className="text-sm text-gray-300 hover:text-white whitespace-nowrap">Apply to teach</a>
+            <a href="#" className="text-sm bg-white text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 whitespace-nowrap">
+              Log In
+            </a>
           </div>
 
-          {/* Mobile menu button */}
-          <button className="md:hidden text-white focus:outline-none" onClick={() => setMobileNavOpen(!mobileNavOpen)}>
-            {mobileNavOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {/* Mobile/Tablet menu button */}
+          <button className="lg:hidden text-white p-2" onClick={() => setMobileNavOpen(!mobileNavOpen)}>
+            {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
 
-        {/* Category Navigation */}
-        <div className="border-t border-white/30">
-          <div className="container mx-auto px-6 max-w-7xl">
-            <nav className="hidden md:flex items-center space-x-8 py-3 text-sm">
-              {['AI', 'Product', 'Engineering', 'Design', 'Marketing', 'Leadership', 'Founders', 'More'].map((item) => (
-                <a key={item} href="#" className="text-white/90 hover:text-white transition-colors font-medium drop-shadow">
+        {/* Second Row - Category Navigation - Hidden on mobile */}
+        <div className="hidden md:block border-t border-gray-800">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+            <nav className="flex items-center space-x-6 lg:space-x-8 py-2 text-sm overflow-x-auto">
+              {categoryItems.map(item => (
+                <a key={item} href="#" className="text-gray-300 hover:text-white transition py-2 whitespace-nowrap text-xs sm:text-sm">
                   {item}
                 </a>
               ))}
             </nav>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="relative z-20 flex-1">
-        {/* Hero Section */}
-        <section className="min-h-screen flex items-center">
-          <div className="w-1/2"></div>
-          <div className="w-1/2 container mx-auto px-6 py-12 relative">
-            <div className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-xl">
-              <div className="flex transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
-                {slides.map((slide, index) => (
-                  <div key={index} className="w-full flex-shrink-0">
-                    <div className="py-12 md:py-20 px-6 md:px-12">
-                      <div className="max-w-3xl">
-                        <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight drop-shadow-lg">
-                          {slide.title}{" "}
-                          <span className="text-blue-300 drop-shadow">{slide.highlight}</span>
-                        </h1>
-                        <p className="text-xl text-white/95 mb-8 leading-relaxed drop-shadow">
-                          {slide.description}
-                        </p>
-                        <a href="/courses" className="inline-block bg-blue-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg">
-                          {slide.cta} →
-                        </a>
-                      </div>
-                    </div>
-                  </div>
+        {/* Mobile Menu */}
+        {mobileNavOpen && (
+          <div className="lg:hidden bg-gray-900 border-t border-gray-800">
+            <div className="container mx-auto px-4 py-4">
+              {/* Mobile Search */}
+              <div className="relative mb-4">
+                <input
+                  type="text"
+                  placeholder="What do you want to learn?"
+                  className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg py-2 pl-10 pr-4 text-sm placeholder-gray-400"
+                />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              </div>
+
+              {/* Mobile Links */}
+              <a href="#" className="block text-gray-300 py-3 border-b border-gray-800">Lightning Lessons</a>
+              <a href="#" className="block text-gray-300 py-3 border-b border-gray-800">Apply to teach</a>
+              
+              {/* Mobile Categories */}
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                {categoryItems.map(item => (
+                  <a key={item} href="#" className="text-gray-300 py-2 text-center bg-gray-800 rounded-lg text-xs">
+                    {item}
+                  </a>
                 ))}
               </div>
-
-              {/* Navigation */}
-              <button onClick={prevSlide} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/40 text-white rounded-full p-2 backdrop-blur">
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-              <button onClick={nextSlide} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/40 text-white rounded-full p-2 backdrop-blur">
-                <ChevronRight className="w-6 h-6" />
-              </button>
-
-              {/* Indicators */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-                {slides.map((_, index) => (
-                  <button key={index} onClick={() => setCurrentSlide(index)} className={`h-2 rounded-full transition-all ${
-                    currentSlide === index ? "w-8 bg-white" : "w-2 bg-white/60 hover:bg-white/80"
-                  }`} />
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Stats Section - Light background */}
-        <section className="relative z-30 bg-white/80 backdrop-blur-sm py-20">
-          <div className="container mx-auto px-6 max-w-7xl">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">Trusted by learners across Africa</h2>
-              <p className="text-xl text-gray-700 max-w-3xl mx-auto">Join thousands of professionals who have transformed their careers with CohortLMS</p>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              <div className="text-center"><div className="text-5xl font-bold text-blue-600 mb-2">15k+</div><div className="text-gray-600">Active Learners</div></div>
-              <div className="text-center"><div className="text-5xl font-bold text-blue-600 mb-2">120+</div><div className="text-gray-600">Expert Instructors</div></div>
-              <div className="text-center"><div className="text-5xl font-bold text-blue-600 mb-2">48</div><div className="text-gray-600">Industry Courses</div></div>
-              <div className="text-center"><div className="text-5xl font-bold text-blue-600 mb-2">94%</div><div className="text-gray-600">Completion Rate</div></div>
-            </div>
-          </div>
-        </section>
-
-        {/* Featured Courses - Light background */}
-        <section className="relative z-30 bg-gray-100/90 backdrop-blur-sm py-20">
-          <div className="container mx-auto px-6 max-w-7xl">
-            <div className="flex justify-between items-end mb-12">
-              <div>
-                <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Courses</h2>
-                <p className="text-xl text-gray-700">Hand-picked courses to accelerate your career</p>
-              </div>
-              <a href="/courses" className="text-blue-600 hover:text-blue-700 font-medium flex items-center">
-                View all courses <ArrowRight className="w-4 h-4 ml-1" />
+              
+              <a href="#" className="block bg-white text-gray-900 px-4 py-3 rounded-lg text-center mt-4 font-medium text-sm">
+                Log In
               </a>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredCourses.map((course, index) => (
-                <div key={index} className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-                  <div className="h-48 bg-gradient-to-br from-blue-500 to-blue-700 relative">
-                    <div className="absolute inset-0 bg-black/10"></div>
-                    <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded-full text-xs font-semibold text-blue-600 shadow">
-                      {course.level}
-                    </div>
+          </div>
+        )}
+      </header>
+
+      {/* Spacer to prevent content from hiding behind fixed header */}
+      <div className="h-[120px] md:h-[140px]"></div>
+
+      {/* Main Content */}
+      <main className="relative z-10">
+        {/* Hero Section - WITH PROPER SPACING LIKE MAVEN */}
+        <section className="min-h-screen flex items-center">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+            {/* Left margin space like Maven */}
+            <div className="max-w-3xl ml-0 lg:ml-8 xl:ml-16">
+              {/* Tagline like Maven's "Unlock your career growth" */}
+              <p className="text-blue-400 font-semibold text-sm sm:text-base mb-4 tracking-wide">
+                UNLOCK YOUR POTENTIAL
+              </p>
+              
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+                Learn with <br />purpose
+              </h1>
+              
+              <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-8 max-w-xl">
+                Social Media Branding, Computer Programming, Entrepreneurship, SRHR, and Team Management — designed for real impact.
+              </p>
+              
+              <div className="flex flex-wrap gap-4">
+                <a href="/courses" className="bg-blue-600 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-lg hover:bg-blue-700 transition font-medium text-sm sm:text-base">
+                  Browse courses
+                </a>
+                <a href="/cohorts" className="bg-white/10 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-lg hover:bg-white/20 transition font-medium text-sm sm:text-base">
+                  View cohorts
+                </a>
+              </div>
+
+              {/* Course tags */}
+              <div className="flex flex-wrap gap-2 mt-8">
+                <span className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/10 text-white rounded-full text-xs sm:text-sm">Social Media</span>
+                <span className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/10 text-white rounded-full text-xs sm:text-sm">Programming</span>
+                <span className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/10 text-white rounded-full text-xs sm:text-sm">Entrepreneurship</span>
+                <span className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/10 text-white rounded-full text-xs sm:text-sm">SRHR</span>
+                <span className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/10 text-white rounded-full text-xs sm:text-sm">Team Mgmt</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Individual Courses Section */}
+        <section className="bg-gray-900/90 backdrop-blur-sm py-16 sm:py-20 lg:py-24 border-y border-gray-800">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+            <div className="ml-0 lg:ml-8 xl:ml-16">
+              <div className="text-left mb-12">
+                <p className="text-blue-400 font-semibold text-sm mb-3">COURSES</p>
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3">Individual Courses</h2>
+                <p className="text-sm sm:text-base text-gray-400 max-w-2xl">Build foundational skills with our core curriculum</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 ml-0 lg:ml-8 xl:ml-16">
+              {individualCourses.map((course, i) => (
+                <div key={i} className="bg-gray-800/80 backdrop-blur-sm rounded-lg p-5 sm:p-6 shadow-lg hover:shadow-xl transition-shadow border border-gray-700">
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full ${course.color} bg-opacity-20 flex items-center justify-center mb-3 sm:mb-4`}>
+                    <course.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">{course.title}</h3>
-                    <p className="text-sm text-gray-600 mb-4">with {course.instructor}</p>
-                    
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center text-sm text-gray-500"><Users className="w-4 h-4 mr-1" />{course.students}</div>
-                      <div className="flex items-center text-sm text-gray-500"><Clock className="w-4 h-4 mr-1" />{course.duration}</div>
-                      <div className="flex items-center text-sm text-yellow-500"><Star className="w-4 h-4 mr-1 fill-current" />{course.rating}</div>
-                    </div>
-                    
-                    <a href="#" className="block text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">Enroll Now</a>
-                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-white mb-2">{course.name}</h3>
+                  <p className="text-xs sm:text-sm text-gray-400">{course.students} active learners</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* How It Works - Light background */}
-        <section className="relative z-30 bg-white/70 backdrop-blur-sm py-20">
-          <div className="container mx-auto px-6 max-w-7xl">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">How Cohort Learning Works</h2>
-              <p className="text-xl text-gray-700 max-w-3xl mx-auto">Learn better together with our structured approach</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="text-center bg-white/80 p-8 rounded-xl shadow-lg backdrop-blur-sm">
-                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6"><Users className="w-10 h-10 text-blue-600" /></div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Join a Cohort</h3>
-                <p className="text-gray-600">Start with a group of motivated peers at the same level. Learn together, grow together.</p>
-              </div>
-              <div className="text-center bg-white/80 p-8 rounded-xl shadow-lg backdrop-blur-sm">
-                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6"><BookOpen className="w-10 h-10 text-blue-600" /></div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Structured Learning</h3>
-                <p className="text-gray-600">Follow a proven curriculum with weekly goals, projects, and peer reviews.</p>
-              </div>
-              <div className="text-center bg-white/80 p-8 rounded-xl shadow-lg backdrop-blur-sm">
-                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6"><Award className="w-10 h-10 text-blue-600" /></div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Earn Certification</h3>
-                <p className="text-gray-600">Complete real-world projects and earn credentials recognized by employers.</p>
+        {/* Group & Team Programs Section */}
+        <section className="bg-gray-800/90 backdrop-blur-sm py-16 sm:py-20 lg:py-24 border-b border-gray-700">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+            <div className="ml-0 lg:ml-8 xl:ml-16">
+              <div className="text-left mb-12">
+                <p className="text-blue-400 font-semibold text-sm mb-3">PROGRAMS</p>
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3">Group & Team Programs</h2>
+                <p className="text-sm sm:text-base text-gray-400 max-w-2xl">Collaborative learning for teams and organizations</p>
               </div>
             </div>
-          </div>
-        </section>
 
-        {/* Testimonials - Light background */}
-        <section className="relative z-30 bg-white/70 backdrop-blur-sm py-20">
-          <div className="container mx-auto px-6 max-w-7xl">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">Success Stories</h2>
-              <p className="text-xl text-gray-700 max-w-3xl mx-auto">Hear from graduates who transformed their careers</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {testimonials.map((testimonial, index) => (
-                <div key={index} className="bg-white/80 backdrop-blur-sm p-8 rounded-xl shadow-lg">
-                  <div className="flex items-center mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full mr-4 shadow"></div>
+            <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 ml-0 lg:ml-8 xl:ml-16">
+              {/* Group Level */}
+              <div className="bg-gray-900/80 backdrop-blur-sm rounded-xl p-6 sm:p-8 shadow-lg border border-gray-700">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
+                  <Users className="w-6 h-6 sm:w-7 sm:h-7 text-blue-400" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Group Level</h3>
+                <p className="text-sm sm:text-base text-gray-400 mb-4">Same core curriculum with team collaboration</p>
+                <div className="space-y-2">
+                  {individualCourses.map((course, i) => (
+                    <div key={i} className="flex items-center text-sm">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></div>
+                      <span className="text-gray-300">{course.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Team Level */}
+              <div className="bg-gray-900/80 backdrop-blur-sm rounded-xl p-6 sm:p-8 shadow-lg border border-gray-700">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-amber-500/20 rounded-xl flex items-center justify-center mb-4">
+                  <Award className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Team Level</h3>
+                <p className="text-sm sm:text-base text-gray-400 mb-4">Advanced leadership for organizations</p>
+                <div className="bg-gray-800/80 rounded-lg p-3 sm:p-4 border border-gray-700">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-500/20 rounded-lg flex items-center justify-center mr-3">
+                      <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+                    </div>
                     <div>
-                      <h4 className="font-bold text-gray-900">{testimonial.name}</h4>
-                      <p className="text-sm text-gray-600">{testimonial.role} at {testimonial.company}</p>
+                      <h4 className="font-bold text-white text-sm sm:text-base">Team Management</h4>
+                      <p className="text-xs sm:text-sm text-gray-400">Leadership & coordination</p>
                     </div>
                   </div>
-                  <p className="text-gray-700 mb-4">"{testimonial.content}"</p>
-                  <div className="flex text-yellow-500">{[...Array(testimonial.rating)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-current" />))}</div>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="relative z-30 bg-gradient-to-r from-blue-600 to-blue-800 py-20">
-          <div className="container mx-auto px-6 max-w-7xl text-center">
-            <h2 className="text-4xl font-bold text-white mb-4">Ready to start your learning journey?</h2>
-            <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">Join our next cohort and learn alongside motivated peers</p>
-            <a href="/courses" className="inline-block bg-white text-blue-600 px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-100 transition-colors shadow-lg">
-              Browse All Courses
-            </a>
+        {/* Background Image CTA Section */}
+        <section className="relative py-20 sm:py-24 lg:py-32">
+          <div className="absolute inset-0">
+            {bgImages.map((img, i) => (
+              <div 
+                key={i} 
+                className={`absolute inset-0 transition-opacity duration-1000 ${i === bgIndex ? 'opacity-100' : 'opacity-0'}`}
+                style={{ 
+                  backgroundImage: `url(${img})`, 
+                  backgroundSize: 'cover', 
+                  backgroundPosition: 'center',
+                }} 
+              />
+            ))}
+            <div className="absolute inset-0 bg-black/70" />
+          </div>
+
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl relative z-10">
+            <div className="ml-0 lg:ml-8 xl:ml-16 max-w-2xl">
+              <p className="text-blue-400 font-semibold text-sm mb-3">GET STARTED</p>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3">Ready to start your journey?</h2>
+              <p className="text-base sm:text-lg text-gray-300 mb-6">Join a cohort today and learn alongside motivated peers</p>
+              <a href="/cohorts" className="inline-block bg-blue-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg hover:bg-blue-700 transition font-medium text-sm sm:text-base">
+                Browse Open Cohorts
+              </a>
+            </div>
           </div>
         </section>
       </main>
 
-      {/* Footer - Dark version (not too dark, not too light) */}
-      <footer className="relative z-20 bg-gray-900 text-gray-300 py-12 border-t border-gray-800">
-        <div className="container mx-auto px-6 max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
+      {/* Footer */}
+      <footer className="bg-gray-900 text-gray-400 border-t border-gray-800">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl py-8 sm:py-12 lg:py-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10 lg:gap-12 ml-0 lg:ml-8 xl:ml-16">
+            
+            {/* Brand Column */}
+            <div className="text-left">
               <div className="flex items-center mb-4">
-                <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center">
-                  <svg viewBox="0 0 40 40" className="w-8 h-8" fill="none">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gray-800 flex items-center justify-center mr-3">
+                  <svg viewBox="0 0 40 40" className="w-5 h-5 sm:w-6 sm:h-6" fill="none">
                     <circle cx="14" cy="10" r="5" fill="#4F46E5" />
                     <circle cx="26" cy="10" r="5" fill="#2563EB" />
                     <circle cx="20" cy="6" r="5" fill="#06B6D4" />
@@ -394,41 +337,69 @@ export default function Home() {
                     <path d="M9 38 Q20 30 31 38" stroke="#06B6D4" strokeWidth="1.5" fill="none" strokeLinecap="round" />
                   </svg>
                 </div>
-                <span className="ml-2 font-bold text-white">CohortLMS</span>
+                <span className="font-bold text-white text-sm sm:text-base">CohortLMS</span>
               </div>
-              <p className="text-gray-400 text-sm">Learn together, grow together.</p>
+              <p className="text-xs sm:text-sm text-gray-500 leading-relaxed max-w-xs">
+                Structured cohort-based learning platform for real-world impact.
+              </p>
+              <p className="text-xs text-gray-600 mt-4">© 2026 All rights reserved.</p>
             </div>
-            <div>
-              <h4 className="font-bold text-white mb-4">Platform</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Courses</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">For Instructors</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">For Teams</a></li>
+
+            {/* Courses Column */}
+            <div className="text-left">
+              <h4 className="font-semibold text-white text-sm sm:text-base mb-4">Courses</h4>
+              <ul className="space-y-2">
+                {individualCourses.map((course, i) => (
+                  <li key={i}>
+                    <a href="#" className="text-xs sm:text-sm text-gray-500 hover:text-white transition-colors">
+                      {course.name}
+                    </a>
+                  </li>
+                ))}
+                <li>
+                  <a href="#" className="text-xs sm:text-sm text-gray-500 hover:text-white transition-colors">
+                    Team Management
+                  </a>
+                </li>
               </ul>
             </div>
-            <div>
-              <h4 className="font-bold text-white mb-4">Company</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
+
+            {/* Levels Column */}
+            <div className="text-left">
+              <h4 className="font-semibold text-white text-sm sm:text-base mb-4">Levels</h4>
+              <ul className="space-y-2">
+                <li><span className="text-xs sm:text-sm text-gray-500">Individual</span></li>
+                <li><span className="text-xs sm:text-sm text-gray-500">Group</span></li>
+                <li><span className="text-xs sm:text-sm text-gray-500">Team</span></li>
               </ul>
             </div>
-            <div>
-              <h4 className="font-bold text-white mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms</a></li>
+
+            {/* Company Column */}
+            <div className="text-left">
+              <h4 className="font-semibold text-white text-sm sm:text-base mb-4">Company</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-xs sm:text-sm text-gray-500 hover:text-white transition-colors">About</a></li>
+                <li><a href="#" className="text-xs sm:text-sm text-gray-500 hover:text-white transition-colors">Contact</a></li>
+                <li><a href="#" className="text-xs sm:text-sm text-gray-500 hover:text-white transition-colors">Privacy</a></li>
+                <li><a href="#" className="text-xs sm:text-sm text-gray-500 hover:text-white transition-colors">Terms</a></li>
               </ul>
             </div>
           </div>
-          
-          {/* Developer Credits */}
-          <div className="border-t border-gray-800 mt-8 pt-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
-            <p>© 2026 CohortLMS. All rights reserved.</p>
-            <p className="mt-2 md:mt-0">
-              Developed by <span className="text-blue-400 font-medium">Freddy Bijanja</span>, <span className="text-blue-400 font-medium">IRADUKUNDA Boris</span> & <span className="text-blue-400 font-medium">Olivier Nduwayesu</span>
-            </p>
+
+          {/* Bottom Bar */}
+          <div className="border-t border-gray-800 mt-8 sm:mt-12 lg:mt-16 pt-6 sm:pt-8 ml-0 lg:ml-8 xl:ml-16">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <p className="text-xs text-gray-600 order-2 sm:order-1">
+                © 2026 CohortLMS. All rights reserved.
+              </p>
+              <p className="text-xs text-gray-600 order-1 sm:order-2 text-center sm:text-right">
+                Developed by{' '}
+                <span className="text-gray-400 hover:text-white transition-colors font-medium">Freddy Bijanja</span>,{' '}
+                <span className="text-gray-400 hover:text-white transition-colors font-medium">IRADUKUNDA Boris</span>{' '}
+                &{' '}
+                <span className="text-gray-400 hover:text-white transition-colors font-medium">Olivier Nduwayesu</span>
+              </p>
+            </div>
           </div>
         </div>
       </footer>
