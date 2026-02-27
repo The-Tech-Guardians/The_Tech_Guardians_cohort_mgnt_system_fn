@@ -17,9 +17,9 @@ import { OtpStatus, TwoFAMethod, TwoFAStep } from "@/components/banner/auth/two-
 
 
 const DEMO_USER = {
-  initials: "FB",
-  name:     "Freddy Bijanja",
-  email:    "freddybijanja31@gmail.com",
+  initials: "AK",
+  name:     "Amara Kone",
+  email:    "a.kone@cohortlms.io",
   role:     "Instructor" as const,
 };
 
@@ -79,7 +79,7 @@ export default function TwoFAPage() {
 
   return (
     <div className="min-h-screen flex bg-white">
-      <AuthPanel footerNote={`© ${new Date().getFullYear()} CohortLMS. Secured Platform.`}>
+      <AuthPanel footerNote="© 2025 CohortLMS. Secured Platform.">
         <TwoFAPanel />
       </AuthPanel>
 

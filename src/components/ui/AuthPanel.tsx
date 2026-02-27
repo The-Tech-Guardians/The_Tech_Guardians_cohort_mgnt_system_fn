@@ -1,7 +1,12 @@
+// components/ui/AuthPanel.tsx
+// Dark left panel shared by Login, Signup, 2FA and ForgotPassword pages.
+// Pass children to fill the centre slot; footer is always "© 2025 CohortLMS".
+
 import Logo from "./Logo";
 
 interface AuthPanelProps {
   children: React.ReactNode;
+  /** Optional small string shown in the bottom footer area */
   footerNote?: string;
 }
 
@@ -11,7 +16,7 @@ export default function AuthPanel({
 }: AuthPanelProps) {
   return (
     <aside className="hidden lg:flex w-[46%] bg-[#0F0C29] relative overflow-hidden flex-col justify-between p-12">
-
+      {/* Gradient blobs */}
       <div
         className="absolute top-[-15%] left-[-10%] w-[65%] h-[65%] rounded-full bg-[#4F46E5] opacity-20 blur-[80px] animate-pulse pointer-events-none"
         aria-hidden="true"
@@ -22,6 +27,7 @@ export default function AuthPanel({
         aria-hidden="true"
       />
 
+      {/* Dot-grid overlay */}
       <div
         className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{
@@ -32,12 +38,15 @@ export default function AuthPanel({
         aria-hidden="true"
       />
 
+      {/* Logo */}
       <div className="relative z-10">
         <Logo />
       </div>
 
+      {/* Centre content slot */}
       <div className="relative z-10">{children}</div>
 
+      {/* Footer */}
       <p className="relative z-10 text-white/20 text-xs">{footerNote}</p>
     </aside>
   );

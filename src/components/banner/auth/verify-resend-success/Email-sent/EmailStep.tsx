@@ -3,7 +3,6 @@
 import Link from "next/link";
 import BackButton from "@/components/ui/BackButton";
 import Button from "@/components/ui/Button";
-import { Key } from "lucide-react";
 
 
 interface EmailStepProps {
@@ -19,7 +18,7 @@ export default function EmailStep({ email, loading, onChange, onSubmit }: EmailS
       <BackButton href="/login" label="Back to login" />
 
       <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-2xl mb-4">
-        <Key/>
+        🔑
       </div>
       <h1 className="text-2xl font-extrabold text-[#111827] mb-2">
         Forgot your password?

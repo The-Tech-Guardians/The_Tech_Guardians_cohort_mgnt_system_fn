@@ -2,7 +2,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Logo from "@/components/ui/Logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,11 +22,28 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-white flex">
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#0F0C29]">
+        <div className="absolute inset-0">
+          <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-[#4F46E5] opacity-20 blur-[100px] animate-pulse" />
+          <div className="absolute bottom-[-10%] right-[-5%] w-[60%] h-[60%] rounded-full bg-[#2563EB] opacity-20 blur-[100px] animate-pulse" style={{ animationDelay: "1s" }} />
+          <div className="absolute top-[40%] left-[30%] w-[40%] h-[40%] rounded-full bg-[#06B6D4] opacity-10 blur-[80px] animate-pulse" style={{ animationDelay: "2s" }} />
+        </div>
 
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: `linear-gradient(rgba(79,70,229,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(79,70,229,0.5) 1px, transparent 1px)`, backgroundSize: "60px 60px" }} />
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-                   <Logo/>
+          <div className="flex items-center gap-3">
+            <div className="w-13 h-13 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
+              <svg viewBox="0 0 40 40" className="w-10 h-10" fill="none">
+                <circle cx="14" cy="10" r="5" fill="#4F46E5" />
+                <circle cx="26" cy="10" r="5" fill="#2563EB" />
+                <circle cx="20" cy="6" r="5" fill="#06B6D4" />
+                <path d="M4 28 Q20 18 36 28" stroke="#4F46E5" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <path d="M6 33 Q20 23 34 33" stroke="#2563EB" strokeWidth="2" fill="none" strokeLinecap="round" />
+                <path d="M9 38 Q20 30 31 38" stroke="#06B6D4" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+              </svg>
+            </div>
+            <span className="text-white font-bold text-xl tracking-tight">CohortLMS</span>
+          </div>
 
           <div className="space-y-8">
             <div className="space-y-2">
@@ -60,9 +76,9 @@ export default function LoginPage() {
              &quot;CohortLMS transformed how our team learns. The structured cohort model keeps everyone accountable.&quot;
             </p>
             <div className="flex items-center gap-3 mt-4">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4F46E5] to-[#06B6D4] flex items-center justify-center text-white text-xs font-bold">FB</div>
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4F46E5] to-[#06B6D4] flex items-center justify-center text-white text-xs font-bold">AK</div>
               <div>
-                <div className="text-white text-sm font-medium">Freddy Bijanja</div>
+                <div className="text-white text-sm font-medium">Amara Kone</div>
                 <div className="text-white/40 text-xs">Lead Instructor</div>
               </div>
             </div>
