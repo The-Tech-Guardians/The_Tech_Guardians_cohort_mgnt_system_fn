@@ -52,9 +52,6 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex bg-white">
      
       <div className="hidden lg:flex w-[46%] bg-[#0F0C29] relative overflow-hidden flex-col justify-between p-12">
-        <div className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] rounded-full bg-[#4F46E5] opacity-20 blur-[80px] animate-pulse" />
-        <div className="absolute bottom-[5%] left-[-8%] w-[50%] h-[50%] rounded-full bg-[#06B6D4] opacity-15 blur-[80px] animate-pulse" style={{ animationDelay: "2s" }} />
-        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(rgba(79,70,229,1) 1px,transparent 1px),linear-gradient(90deg,rgba(79,70,229,1) 1px,transparent 1px)", backgroundSize: "60px 60px" }} />
 
         <Logo/>
 
@@ -86,7 +83,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4 relative z-10">
-          <p className="text-white/35 text-xs leading-relaxed">🔒 Reset links expire after <strong className="text-white/55">15 minutes</strong>. For Admins & Instructors, 2FA will still be required after reset.</p>
+          <p className="text-white/35 text-xs leading-relaxed"> Reset links expire after <strong className="text-white/55">15 minutes</strong>. For Admins & Instructors, 2FA will still be required after reset.</p>
         </div>
       </div>
       <div className="flex-1 bg-[#F9FAFB] flex items-center justify-center px-6 py-20 overflow-y-auto">
@@ -106,7 +103,6 @@ export default function ForgotPasswordPage() {
                 <div className="h-2 w-2 rounded-full bg-gray-200" />
               </div>
 
-              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-2xl mb-4">🔑</div>
               <h1 className="text-2xl font-extrabold text-[#111827] mb-2">Forgot your password?</h1>
               <p className="text-sm text-gray-500 leading-relaxed mb-6">No worries. Enter your registered email address and we&apos;ll send you a secure reset link.</p>
 
@@ -190,7 +186,7 @@ export default function ForgotPasswordPage() {
                 </div>
               ) : (
                 <>
-                  <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-2xl mb-4">🔐</div>
+
                   <h1 className="text-2xl font-extrabold text-[#111827] mb-2">Set new password</h1>
                   <p className="text-sm text-gray-500 mb-6">Choose a strong password you haven&apos;t used before.</p>
 

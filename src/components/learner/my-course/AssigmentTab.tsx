@@ -4,7 +4,7 @@ export default function AssignmentTab() {
   const [checks, setChecks] = useState([true, true, false, false, false]);
 
   return (
-    <div className="bg-[#111318] border border-white/[0.07] rounded-xl overflow-hidden">
+    <div className="bg-gray-200 border border-white rounded-xl overflow-hidden">
       <div className="px-5 py-4 border-b border-white/[0.07] flex items-center justify-between">
         <div className="font-['Syne'] text-[15px] font-bold">Build a Weather App with Fetch API</div>
         <div className="flex items-center gap-1.5 text-xs text-[#f6ad55] bg-[#f6ad55]/[0.08] border border-[#f6ad55]/20 px-2.5 py-1 rounded-full">
@@ -23,7 +23,7 @@ export default function AssignmentTab() {
               <div
                 onClick={() => setChecks(prev => prev.map((c, idx) => idx === i ? !c : c))}
                 className={`w-[18px] h-[18px] rounded border-[1.5px] grid place-items-center text-[10px] cursor-pointer transition flex-shrink-0 ${
-                  checks[i] ? 'bg-[#68d391]/15 border-[#68d391] text-[#68d391]' : 'border-white/[0.07]'
+                  checks[i] ? 'bg-[#68d391]/15 border-[#68d391] text-[#68d391]' : 'border-gray-900'
                 }`}
               >
                 {checks[i] && '✓'}

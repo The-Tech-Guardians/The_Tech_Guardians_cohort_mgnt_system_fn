@@ -23,11 +23,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-white flex">
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#0F0C29]">
-        <div className="absolute inset-0">
-          <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-[#4F46E5] opacity-20 blur-[100px] animate-pulse" />
-          <div className="absolute bottom-[-10%] right-[-5%] w-[60%] h-[60%] rounded-full bg-[#2563EB] opacity-20 blur-[100px] animate-pulse" style={{ animationDelay: "1s" }} />
-          <div className="absolute top-[40%] left-[30%] w-[40%] h-[40%] rounded-full bg-[#06B6D4] opacity-10 blur-[80px] animate-pulse" style={{ animationDelay: "2s" }} />
-        </div>
 
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: `linear-gradient(rgba(79,70,229,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(79,70,229,0.5) 1px, transparent 1px)`, backgroundSize: "60px 60px" }} />
 
