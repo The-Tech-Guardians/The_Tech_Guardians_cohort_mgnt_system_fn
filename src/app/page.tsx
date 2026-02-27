@@ -1,286 +1,315 @@
 "use client";
 
-import { Search, Menu, X, ArrowRight, Users, BookOpen, Award, Target, Code, Briefcase, Heart } from "lucide-react";
+import { Search, Menu, X, ArrowRight, Users, BookOpen, Award, Target, Code, Briefcase, Heart, Calendar, ChevronRight, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 export default function Home() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [bgIndex, setBgIndex] = useState(0);
   const [scrolled, setScrolled] = useState(false);
+  const [activeModal, setActiveModal] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [enrollments, setEnrollments] = useState({});
 
-  // Background images
   const bgImages = ["/bg-image-1.jpg", "/bg-image-2.jpg", "/bg-image-3.jpg"];
 
-  // Auto-change background images
   useEffect(() => {
-    const bgTimer = setInterval(() => {
-      setBgIndex(i => (i + 1) % bgImages.length);
-    }, 7000);
-    return () => clearInterval(bgTimer);
+    const bgTimer = setInterval(() => setBgIndex(i => (i + 1) % bgImages.length), 7000);
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', handleScroll);
+    
+    // Fetch enrollment data
+    const fetchEnrollments = async () => {
+      // In production: const response = await fetch('/api/enrollments');
+      setEnrollments({});
+    };
+    fetchEnrollments();
+    
+    return () => {
+      clearInterval(bgTimer);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, [bgImages.length]);
 
-  // Track scroll for header effect
-  useEffect(() => {
-    const handleScroll = () => {
-      const isScrolled = window.scrollY > 10;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [scrolled]);
-
-  // Individual courses
-  const individualCourses = [
-    { name: "Social Media Branding", icon: Target, color: "bg-pink-500/20 text-pink-300", students: "345", slug: "social-media" },
-    { name: "Computer Programming", icon: Code, color: "bg-blue-500/20 text-blue-300", students: "567", slug: "programming" },
-    { name: "Entrepreneurship", icon: Briefcase, color: "bg-green-500/20 text-green-300", students: "234", slug: "entrepreneurship" },
-    { name: "SRHR", icon: Heart, color: "bg-purple-500/20 text-purple-300", students: "189", slug: "srhr" }
+  const courses = [
+    { id: 1, name: "Social Media Branding", icon: Target, color: "bg-pink-500/20 text-pink-300", slug: "social-media" },
+    { id: 2, name: "Computer Programming", icon: Code, color: "bg-blue-500/20 text-blue-300", slug: "programming" },
+    { id: 3, name: "Entrepreneurship", icon: Briefcase, color: "bg-green-500/20 text-green-300", slug: "entrepreneurship" },
+    { id: 4, name: "SRHR", icon: Heart, color: "bg-purple-500/20 text-purple-300", slug: "srhr" },
+    { id: 5, name: "Team Management", icon: Award, color: "bg-amber-500/20 text-amber-300", slug: "team-management" }
   ];
 
-  // YOUR courses - for the Maven-style navigation
-  const categoryItems = [
-    'Social Media', 
-    'Programming', 
-    'Entrepreneurship', 
-    'SRHR', 
-    'Team Management'
+  const categoryItems = ['Social Media', 'Programming', 'Entrepreneurship', 'SRHR', 'Team Management'];
+
+  const lightningLessons = [
+    {
+      id: 1,
+      title: "Social Media Branding Masterclass",
+      date: "LIVE TUE, MAR 10, 7:00PM",
+      instructor: "Sarah Chen",
+      badge: "FREE WORKSHOP"
+    },
+    {
+      id: 2,
+      title: "Python Programming for Beginners",
+      date: "LIVE THU, MAR 19, 8:30PM",
+      instructor: "Michael Okonkwo",
+      badge: "FREE WORKSHOP"
+    },
+    {
+      id: 3,
+      title: "Startup Fundamentals",
+      date: "LIVE THU, MAR 19, 3:30PM",
+      instructor: "David Kimani",
+      badge: "FREE WORKSHOP"
+    },
+    {
+      id: 4,
+      title: "SRHR: Comprehensive Health Education",
+      date: "LIVE MON, MAR 24, 6:00PM",
+      instructor: "Dr. Amina Diallo",
+      badge: "FREE WORKSHOP"
+    },
+    {
+      id: 5,
+      title: "Leading High-Performance Teams",
+      date: "LIVE WED, MAR 26, 5:30PM",
+      instructor: "Oluwaseun Adebayo",
+      badge: "FREE WORKSHOP"
+    }
   ];
+
+  const Modals = {
+    lightning: {
+      title: "Lightning Lessons",
+      content: (
+        <div className="space-y-4">
+          {lightningLessons.map((lesson) => (
+            <div key={lesson.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs bg-blue-600/20 text-blue-400 px-2 py-1 rounded-full">{lesson.badge}</span>
+              </div>
+              <h4 className="text-white font-semibold mb-1">{lesson.title}</h4>
+              <p className="text-gray-400 text-sm mb-2">{lesson.instructor}</p>
+              <div className="flex items-center gap-4 text-sm text-gray-400">
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  <span>{lesson.date}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Users className="w-3 h-3" />
+                  <span>{enrollments[lesson.id] || 0} enrolled</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )
+    },
+    apply: {
+      title: "Apply to Teach",
+      content: (
+        <form className="space-y-4">
+          <input placeholder="Full Name" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white" />
+          <input placeholder="Email" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white" />
+          <input placeholder="Expertise" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white" />
+          <button className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">Submit</button>
+        </form>
+      )
+    },
+    login: {
+      title: "Welcome Back",
+      content: (
+        <form className="space-y-4">
+          <input placeholder="Email" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white" />
+          <input type="password" placeholder="Password" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white" />
+          <button className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">Sign In</button>
+        </form>
+      )
+    },
+    admin: {
+      title: "Admin Access",
+      content: (
+        <form className="space-y-4">
+          <input placeholder="Email" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white" />
+          <input type="password" placeholder="Password" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white" />
+          <input placeholder="2FA Code" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white" />
+          <button className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">Authenticate</button>
+        </form>
+      )
+    },
+    cohorts: {
+      title: "Open Cohorts",
+      content: (
+        <div className="space-y-4">
+          {['Spring 2026', 'Summer 2026'].map((cohort, i) => (
+            <div key={i} className="p-4 border border-gray-800 rounded-lg">
+              <p className="text-white font-bold">{cohort} Cohort</p>
+              <p className="text-sm text-gray-400">Starts {i === 0 ? 'April 1' : 'July 1'}, 2026</p>
+            </div>
+          ))}
+        </div>
+      )
+    },
+    course: selectedCourse && {
+      title: selectedCourse.name,
+      content: (
+        <div>
+          <div className="flex items-center gap-3 mb-6">
+            <div className={`w-12 h-12 rounded-full ${selectedCourse.color} flex items-center justify-center`}>
+              <selectedCourse.icon className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">{selectedCourse.name}</p>
+              <p className="text-gray-400">{enrollments[selectedCourse.id] || 0} active learners</p>
+            </div>
+          </div>
+          <button className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">Enroll Now</button>
+        </div>
+      )
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Background Images */}
+      {/* Background */}
       <div className="fixed inset-0 -z-10">
         {bgImages.map((img, i) => (
-          <div 
-            key={i} 
-            className={`absolute inset-0 transition-opacity duration-1000 ${i === bgIndex ? 'opacity-100' : 'opacity-0'}`}
-            style={{ 
-              backgroundImage: `url(${img})`, 
-              backgroundSize: 'cover', 
-              backgroundPosition: 'center',
-            }} 
-          />
+          <div key={i} className={`absolute inset-0 transition-opacity duration-1000 ${i === bgIndex ? 'opacity-100' : 'opacity-0'}`}
+               style={{ backgroundImage: `url(${img})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
         ))}
         <div className="absolute inset-0 bg-black/70" />
       </div>
 
-      {/* Header - FIXED at top with darker background */}
+      {/* Header */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled 
-          ? 'bg-gray-900/95 backdrop-blur-md shadow-lg border-b border-gray-800' 
-          : 'bg-gray-900/80 backdrop-blur-sm border-b border-gray-800'
+        scrolled ? 'bg-gray-900/95 border-b border-gray-800' : 'bg-gray-900/80 border-b border-gray-800'
       }`}>
-        {/* Top Row */}
-        <div className="container mx-auto flex items-center justify-between py-3 px-4 sm:px-6 lg:px-8 max-w-7xl">
-          {/* Logo - YOUR EXACT LOGO */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-13 md:h-13 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
-              <svg viewBox="0 0 40 40" className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10" fill="none">
+        <div className="container mx-auto flex items-center justify-between py-3 px-6 max-w-7xl">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+              <svg viewBox="0 0 40 40" className="w-8 h-8" fill="none">
                 <circle cx="14" cy="10" r="5" fill="#4F46E5" />
                 <circle cx="26" cy="10" r="5" fill="#2563EB" />
                 <circle cx="20" cy="6" r="5" fill="#06B6D4" />
-                <path d="M4 28 Q20 18 36 28" stroke="#4F46E5" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                <path d="M6 33 Q20 23 34 33" stroke="#2563EB" strokeWidth="2" fill="none" strokeLinecap="round" />
-                <path d="M9 38 Q20 30 31 38" stroke="#06B6D4" strokeWidth="1.5" fill="none" strokeLinecap="round" />
               </svg>
             </div>
-            <div className="flex flex-col">
-              <span className="text-white font-bold text-base sm:text-lg md:text-xl tracking-tight">CohortLMS</span>
-              <span className="text-gray-400 font-bold text-xs sm:text-sm tracking-tight">Platform</span>
+            <div>
+              <span className="text-white font-bold text-xl">CohortLMS</span>
+              <span className="text-gray-400 text-xs block">Platform</span>
             </div>
-          </div>
+          </Link>
 
-          {/* Search Bar - Hidden on mobile/tablet */}
-          <div className="hidden lg:block flex-1 max-w-md mx-8">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="What do you want to learn?"
-                className="w-full border border-gray-700 bg-gray-800/50 text-white rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-              />
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            </div>
-          </div>
-
-          {/* Right Links - Hidden on mobile/tablet */}
           <div className="hidden lg:flex items-center space-x-6">
-            <a href="#" className="text-sm text-gray-300 hover:text-white whitespace-nowrap">Lightning Lessons</a>
-            <a href="#" className="text-sm text-gray-300 hover:text-white whitespace-nowrap">Apply to teach</a>
-            <a href="#" className="text-sm bg-white text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 whitespace-nowrap">
-              Log In
-            </a>
+            <button onClick={() => setActiveModal('lightning')} className="text-gray-300 hover:text-white">Lightning Lessons</button>
+            <button onClick={() => setActiveModal('apply')} className="text-gray-300 hover:text-white">Apply to teach</button>
+            <button onClick={() => setActiveModal('admin')} className="text-gray-300 hover:text-white">Admin</button>
+            <button onClick={() => setActiveModal('login')} className="bg-white text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100">Log In</button>
           </div>
 
-          {/* Mobile/Tablet menu button */}
-          <button className="lg:hidden text-white p-2" onClick={() => setMobileNavOpen(!mobileNavOpen)}>
-            {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <button className="lg:hidden text-white" onClick={() => setMobileNavOpen(!mobileNavOpen)}>
+            {mobileNavOpen ? <X /> : <Menu />}
           </button>
         </div>
 
-        {/* Second Row - Category Navigation - Hidden on mobile */}
-        <div className="hidden md:block border-t border-gray-800">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-            <nav className="flex items-center space-x-6 lg:space-x-8 py-2 text-sm overflow-x-auto">
-              {categoryItems.map(item => (
-                <a key={item} href="#" className="text-gray-300 hover:text-white transition py-2 whitespace-nowrap text-xs sm:text-sm">
-                  {item}
-                </a>
+        <div className="hidden lg:block border-t border-gray-800">
+          <div className="container mx-auto px-6 max-w-7xl">
+            <nav className="flex space-x-8 py-2">
+              {categoryItems.map((item, i) => (
+                <button key={item} onClick={() => { setSelectedCourse(courses[i]); setActiveModal('course'); }}
+                        className="text-gray-300 hover:text-white py-2">{item}</button>
               ))}
             </nav>
           </div>
         </div>
-
-        {/* Mobile Menu */}
-        {mobileNavOpen && (
-          <div className="lg:hidden bg-gray-900 border-t border-gray-800">
-            <div className="container mx-auto px-4 py-4">
-              {/* Mobile Search */}
-              <div className="relative mb-4">
-                <input
-                  type="text"
-                  placeholder="What do you want to learn?"
-                  className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg py-2 pl-10 pr-4 text-sm placeholder-gray-400"
-                />
-                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              </div>
-
-              {/* Mobile Links */}
-              <a href="#" className="block text-gray-300 py-3 border-b border-gray-800">Lightning Lessons</a>
-              <a href="#" className="block text-gray-300 py-3 border-b border-gray-800">Apply to teach</a>
-              
-              {/* Mobile Categories */}
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                {categoryItems.map(item => (
-                  <a key={item} href="#" className="text-gray-300 py-2 text-center bg-gray-800 rounded-lg text-xs">
-                    {item}
-                  </a>
-                ))}
-              </div>
-              
-              <a href="#" className="block bg-white text-gray-900 px-4 py-3 rounded-lg text-center mt-4 font-medium text-sm">
-                Log In
-              </a>
-            </div>
-          </div>
-        )}
       </header>
 
-      {/* Spacer to prevent content from hiding behind fixed header */}
-      <div className="h-[120px] md:h-[140px]"></div>
+      <div className="h-[140px]" />
 
       {/* Main Content */}
-      <main className="relative z-10">
-        {/* Hero Section - WITH PROPER SPACING LIKE MAVEN */}
+      <main className="flex-1">
+        {/* Hero Section */}
         <section className="min-h-screen flex items-center">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-            {/* Left margin space like Maven */}
-            <div className="max-w-3xl ml-0 lg:ml-8 xl:ml-16">
-              {/* Tagline like Maven's "Unlock your career growth" */}
-              <p className="text-blue-400 font-semibold text-sm sm:text-base mb-4 tracking-wide">
-                UNLOCK YOUR POTENTIAL
-              </p>
+          <div className="container mx-auto px-6 max-w-7xl">
+            <div className="max-w-3xl ml-0 lg:ml-16">
+              <p className="text-blue-400 text-sm mb-4">UNLOCK YOUR POTENTIAL</p>
+              <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">Learn with purpose</h1>
+              <p className="text-xl text-gray-300 mb-8 max-w-xl">Social Media, Programming, Entrepreneurship, SRHR, and Team Management.</p>
               
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
-                Learn with <br />purpose
-              </h1>
-              
-              <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-8 max-w-xl">
-                Social Media Branding, Computer Programming, Entrepreneurship, SRHR, and Team Management — designed for real impact.
-              </p>
-              
-              <div className="flex flex-wrap gap-4">
-                <a href="/courses" className="bg-blue-600 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-lg hover:bg-blue-700 transition font-medium text-sm sm:text-base">
-                  Browse courses
-                </a>
-                <a href="/cohorts" className="bg-white/10 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-lg hover:bg-white/20 transition font-medium text-sm sm:text-base">
-                  View cohorts
-                </a>
+              <div className="flex gap-4 mb-8">
+                <button onClick={() => { setSelectedCourse(courses[0]); setActiveModal('course'); }}
+                        className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700">Browse courses</button>
+                <button onClick={() => setActiveModal('cohorts')}
+                        className="bg-white/10 text-white px-8 py-4 rounded-lg hover:bg-white/20">View cohorts</button>
               </div>
 
-              {/* Course tags */}
-              <div className="flex flex-wrap gap-2 mt-8">
-                <span className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/10 text-white rounded-full text-xs sm:text-sm">Social Media</span>
-                <span className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/10 text-white rounded-full text-xs sm:text-sm">Programming</span>
-                <span className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/10 text-white rounded-full text-xs sm:text-sm">Entrepreneurship</span>
-                <span className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/10 text-white rounded-full text-xs sm:text-sm">SRHR</span>
-                <span className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/10 text-white rounded-full text-xs sm:text-sm">Team Mgmt</span>
+              <div className="flex flex-wrap gap-2">
+                {courses.map(course => (
+                  <button key={course.id} onClick={() => { setSelectedCourse(course); setActiveModal('course'); }}
+                          className="px-4 py-2 bg-white/10 text-white rounded-full text-sm hover:bg-white/20">
+                    {course.name}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         </section>
 
         {/* Individual Courses Section */}
-        <section className="bg-gray-900/90 backdrop-blur-sm py-16 sm:py-20 lg:py-24 border-y border-gray-800">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-            <div className="ml-0 lg:ml-8 xl:ml-16">
-              <div className="text-left mb-12">
-                <p className="text-blue-400 font-semibold text-sm mb-3">COURSES</p>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3">Individual Courses</h2>
-                <p className="text-sm sm:text-base text-gray-400 max-w-2xl">Build foundational skills with our core curriculum</p>
-              </div>
+        <section className="bg-gray-900/90 py-20 border-y border-gray-800">
+          <div className="container mx-auto px-6 max-w-7xl">
+            <div className="ml-0 lg:ml-16 mb-12">
+              <p className="text-blue-400 text-sm mb-2">COURSES</p>
+              <h2 className="text-3xl font-bold text-white">Individual Courses</h2>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 ml-0 lg:ml-8 xl:ml-16">
-              {individualCourses.map((course, i) => (
-                <div key={i} className="bg-gray-800/80 backdrop-blur-sm rounded-lg p-5 sm:p-6 shadow-lg hover:shadow-xl transition-shadow border border-gray-700">
-                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full ${course.color} bg-opacity-20 flex items-center justify-center mb-3 sm:mb-4`}>
-                    <course.icon className="w-5 h-5 sm:w-6 sm:h-6" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ml-0 lg:ml-16">
+              {courses.slice(0,4).map(course => (
+                <button key={course.id} onClick={() => { setSelectedCourse(course); setActiveModal('course'); }}
+                        className="bg-gray-800/80 p-6 rounded-lg text-left hover:bg-gray-800 transition border border-gray-700">
+                  <div className={`w-12 h-12 rounded-full ${course.color} flex items-center justify-center mb-4`}>
+                    <course.icon className="w-6 h-6" />
                   </div>
-                  <h3 className="text-base sm:text-lg font-bold text-white mb-2">{course.name}</h3>
-                  <p className="text-xs sm:text-sm text-gray-400">{course.students} active learners</p>
-                </div>
+                  <h3 className="text-white font-bold mb-1">{course.name}</h3>
+                  <p className="text-gray-400 text-sm">{enrollments[course.id] || 0} learners</p>
+                </button>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Group & Team Programs Section */}
-        <section className="bg-gray-800/90 backdrop-blur-sm py-16 sm:py-20 lg:py-24 border-b border-gray-700">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-            <div className="ml-0 lg:ml-8 xl:ml-16">
-              <div className="text-left mb-12">
-                <p className="text-blue-400 font-semibold text-sm mb-3">PROGRAMS</p>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3">Group & Team Programs</h2>
-                <p className="text-sm sm:text-base text-gray-400 max-w-2xl">Collaborative learning for teams and organizations</p>
-              </div>
+        {/* Group & Team Section */}
+        <section className="bg-gray-800/90 py-20 border-b border-gray-700">
+          <div className="container mx-auto px-6 max-w-7xl">
+            <div className="ml-0 lg:ml-16 mb-12">
+              <p className="text-blue-400 text-sm mb-2">PROGRAMS</p>
+              <h2 className="text-3xl font-bold text-white">Group & Team Programs</h2>
             </div>
-
-            <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 ml-0 lg:ml-8 xl:ml-16">
-              {/* Group Level */}
-              <div className="bg-gray-900/80 backdrop-blur-sm rounded-xl p-6 sm:p-8 shadow-lg border border-gray-700">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
-                  <Users className="w-6 h-6 sm:w-7 sm:h-7 text-blue-400" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Group Level</h3>
-                <p className="text-sm sm:text-base text-gray-400 mb-4">Same core curriculum with team collaboration</p>
+            <div className="grid md:grid-cols-2 gap-6 ml-0 lg:ml-16">
+              <div className="bg-gray-900/80 p-8 rounded-lg border border-gray-700">
+                <Users className="w-12 h-12 text-blue-400 mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">Group Level</h3>
+                <p className="text-gray-400 mb-4">Same core curriculum with team collaboration</p>
                 <div className="space-y-2">
-                  {individualCourses.map((course, i) => (
-                    <div key={i} className="flex items-center text-sm">
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></div>
-                      <span className="text-gray-300">{course.name}</span>
+                  {courses.slice(0,4).map(c => (
+                    <div key={c.id} className="flex items-center text-sm">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2" />
+                      <span className="text-gray-300">{c.name}</span>
+                      <span className="text-gray-500 text-xs ml-2">({enrollments[c.id] || 0})</span>
                     </div>
                   ))}
                 </div>
               </div>
-
-              {/* Team Level */}
-              <div className="bg-gray-900/80 backdrop-blur-sm rounded-xl p-6 sm:p-8 shadow-lg border border-gray-700">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-amber-500/20 rounded-xl flex items-center justify-center mb-4">
-                  <Award className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Team Level</h3>
-                <p className="text-sm sm:text-base text-gray-400 mb-4">Advanced leadership for organizations</p>
-                <div className="bg-gray-800/80 rounded-lg p-3 sm:p-4 border border-gray-700">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-500/20 rounded-lg flex items-center justify-center mr-3">
-                      <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
-                    </div>
+              <div className="bg-gray-900/80 p-8 rounded-lg border border-gray-700">
+                <Award className="w-12 h-12 text-amber-400 mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">Team Level</h3>
+                <p className="text-gray-400 mb-4">Advanced leadership for organizations</p>
+                <div className="bg-gray-800 p-4 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Briefcase className="w-8 h-8 text-amber-400" />
                     <div>
-                      <h4 className="font-bold text-white text-sm sm:text-base">Team Management</h4>
-                      <p className="text-xs sm:text-sm text-gray-400">Leadership & coordination</p>
+                      <p className="text-white font-bold">Team Management</p>
+                      <p className="text-sm text-gray-400">{enrollments[5] || 0} enrolled</p>
                     </div>
                   </div>
                 </div>
@@ -289,120 +318,88 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Background Image CTA Section */}
-        <section className="relative py-20 sm:py-24 lg:py-32">
+        {/* CTA Section */}
+        <section className="relative py-32">
           <div className="absolute inset-0">
             {bgImages.map((img, i) => (
-              <div 
-                key={i} 
-                className={`absolute inset-0 transition-opacity duration-1000 ${i === bgIndex ? 'opacity-100' : 'opacity-0'}`}
-                style={{ 
-                  backgroundImage: `url(${img})`, 
-                  backgroundSize: 'cover', 
-                  backgroundPosition: 'center',
-                }} 
-              />
+              <div key={i} className={`absolute inset-0 transition-opacity duration-1000 ${i === bgIndex ? 'opacity-100' : 'opacity-0'}`}
+                   style={{ backgroundImage: `url(${img})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
             ))}
             <div className="absolute inset-0 bg-black/70" />
           </div>
-
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl relative z-10">
-            <div className="ml-0 lg:ml-8 xl:ml-16 max-w-2xl">
-              <p className="text-blue-400 font-semibold text-sm mb-3">GET STARTED</p>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3">Ready to start your journey?</h2>
-              <p className="text-base sm:text-lg text-gray-300 mb-6">Join a cohort today and learn alongside motivated peers</p>
-              <a href="/cohorts" className="inline-block bg-blue-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg hover:bg-blue-700 transition font-medium text-sm sm:text-base">
-                Browse Open Cohorts
-              </a>
+          <div className="container mx-auto px-6 max-w-7xl relative z-10">
+            <div className="ml-0 lg:ml-16 max-w-2xl">
+              <p className="text-blue-400 text-sm mb-2">GET STARTED</p>
+              <h2 className="text-3xl font-bold text-white mb-3">Ready to start your journey?</h2>
+              <p className="text-lg text-gray-300 mb-6">Join a cohort and learn alongside motivated peers</p>
+              <button onClick={() => setActiveModal('cohorts')}
+                      className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700">Browse Open Cohorts</button>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 border-t border-gray-800">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl py-8 sm:py-12 lg:py-16">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10 lg:gap-12 ml-0 lg:ml-8 xl:ml-16">
-            
-            {/* Brand Column */}
-            <div className="text-left">
-              <div className="flex items-center mb-4">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gray-800 flex items-center justify-center mr-3">
-                  <svg viewBox="0 0 40 40" className="w-5 h-5 sm:w-6 sm:h-6" fill="none">
+      {/* Footer - RESTORED */}
+      <footer className="bg-gray-900 border-t border-gray-800 py-12">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 ml-0 lg:ml-16">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center">
+                  <svg viewBox="0 0 40 40" className="w-5 h-5" fill="none">
                     <circle cx="14" cy="10" r="5" fill="#4F46E5" />
                     <circle cx="26" cy="10" r="5" fill="#2563EB" />
                     <circle cx="20" cy="6" r="5" fill="#06B6D4" />
-                    <path d="M4 28 Q20 18 36 28" stroke="#4F46E5" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                    <path d="M6 33 Q20 23 34 33" stroke="#2563EB" strokeWidth="2" fill="none" strokeLinecap="round" />
-                    <path d="M9 38 Q20 30 31 38" stroke="#06B6D4" strokeWidth="1.5" fill="none" strokeLinecap="round" />
                   </svg>
                 </div>
-                <span className="font-bold text-white text-sm sm:text-base">CohortLMS</span>
+                <span className="font-bold text-white">CohortLMS</span>
               </div>
-              <p className="text-xs sm:text-sm text-gray-500 leading-relaxed max-w-xs">
-                Structured cohort-based learning platform for real-world impact.
-              </p>
-              <p className="text-xs text-gray-600 mt-4">© 2026 All rights reserved.</p>
+              <p className="text-xs text-gray-500">© 2026 All rights reserved.</p>
             </div>
-
-            {/* Courses Column */}
-            <div className="text-left">
-              <h4 className="font-semibold text-white text-sm sm:text-base mb-4">Courses</h4>
-              <ul className="space-y-2">
-                {individualCourses.map((course, i) => (
-                  <li key={i}>
-                    <a href="#" className="text-xs sm:text-sm text-gray-500 hover:text-white transition-colors">
-                      {course.name}
-                    </a>
-                  </li>
+            <div>
+              <h4 className="font-semibold text-white mb-4 text-sm">Courses</h4>
+              <ul className="space-y-2 text-xs text-gray-500">
+                {courses.map(c => (
+                  <li key={c.id}><button onClick={() => { setSelectedCourse(c); setActiveModal('course'); }}
+                                          className="hover:text-white">{c.name}</button></li>
                 ))}
-                <li>
-                  <a href="#" className="text-xs sm:text-sm text-gray-500 hover:text-white transition-colors">
-                    Team Management
-                  </a>
-                </li>
               </ul>
             </div>
-
-            {/* Levels Column */}
-            <div className="text-left">
-              <h4 className="font-semibold text-white text-sm sm:text-base mb-4">Levels</h4>
-              <ul className="space-y-2">
-                <li><span className="text-xs sm:text-sm text-gray-500">Individual</span></li>
-                <li><span className="text-xs sm:text-sm text-gray-500">Group</span></li>
-                <li><span className="text-xs sm:text-sm text-gray-500">Team</span></li>
+            <div>
+              <h4 className="font-semibold text-white mb-4 text-sm">Levels</h4>
+              <ul className="space-y-2 text-xs text-gray-500">
+                <li>Individual</li><li>Group</li><li>Team</li>
               </ul>
             </div>
-
-            {/* Company Column */}
-            <div className="text-left">
-              <h4 className="font-semibold text-white text-sm sm:text-base mb-4">Company</h4>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-xs sm:text-sm text-gray-500 hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="text-xs sm:text-sm text-gray-500 hover:text-white transition-colors">Contact</a></li>
-                <li><a href="#" className="text-xs sm:text-sm text-gray-500 hover:text-white transition-colors">Privacy</a></li>
-                <li><a href="#" className="text-xs sm:text-sm text-gray-500 hover:text-white transition-colors">Terms</a></li>
+            <div>
+              <h4 className="font-semibold text-white mb-4 text-sm">Company</h4>
+              <ul className="space-y-2 text-xs text-gray-500">
+                <li><button className="hover:text-white">About</button></li>
+                <li><button className="hover:text-white">Contact</button></li>
+                <li><button className="hover:text-white">Privacy</button></li>
               </ul>
             </div>
           </div>
-
-          {/* Bottom Bar */}
-          <div className="border-t border-gray-800 mt-8 sm:mt-12 lg:mt-16 pt-6 sm:pt-8 ml-0 lg:ml-8 xl:ml-16">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <p className="text-xs text-gray-600 order-2 sm:order-1">
-                © 2026 CohortLMS. All rights reserved.
-              </p>
-              <p className="text-xs text-gray-600 order-1 sm:order-2 text-center sm:text-right">
-                Developed by{' '}
-                <span className="text-gray-400 hover:text-white transition-colors font-medium">Freddy Bijanja</span>,{' '}
-                <span className="text-gray-400 hover:text-white transition-colors font-medium">IRADUKUNDA Boris</span>{' '}
-                &{' '}
-                <span className="text-gray-400 hover:text-white transition-colors font-medium">Olivier Nduwayesu</span>
-              </p>
-            </div>
+          <div className="border-t border-gray-800 mt-8 pt-6 text-center text-xs text-gray-600 ml-0 lg:ml-16">
+            <p>Developed by Freddy Bijanja, IRADUKUNDA Boris & Olivier Nduwayesu</p>
           </div>
         </div>
       </footer>
+
+      {/* Modal */}
+      {activeModal && Modals[activeModal] && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+          <div className="bg-gray-900 rounded-xl max-w-md w-full max-h-[80vh] overflow-y-auto border border-gray-700">
+            <div className="p-6 border-b border-gray-800 flex justify-between sticky top-0 bg-gray-900">
+              <h3 className="text-xl font-bold text-white">{Modals[activeModal].title}</h3>
+              <button onClick={() => setActiveModal(null)} className="text-gray-400 hover:text-white">
+                <X />
+              </button>
+            </div>
+            <div className="p-6">{Modals[activeModal].content}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
