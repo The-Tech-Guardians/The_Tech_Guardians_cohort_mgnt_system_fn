@@ -1,8 +1,8 @@
 export default function DiscussionTab() {
   return (
-    <div className="py-10 text-center text-gray-400">
+    <div className="py-10 text-center text-gray-400-">
       <div className="text-[32px] mb-3">💬</div>
-      <div className="font-['Syne'] text-base font-semibold text-white mb-2">Discussion Board</div>
+      <div className="font-['Syne'] text-base font-semibold text-gray-900 mb-2">Discussion Board</div>
       <p className="text-[13px] max-w-xs mx-auto mb-5">
         Ask questions, share insights, and engage with your cohort peers and instructors about this lesson.
       </p>

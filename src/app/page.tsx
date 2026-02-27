@@ -1,13 +1,12 @@
 "use client";
 
-import { Search, Menu, X, Users, BookOpen, Award, Target, Code, Briefcase, Heart } from "lucide-react";
+import {  Menu, X, Users,  Award, Target, Code, Briefcase, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function Home() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [bgIndex, setBgIndex] = useState(0);
 
-  // Background images
   const bgImages = ["/bg-image-1.jpg", "/bg-image-2.jpg", "/bg-image-3.jpg"];
 
   // Auto-change background images

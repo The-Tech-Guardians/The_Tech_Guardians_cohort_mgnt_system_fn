@@ -73,30 +73,30 @@ export default function CourseSidebar() {
   };
 
   return (
-    <aside className="w-[260px] lg:w-[240px] xl:w-[260px] border-r border-white/[0.07] bg-[#111318] overflow-y-auto py-5 h-full scrollbar-hide">
-      <div className="px-5 pb-4 border-b border-white/[0.07] mb-4">
-        <div className="font-['Syne'] font-bold text-sm mb-2">Full-Stack Web Development</div>
-        <div className="flex items-center gap-2 text-xs text-gray-400">
+    <aside className="w-[260px] lg:w-[240px] xl:w-[260px] border-r border-gray-200 bg-white overflow-y-auto py-5 h-full scrollbar-hide shadow-sm">
+      <div className="px-5 pb-4 border-b border-gray-200 mb-4">
+        <div className="font-['Syne'] font-bold text-sm mb-2 text-gray-900">Full-Stack Web Development</div>
+        <div className="flex items-center gap-2 text-xs text-gray-600">
           <span>🗓 12 Weeks</span>
           <span>·</span>
           <span>48 Lessons</span>
         </div>
       </div>
 
-      <div className="mx-3 mb-4 flex items-center gap-2.5 p-2.5 bg-[#181c24] rounded-xl">
+      <div className="mx-3 mb-4 flex items-center gap-2.5 p-2.5 bg-gray-50 border border-gray-200 rounded-xl">
         <div className="relative w-10 h-10 flex-shrink-0">
           <svg className="w-10 h-10 -rotate-90" viewBox="0 0 40 40">
-            <circle cx="20" cy="20" r="16" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
-            <circle cx="20" cy="20" r="16" fill="none" stroke="#63b3ed" strokeWidth="3"
+            <circle cx="20" cy="20" r="16" fill="none" stroke="#E5E7EB" strokeWidth="3" />
+            <circle cx="20" cy="20" r="16" fill="none" stroke="#10B981" strokeWidth="3"
               strokeDasharray="100.5" strokeDashoffset="65" strokeLinecap="round" />
           </svg>
-          <div className="absolute inset-0 grid place-items-center font-mono text-[10px] font-medium text-[#63b3ed]">
+          <div className="absolute inset-0 grid place-items-center font-mono text-[10px] font-medium text-green-600">
             35%
           </div>
         </div>
         <div className="flex-1">
-          <div className="text-[11px] text-gray-400 mb-0.5">Overall Progress</div>
-          <div className="font-['Syne'] text-[13px] font-semibold">17 / 48 Lessons</div>
+          <div className="text-[11px] text-gray-600 mb-0.5">Overall Progress</div>
+          <div className="font-['Syne'] text-[13px] font-semibold text-gray-900">17 / 48 Lessons</div>
         </div>
       </div>
 
@@ -104,18 +104,18 @@ export default function CourseSidebar() {
         <div key={module.id} className="mb-1">
           <div
             onClick={() => !module.locked && toggleModule(module.id)}
-            className={`flex items-center justify-between px-5 py-2 font-['Syne'] text-[11px] font-semibold uppercase tracking-wider text-gray-400 hover:text-white cursor-pointer transition ${
+            className={`flex items-center justify-between px-5 py-2 font-['Syne'] text-[11px] font-semibold uppercase tracking-wider text-gray-600 hover:text-gray-900 cursor-pointer transition ${
               module.locked ? 'opacity-40' : ''
             }`}
           >
             <span>
-              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#181c24] text-gray-400 mr-2">
+              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 mr-2">
                 {module.week}
               </span>
               {module.title}
             </span>
             <span className={`text-[10px] transition-transform ${openModules.includes(module.id) ? 'rotate-180' : ''}`}>
-              {module.locked ? <Lock/> : '▼'}
+              {module.locked ? <Lock className="w-3 h-3"/> : '▼'}
             </span>
           </div>
           {!module.locked && (
@@ -126,22 +126,22 @@ export default function CourseSidebar() {
               {module.lessons.map(lesson => (
                 <div
                   key={lesson.id}
-                  className={`flex items-center gap-2.5 px-5 pl-7 py-2 cursor-pointer transition border-l-2 border-transparent hover:bg-[#181c24] ${
-                    lesson.status === 'active' ? 'bg-[#63b3ed]/[0.08] border-l-[#63b3ed]' : ''
+                  className={`flex items-center gap-2.5 px-5 pl-7 py-2 cursor-pointer transition border-l-2 border-transparent hover:bg-gray-50 ${
+                    lesson.status === 'active' ? 'bg-indigo-50 border-l-indigo-500' : ''
                   } ${lesson.status === 'locked' ? 'opacity-40 cursor-not-allowed' : ''}`}
                 >
                   <span className="text-sm w-4 text-center flex-shrink-0">
-                    {lesson.status === 'completed' && <span className="text-[#68d391]">✓</span>}
-                    {lesson.status === 'active' && '▶'}
-                    {lesson.status === 'available' && '○'}
+                    {lesson.status === 'completed' && <span className="text-green-500">✓</span>}
+                    {lesson.status === 'active' && <span className="text-indigo-600">▶</span>}
+                    {lesson.status === 'available' && <span className="text-gray-400">○</span>}
                     {lesson.status === 'locked' && '🔒'}
                   </span>
                   <span className={`text-[13px] flex-1 truncate ${
-                    lesson.status === 'active' ? 'text-white' : 'text-gray-400'
+                    lesson.status === 'active' ? 'text-gray-900 font-medium' : 'text-gray-600'
                   }`}>
                     {lesson.name}
                   </span>
-                  <span className="font-mono text-[10px] text-gray-400">{lesson.duration}</span>
+                  <span className="font-mono text-[10px] text-gray-500">{lesson.duration}</span>
                 </div>
               ))}
             </div>

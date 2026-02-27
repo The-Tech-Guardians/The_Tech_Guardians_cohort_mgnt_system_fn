@@ -50,7 +50,7 @@ export default function LessonContent() {
             className={`px-3 md:px-4 py-2.5 text-[13px] font-medium border-b-2 -mb-px transition whitespace-nowrap ${
               activeTab === tab
                 ? 'text-[#63b3ed] border-[#63b3ed]'
-                : 'text-gray-400 border-transparent hover:text-white'
+                : 'text-gray-400 border-transparent hover:text-[#63b3ed]'
             }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}

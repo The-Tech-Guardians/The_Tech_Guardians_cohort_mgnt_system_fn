@@ -85,10 +85,6 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-white flex">
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#0F0C29]">
-        <div className="absolute inset-0">
-          <div className="absolute top-[-10%] right-[-10%] w-[65%] h-[65%] rounded-full bg-[#4F46E5] opacity-20 blur-[100px] animate-pulse" />
-          <div className="absolute bottom-[10%] left-[-10%] w-[55%] h-[55%] rounded-full bg-[#06B6D4] opacity-15 blur-[90px] animate-pulse" style={{ animationDelay: "1.5s" }} />
-        </div>
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: `linear-gradient(rgba(79,70,229,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(79,70,229,0.5) 1px, transparent 1px)`, backgroundSize: "60px 60px" }} />
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
