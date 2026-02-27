@@ -1,6 +1,3 @@
-// components/ui/Button.tsx
-// Primary and Outline variants used across every auth form.
-
 import { ButtonHTMLAttributes } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

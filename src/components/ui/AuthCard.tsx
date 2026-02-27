@@ -1,6 +1,3 @@
-// components/ui/AuthCard.tsx
-// White card that wraps every auth form panel.
-
 interface AuthCardProps {
   children: React.ReactNode;
   className?: string;
