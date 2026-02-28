@@ -2,10 +2,10 @@ import React from "react";
 import Sidebar from "../../components/admin/Sidebar";
 
 export const metadata = {
-  title: "Admin Dashboard - CohortLMS",
+  title: "Instructor Dashboard - CohortLMS",
 };
 
-export default function AdminLayout({
+export default function InstructorLayout({
   children,
 }: {
   children: React.ReactNode;
