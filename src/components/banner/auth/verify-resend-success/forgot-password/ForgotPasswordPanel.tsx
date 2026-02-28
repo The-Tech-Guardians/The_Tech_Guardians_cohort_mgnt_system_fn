@@ -1,11 +1,9 @@
-// components/auth/forgot-password/ForgotPasswordPanel.tsx
-// Left panel for the Forgot Password flow.
-// Renders the animated step tracker that updates as the user progresses.
 
+
+import { Lock } from "lucide-react";
 import { FPStep, STEPS } from "./types";
 
 interface ForgotPasswordPanelProps {
-  /** Current active step (1 | 2 | 3). Steps below this are shown as complete. */
   currentStep: FPStep;
 }
 
@@ -67,7 +65,7 @@ export default function ForgotPasswordPanel({ currentStep }: ForgotPasswordPanel
       {/* Security note */}
       <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
         <p className="text-white/35 text-xs leading-relaxed">
-          🔒 Reset links expire after{" "}
+          <Lock/> Reset links expire after{" "}
           <strong className="text-white/55">15 minutes</strong>. For Admins &
           Instructors, 2FA will still be required after reset.
         </p>
