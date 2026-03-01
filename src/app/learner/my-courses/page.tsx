@@ -19,7 +19,7 @@ export default function LearnerMyCoursesPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className=" max-w-6xl mx-auto  space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-black text-gray-900" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>My Courses</h1>
@@ -29,7 +29,7 @@ export default function LearnerMyCoursesPage() {
           {["all", "in-progress", "not-started"].map(f => (
             <button key={f} onClick={() => setFilter(f)}
               className={`text-xs font-semibold px-4 py-2 rounded-xl capitalize transition-colors
-                ${filter === f ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+                ${filter === f ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-indigo-200"}`}>
               {f.replace("-", " ")}
             </button>
           ))}
@@ -40,7 +40,7 @@ export default function LearnerMyCoursesPage() {
         {filtered.map(course => (
          
           <div key={course.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden group cursor-pointer">
-            <div className="relative h-32 bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center">
+            <div className="relative h-32 bg-gray-900 flex items-center justify-center">
               <span className="text-6xl font-black text-white/20" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>{course.thumbnail}</span>
               <div className="absolute top-3 right-3">
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
@@ -75,7 +75,7 @@ export default function LearnerMyCoursesPage() {
                   <span className="font-semibold">{course.progress}%</span>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                  <div className="bg-gray-900 h-full rounded-full transition-all" style={{width: `${course.progress}%`}}/>
+                  <div className="bg-indigo-600 h-full rounded-full transition-all" style={{width: `${course.progress}%`}}/>
                 </div>
               </div>
 
@@ -89,7 +89,7 @@ export default function LearnerMyCoursesPage() {
               <div className="flex gap-2">
                
                
-                <button className="flex-1 bg-gray-900 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-gray-700 transition-colors">
+                <button className="flex-1 bg-indigo-600 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-indigo-400 transition-colors">
                   <Link href="my-courses/my-learning"> {course.progress > 0 ? "Continue" : "Start Course"}</Link>
                 </button>
                 <button className="w-10 h-10 flex items-center justify-center border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">

@@ -4,8 +4,6 @@ import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { BookOpen, TrendingUp, Megaphone, Home, Menu, Bell, LogOut, ChevronRight } from "lucide-react";
 import ProfileSidebar from '@/components/profile/learner-profile/ProfileSidebar';
-import Image from 'next/image';
-import logo from "@/images/Logo Part1-whitescreen.png"
 import SafedLogo from "@/components/ui/seftLogo";
 
 function NavItem({ icon: Icon, label, active, onClick }: { 
@@ -21,14 +19,14 @@ function NavItem({ icon: Icon, label, active, onClick }: {
         w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium
         transition-all duration-200 group relative overflow-hidden
         ${active
-          ? "bg-blue-600 text-white shadow-sm"
-          : "text-gray-400 hover:bg-blue-400 hover:text-gray-800"
+          ? "bg-indigo-600 text-white shadow-sm"
+          : "text-gray-400 hover:bg-indigo-300 hover:text-gray-800"
         }
       `}
     >
-      {/* Active left accent bar */}
+
       {active && (
-        <span className="absolute left-0 top-2 bottom-2 w-0.5 bg-white/40 rounded-r-full" />
+        <span className="absolute left-0 top-0 bottom-2 w-2.5 h-full bg-white  rounded-l-2xl" />
       )}
       <Icon
         size={16}
@@ -86,19 +84,13 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
     <div className="flex flex-col h-full">
       <div className="px-5 pt-6 pb-5">
         <div className="flex items-center gap-3 mb-0.5">
-          {/* <div>
-            <div className="text-md font-semibold text-gray-800 tracking-tight leading-none">safED</div>
-       
-          </div> */}
      <div className="text-[10px] text-gray-400 "><SafedLogo/></div>
           
         </div>
       </div>
 
-      {/* Divider */}
       <div className="mx-4 h-px bg-gray-100" />
 
-      {/* Nav */}
       <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
         <NavSection label="Navigate" />
         {nav.map(item => (
@@ -115,18 +107,15 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
         ))}
       </nav>
 
-      {/* Divider */}
       <div className="mx-4 h-px bg-gray-100" />
 
-      {/* User profile area */}
       <div className="p-3 space-y-1">
         <button
           onClick={() => setProfileOpen(!profileOpen)}
           className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-gray-50 transition-all duration-200 group"
         >
-          {/* Avatar with online dot */}
           <div className="relative flex-shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center text-white font-bold text-xs">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">
               FB
             </div>
             <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />
@@ -154,7 +143,6 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
   return (
     <div className="flex h-screen bg-[#f8f8f8] overflow-hidden">
 
-      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 lg:hidden"
@@ -188,7 +176,6 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
               <h1 className="text-base font-bold text-gray-900 truncate leading-tight">
                 {titles[view]}
               </h1>
-              {/* Breadcrumb-style cohort tag */}
               <span className="hidden sm:inline-flex items-center text-[10px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                 2025-A
               </span>
@@ -213,8 +200,8 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
               className="relative flex-shrink-0 group"
               aria-label="Open profile"
             >
-              <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center text-white text-xs font-bold
-                group-hover:bg-gray-700 transition-all duration-200 shadow-sm group-hover:shadow-md group-hover:scale-105">
+              <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-xs font-bold
+                group-hover:bg-indigo-700 transition-all duration-200 shadow-sm group-hover:shadow-md group-hover:scale-105">
                 FB
               </div>
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />
@@ -222,13 +209,11 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
           </div>
         </header>
 
-        {/* Scrollable page content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           {children}
         </main>
       </div>
 
-      {/* Profile sidebar */}
       <ProfileSidebar isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
   );

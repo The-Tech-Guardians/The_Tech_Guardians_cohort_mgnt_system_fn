@@ -6,7 +6,7 @@ import LessonContent from '@/components/learner/my-course/LessonContent';
 
 export default function MyLearningPage() {
   return (
-    <div className="flex-1 flex overflow-hidden -m-6">
+    <div className="flex-1 flex overflow-hidden ">
       <div className="hidden lg:block">
         <CourseSidebar />
       </div>

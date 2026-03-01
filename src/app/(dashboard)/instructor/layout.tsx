@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { Icon, I } from "@/components/instructor/ui/Icon";
 import { Badge, Btn } from "@/components/instructor/ui/SharedUI";
 import { MESSAGES_DATA } from "@/lib/data/instructorData";
+import SafedLogo from "@/components/ui/seftLogo";
 
 function NavItem({ icon, label, active, badge, onClick }: { 
   icon: string; 
@@ -16,7 +17,7 @@ function NavItem({ icon, label, active, badge, onClick }: {
   return (
     <button onClick={onClick}
       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group
-        ${active?"bg-gray-900 text-white":"text-gray-500 hover:bg-gray-100 hover:text-gray-900"}`}>
+        ${active?"bg-indigo-600 text-white":"text-gray-500 hover:bg-indigo-100 hover:text-gray-900"}`}>
       <Icon d={I[icon as keyof typeof I]} size={17} className={active?"text-white":"text-gray-400 group-hover:text-gray-700"}/>
       <span className="flex-1 text-left">{label}</span>
       {badge&&<span className="bg-rose-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">{badge}</span>}
@@ -49,15 +50,12 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
 
   const SidebarContent = (
     <>
-      <div className="px-5 py-5 border-b border-gray-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center shadow-sm">
-            <span className="text-white font-black text-sm" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>C</span>
-          </div>
-          <span className="text-gray-900 font-black text-lg" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>CohortOS</span>
-        </div>
-        <div className="mt-1 text-xs text-gray-400 font-medium">Instructor Portal</div>
-      </div>
+      <div className="px-5 pt-6 pb-5">
+             <div className="flex items-center gap-3 mb-0.5">
+          <div className="text-[10px] text-gray-400 "><SafedLogo/></div>
+               
+             </div>
+           </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {nav.map(item=>(
@@ -70,14 +68,14 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
       <div className="p-4 border-t border-gray-100">
         <button onClick={()=>setProfileOpen(!profileOpen)}
           className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 transition-colors">
-          <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">JK</div>
+          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">JK</div>
           <div className="flex-1 text-left min-w-0">
             <div className="text-gray-900 text-sm font-semibold truncate">Dr. James Kowalski</div>
             <div className="text-gray-400 text-xs">Instructor</div>
           </div>
           <Icon d={I.chevronR} size={14} className="text-gray-400"/>
         </button>
-        <button className="mt-1 w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors">
+        <button className="mt-1 w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:text-red-700 hover:bg-red-100 rounded-xl transition-colors">
           <Icon d={I.logout} size={14}/>Sign Out
         </button>
       </div>
@@ -107,7 +105,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <header className="bg-white border-b border-gray-200 px-4 sm:px-6 h-16 flex items-center gap-4 flex-shrink-0">
-            <button className="lg:hidden text-gray-500 hover:text-gray-900 transition-colors" onClick={()=>setSidebarOpen(true)}>
+            <button className="lg:hidden text-gray-500 hover:text-indigo-600 transition-colors" onClick={()=>setSidebarOpen(true)}>
               <Icon d={I.menu} size={20}/>
             </button>
 
@@ -127,7 +125,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full"/>
             </button>
 
-            <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center text-white text-sm font-bold cursor-pointer hover:bg-gray-700 transition-colors flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-sm font-bold cursor-pointer hover:bg-gray-700 transition-colors flex-shrink-0">
               JK
             </div>
           </header>
@@ -139,7 +137,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
 
         {profileOpen && (
           <div className="fixed inset-0 z-50 flex">
-            <div className="flex-1 bg-black/20" onClick={()=>setProfileOpen(false)}/>
+            <div className="flex-1 bg-gray-900/70" onClick={()=>setProfileOpen(false)}/>
             <div className="w-80 bg-white shadow-2xl flex flex-col">
               <div className="p-5 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="font-black text-gray-900" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>Public Profile</h3>
@@ -149,7 +147,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
               </div>
               <div className="flex-1 overflow-y-auto p-5 space-y-5">
                 <div className="text-center">
-                  <div className="w-20 h-20 rounded-2xl bg-gray-900 flex items-center justify-center text-white text-2xl font-black mx-auto mb-3">JK</div>
+                  <div className="w-20 h-20 rounded-2xl bg-indigo-600 flex items-center justify-center text-white text-2xl font-black mx-auto mb-3">JK</div>
                   <h2 className="font-black text-gray-900 text-lg" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>Dr. James Kowalski</h2>
                   <p className="text-sm text-gray-500">Senior Web Engineer</p>
                   <div className="flex justify-center gap-2 mt-2">
@@ -169,10 +167,10 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
                     </div>
                   ))}
                 </div>
-                <Btn variant="primary" size="md" className="w-full justify-center">
+                <Btn variant="primary" size="md" className="w-full bg-indigo-600 justify-center">
                   <Icon d={I.edit} size={15}/>Edit Profile
                 </Btn>
-                <Btn variant="ghost" size="md" className="w-full justify-center">
+                <Btn variant="outline" size="md" className="w-full justify-center">
                   Upload CV / Resume
                 </Btn>
               </div>

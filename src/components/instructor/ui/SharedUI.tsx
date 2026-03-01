@@ -1,17 +1,18 @@
 import { ReactNode } from "react";
 
-export function Badge({ variant = "gray", children }: { variant?: "gray" | "green" | "rose" | "amber" | "dark"; children: ReactNode }) {
+export function Badge({ variant = "gray", children }: { variant?: "gray" | "green" | "rose" |"indigo"| "amber" | "dark"; children: ReactNode }) {
   const colors = {
     gray: "bg-gray-100 text-gray-600",
     green: "bg-green-100 text-green-700",
     rose: "bg-rose-100 text-rose-700",
     amber: "bg-amber-100 text-amber-700",
     dark: "bg-gray-900 text-white",
+    indigo:"indigo-600"
   };
   return <span className={`text-xs font-semibold px-2 py-0.5 rounded-lg ${colors[variant]}`}>{children}</span>;
 }
 
-export function ProgressBar({ value, color = "dark" }: { value: number; color?: "dark" | "green" | "amber" | "rose" }) {
+export function ProgressBar({ value, color = "green" }: { value: number; color?: "dark" | "green" | "amber" | "rose" }) {
   const colors = {
     dark: "bg-gray-900",
     green: "bg-green-500",

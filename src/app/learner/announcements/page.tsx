@@ -52,7 +52,7 @@ const ANNOUNCEMENTS = [
 
 export default function AnnouncementsPage() {
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto ">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Announcements</h1>
         <p className="text-sm text-gray-500">Stay updated with the latest news and updates</p>
