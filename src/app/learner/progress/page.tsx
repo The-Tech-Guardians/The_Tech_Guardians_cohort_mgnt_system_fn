@@ -1,9 +1,14 @@
+"use client";
+
 import CouserPregress from "@/components/learner/progress/CoursePregress";
 import RecentActivity from "@/components/learner/progress/RecentActivity";
 import WeeklyLearningTime from "@/components/learner/progress/WeeklyLearningTime";
 import { BookOpen, CheckCircle, Clock, Award, TrendingUp } from "lucide-react";
+import { useSidebar } from "../layout";
 
 export default function ProgressPage() {
+  const { collapsed } = useSidebar();
+  
   const stats = [
     {
       label: "Lessons Completed",
@@ -38,7 +43,7 @@ export default function ProgressPage() {
   ];
 
   return (
-    <main className=" max-w-6xl mx-auto  flex-1 overflow-y-auto">
+    <main className={`flex-1 overflow-y-auto transition-all duration-300 ${collapsed ? 'mx-4' : 'max-w-6xl mx-auto'}`}>
       <div className="px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">My Progress</h1>

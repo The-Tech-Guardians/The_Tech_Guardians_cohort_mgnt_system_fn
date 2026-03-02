@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useSidebar } from "../layout";
 
 const LEARNER_COURSES = [
   { id: 1, title: "Full-Stack Web Development", instructor: "Dr. James Kowalski", progress: 67, modules: 5, lessons: 24, nextLesson: "React Hooks Deep Dive", dueDate: "Mar 15", status: "active", thumbnail: "F" },
@@ -11,6 +12,7 @@ const LEARNER_COURSES = [
 
 export default function LearnerMyCoursesPage() {
   const [filter, setFilter] = useState("all");
+  const { collapsed } = useSidebar();
 
   const filtered = LEARNER_COURSES.filter(c => 
     filter === "all" || 
@@ -19,7 +21,7 @@ export default function LearnerMyCoursesPage() {
   );
 
   return (
-    <div className=" max-w-6xl mx-auto  space-y-6">
+    <div className={`transition-all duration-300 space-y-6 ${collapsed ? 'mx-4' : 'max-w-6xl mx-auto'}`}>
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-black text-gray-900" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>My Courses</h1>
