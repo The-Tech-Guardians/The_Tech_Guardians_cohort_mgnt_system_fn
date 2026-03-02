@@ -1,4 +1,5 @@
 import { ArrowRight, ChevronRight, Clock, GraduationCap, Play } from "lucide-react";
+import Link from "next/link";
 
 
 const CURRENT_COURSE = {
@@ -62,8 +63,8 @@ const CurrentLesson = () => {
             </div>
           </div>
 
-          {/* PRIMARY CTA */}
-          <button
+         <Link href="learner/my-courses/my-learning">
+           <button
             className="flex-shrink-0 flex items-center gap-2 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm"
             style={{ background: C.indigo }}
             onMouseEnter={e => (e.currentTarget.style.background = C.indigoDark)}
@@ -72,12 +73,13 @@ const CurrentLesson = () => {
             <Play size={13} className="fill-white" />
             Let&apos;s Do This
           </button>
+         </Link>
+        
         </div>
 
-        {/* Divider */}
+        
         <div className="mx-6 h-px" style={{ background: C.border }} />
 
-        {/* Skip row */}
         <div className="flex items-center justify-between px-6 py-4 gap-3 flex-wrap" style={{ background: C.section }}>
           <div>
             <p className="text-xs font-semibold" style={{ color: C.text }}>Already know this?</p>

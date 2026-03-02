@@ -66,7 +66,7 @@ export default function InstructorLearnersPage() {
                         <span className="text-xs font-semibold text-gray-600 w-8">{l.progress}%</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3"><Badge variant={SC[l.status as keyof typeof SC]}>{l.status}</Badge></td>
+                    <td className="px-4 py-3"><Badge variant={SC[l.status as keyof typeof SC] as "dark" | "gray" | "green" | "rose" | "indigo" | "amber"}>{l.status}</Badge></td>
                     <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{l.lastSeen}</td>
                     <td className="px-4 py-3"><button className="text-gray-400 hover:text-gray-700"><Icon d={I.eye} size={15}/></button></td>
                   </tr>
@@ -83,7 +83,7 @@ export default function InstructorLearnersPage() {
                 <Avatar initials={sel.name.split(" ").map(n=>n[0]).join("")} size="lg"/>
                 <div>
                   <div className="font-black text-gray-900" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>{sel.name}</div>
-                  <Badge variant={SC[sel.status as keyof typeof SC]}>{sel.status}</Badge>
+                  <Badge variant={SC[sel.status as keyof typeof SC] as "dark" | "gray" | "green" | "rose" | "indigo" | "amber"}>{sel.status}</Badge>
                 </div>
               </div>
               <div className="space-y-1 mb-5">

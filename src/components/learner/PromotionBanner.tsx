@@ -1,6 +1,7 @@
 import { ArrowRight, ChevronRight, Tag } from "lucide-react";
 import { ProgressBar } from "../instructor/ui/SharedUI";
 import { useState } from "react";
+import Link from "next/link";
 
 const C = {
   indigo:       "#4F46E5",
@@ -29,7 +30,6 @@ const PromotionBanner = () => {
           className="relative rounded-2xl overflow-hidden"
           style={{ background: `linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, ${C.indigo} 100%)` }}
         >
-          {/* Glow accents */}
           <div className="absolute -top-12 -right-12 w-52 h-52 rounded-full opacity-20 blur-3xl" style={{ background: "#818CF8" }} />
           <div className="absolute -bottom-8 left-24 w-36 h-36 rounded-full opacity-10 blur-2xl" style={{ background: C.indigo }} />
         </div>
@@ -43,13 +43,16 @@ const PromotionBanner = () => {
           <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: C.text }}>
             Pick up where you left off
           </h2>
-          <button
+        <Link href="learner/my-courses">
+        <button
             className="text-xs font-semibold flex items-center gap-1 transition-opacity hover:opacity-75 group"
             style={{ color: C.indigo }}
           >
             See All in My Library
             <ChevronRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
           </button>
+          </Link>
+          
         </div>
 
         <div className="space-y-3">
@@ -61,7 +64,6 @@ const PromotionBanner = () => {
               onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = C.indigoBorder)}
               onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = C.border)}
             >
-              {/* Abbr avatar */}
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0"
                 style={{ background: C.indigoLight, color: C.indigo }}
@@ -69,7 +71,6 @@ const PromotionBanner = () => {
                 {course.abbr}
               </div>
 
-              {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: C.textLight }}>
@@ -92,7 +93,6 @@ const PromotionBanner = () => {
                 </div>
               </div>
 
-              {/* Continue CTA */}
               <button
                 className="flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl border transition-all"
                 style={{ borderColor: C.indigoBorder, color: C.indigo, background: C.indigoLight }}

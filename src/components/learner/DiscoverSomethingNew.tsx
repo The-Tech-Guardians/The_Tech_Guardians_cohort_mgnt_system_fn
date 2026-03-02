@@ -30,8 +30,9 @@ const DiscoverSomethingNew = () => {
           {[
             { label: "Career Tracks", icon: BarChart2 },
             { label: "Skill Tracks",  icon: Layers    },
-            { label: "Courses",       icon: BookOpen  },
-          ].map(({ label, icon: Icon }) => (
+            { label: "Courses",       icon: BookOpen  , link:"my-courses" },
+          ].map(({ label, icon: Icon , link: Link }) => (
+           
             <button
               key={label}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-semibold transition-all hover:shadow-sm group"

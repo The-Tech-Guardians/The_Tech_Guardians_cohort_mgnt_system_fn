@@ -1,18 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, createContext, useContext } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { BookOpen, TrendingUp, Megaphone, Home, Menu, Bell, LogOut, ChevronRight } from "lucide-react";
 import ProfileSidebar from '@/components/profile/learner-profile/ProfileSidebar';
-import Image from 'next/image';
-import logo from "@/images/Logo Part1-whitescreen.png"
 import SafedLogo from "@/components/ui/seftLogo";
 
-function NavItem({ icon: Icon, label, active, onClick }: { 
+const SidebarContext = createContext({ collapsed: false });
+
+export const useSidebar = () => useContext(SidebarContext);
+
+function NavItem({ icon: Icon, label, active, onClick, collapsed }: { 
   icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>; 
   label: string; 
   active: boolean; 
   onClick: () => void;
+  collapsed: boolean;
 }) {
   return (
     <button
@@ -21,14 +24,15 @@ function NavItem({ icon: Icon, label, active, onClick }: {
         w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium
         transition-all duration-200 group relative overflow-hidden
         ${active
-          ? "bg-blue-600 text-white shadow-sm"
-          : "text-gray-400 hover:bg-blue-400 hover:text-gray-800"
+          ? "bg-indigo-600 text-white shadow-sm"
+          : "text-gray-400 hover:bg-indigo-300 hover:text-gray-800"
         }
+        ${collapsed ? "justify-center" : ""}
       `}
     >
-      {/* Active left accent bar */}
-      {active && (
-        <span className="absolute left-0 top-2 bottom-2 w-0.5 bg-white/40 rounded-r-full" />
+
+      {active && !collapsed && (
+        <span className="absolute left-0 top-0 bottom-2 w-2.5 h-full bg-white  rounded-l-2xl" />
       )}
       <Icon
         size={16}
@@ -37,9 +41,13 @@ function NavItem({ icon: Icon, label, active, onClick }: {
           active ? "text-white" : "text-gray-400 group-hover:text-gray-700"
         }`}
       />
-      <span className="flex-1 text-left tracking-tight">{label}</span>
-      {active && (
-        <ChevronRight size={13} className="text-white/50" />
+      {!collapsed && (
+        <>
+          <span className="flex-1 text-left tracking-tight">{label}</span>
+          {active && (
+            <ChevronRight size={13} className="text-white/50" />
+          )}
+        </>
       )}
     </button>
   );
@@ -58,6 +66,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   const view = pathname.split('/').pop() || 'learner';
 
@@ -84,29 +93,32 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
 
   const SidebarContent = (
     <div className="flex flex-col h-full">
-      <div className="px-5 pt-6 pb-5">
-        <div className="flex items-center gap-3 mb-0.5">
-          {/* <div>
-            <div className="text-md font-semibold text-gray-800 tracking-tight leading-none">safED</div>
-       
-          </div> */}
-     <div className="text-[10px] text-gray-400 "><SafedLogo/></div>
-          
-        </div>
+      <div className={`px-5 pt-6 pb-5 flex items-center justify-between ${collapsed ? '' : 'max-w-6xl- mx-auto-'} `}>
+        {!collapsed && (
+          <div className="flex items-center gap-3 mb-0.5">
+            <div className="text-[10px] text-gray-400"><SafedLogo/></div>
+          </div>
+        )}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="hidden lg:flex w-8 h-8 items-center justify-center rounded-xl hover:bg-gray-100 transition-colors"
+        >
+          {collapsed ? <Menu size={16} className="text-gray-400" /> : <ChevronRight size={16} className="text-gray-400" />}
+         
+        </button>
       </div>
 
-      {/* Divider */}
       <div className="mx-4 h-px bg-gray-100" />
 
-      {/* Nav */}
       <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
-        <NavSection label="Navigate" />
+        {!collapsed && <NavSection label="Navigate" />}
         {nav.map(item => (
           <NavItem
             key={item.id}
             icon={item.icon}
             label={item.label}
             active={view === item.id}
+            collapsed={collapsed}
             onClick={() => {
               router.push(`/learner${item.id === 'learner' ? '' : `/${item.id}`}`);
               setSidebarOpen(false);
@@ -115,46 +127,49 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
         ))}
       </nav>
 
-      {/* Divider */}
       <div className="mx-4 h-px bg-gray-100" />
 
-      {/* User profile area */}
       <div className="p-3 space-y-1">
         <button
           onClick={() => setProfileOpen(!profileOpen)}
-          className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-gray-50 transition-all duration-200 group"
+          className={`w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-gray-50 transition-all duration-200 group ${collapsed ? 'justify-center' : ''}`}
         >
-          {/* Avatar with online dot */}
           <div className="relative flex-shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center text-white font-bold text-xs">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">
               FB
             </div>
             <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />
           </div>
 
-          <div className="flex-1 text-left min-w-0">
-            <div className="text-gray-900 text-xs font-semibold truncate leading-tight">Freddy Bijanja</div>
-            <div className="text-gray-400 text-[10px] mt-0.5 font-medium">Active · Cohort 2025-A</div>
-          </div>
+          {!collapsed && (
+            <>
+              <div className="flex-1 text-left min-w-0">
+                <div className="text-gray-900 text-xs font-semibold truncate leading-tight">Freddy Bijanja</div>
+                <div className="text-gray-400 text-[10px] mt-0.5 font-medium">Active · Cohort 2025-A</div>
+              </div>
 
-          <ChevronRight
-            size={14}
-            className="text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0"
-          />
+              <ChevronRight
+                size={14}
+                className="text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0"
+              />
+            </>
+          )}
         </button>
 
-        <button className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-200">
-          <LogOut size={13} strokeWidth={1.8} />
-          <span>Sign Out</span>
-        </button>
+        {!collapsed && (
+          <button className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-200">
+            <LogOut size={13} strokeWidth={1.8} />
+            <span>Sign Out</span>
+          </button>
+        )}
       </div>
     </div>
   );
 
   return (
-    <div className="flex h-screen bg-[#f8f8f8] overflow-hidden">
+    <SidebarContext.Provider value={{ collapsed }}>
+      <div className="flex h-screen bg-[#f8f8f8] overflow-hidden">
 
-      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 lg:hidden"
@@ -170,7 +185,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
         </div>
       )}
 
-      <aside className="hidden lg:flex w-60 flex-shrink-0 flex-col bg-white border-r border-gray-100 shadow-sm">
+      <aside className={`hidden lg:flex flex-shrink-0 flex-col bg-white border-r border-gray-100 shadow-sm transition-all duration-300 ${collapsed ? 'w-20' : 'w-60'}`}>
         {SidebarContent}
       </aside>
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -188,7 +203,6 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
               <h1 className="text-base font-bold text-gray-900 truncate leading-tight">
                 {titles[view]}
               </h1>
-              {/* Breadcrumb-style cohort tag */}
               <span className="hidden sm:inline-flex items-center text-[10px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                 2025-A
               </span>
@@ -213,8 +227,8 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
               className="relative flex-shrink-0 group"
               aria-label="Open profile"
             >
-              <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center text-white text-xs font-bold
-                group-hover:bg-gray-700 transition-all duration-200 shadow-sm group-hover:shadow-md group-hover:scale-105">
+              <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-xs font-bold
+                group-hover:bg-indigo-700 transition-all duration-200 shadow-sm group-hover:shadow-md group-hover:scale-105">
                 FB
               </div>
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />
@@ -222,14 +236,13 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
           </div>
         </header>
 
-        {/* Scrollable page content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className={`flex-1 overflow-y-auto transition-all duration-300 ${collapsed ? 'p-0' : 'p-4 sm:p-6'}`}>
           {children}
         </main>
       </div>
 
-      {/* Profile sidebar */}
       <ProfileSidebar isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
+    </SidebarContext.Provider>
   );
 }

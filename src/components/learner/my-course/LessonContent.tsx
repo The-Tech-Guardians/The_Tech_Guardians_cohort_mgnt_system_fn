@@ -11,7 +11,7 @@ export default function LessonContent() {
   const [completed, setCompleted] = useState(false);
 
   return (
-    <div className="px-4 md:px-8 py-5 md:py-7 max-w-[860px]">
+    <div className="px-4 md:px-8 py-5 md:py-7 ">
       <div className="flex flex-col sm:flex-row items-start justify-between gap-3 md:gap-4 mb-5">
         <h1 className="font-['Syne'] text-xl md:text-2xl font-bold leading-tight">Async JavaScript & Promises</h1>
         <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">

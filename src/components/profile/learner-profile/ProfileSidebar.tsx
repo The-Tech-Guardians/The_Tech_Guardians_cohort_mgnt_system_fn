@@ -17,7 +17,7 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
         <div className="p-5">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-['Syne'] text-sm font-bold uppercase tracking-wider">Profile</h2>
-            <button onClick={onClose} className="p-1.5 hover:bg-[#181c24] rounded transition">
+            <button onClick={onClose} className="p-1.5 hover:text-indigo-600 rounded transition">
               <X className="w-5 h-5" />
             </button>
           </div>

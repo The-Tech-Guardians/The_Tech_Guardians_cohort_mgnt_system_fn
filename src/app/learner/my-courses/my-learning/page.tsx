@@ -6,8 +6,8 @@ import LessonContent from '@/components/learner/my-course/LessonContent';
 
 export default function MyLearningPage() {
   return (
-    <div className="flex-1 flex overflow-hidden -m-6">
-      <div className="hidden lg:block">
+    <div className="flex h-screen overflow-hidden">
+      <div className="hidden lg:block  flex-shrink-0 overflow-y-auto">
         <CourseSidebar />
       </div>
       
@@ -15,8 +15,6 @@ export default function MyLearningPage() {
         <VideoPlayer />
         <LessonContent />
       </main>
-      
-     
     </div>
   );
 }
