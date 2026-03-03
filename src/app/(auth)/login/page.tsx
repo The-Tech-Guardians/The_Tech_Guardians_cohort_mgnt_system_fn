@@ -1,3 +1,4 @@
+
 "use client";
 import { useState } from "react";
 import Link from "next/link";
@@ -22,54 +23,184 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-white flex">
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#0F0C29]">
 
-        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: `linear-gradient(rgba(79,70,229,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(79,70,229,0.5) 1px, transparent 1px)`, backgroundSize: "60px 60px" }} />
+  
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-blue-600 to-cyan-500">
+        <div className="absolute inset-0 opacity-[0.08]"
+          style={{
+            backgroundImage: `radial-gradient(circle, #ffffff 1px, transparent 1px)`,
+            backgroundSize: "28px 28px",
+          }}
+        />
+        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-                   <Logo/>
+
+          <Logo />
 
           <div className="space-y-8">
-            <div className="space-y-2">
-              <div className="w-12 h-1 bg-[#4F46E5] rounded-full" />
+
+            <div className="space-y-3">
+              <div className="w-10 h-1 bg-white/60 rounded-full" />
               <h2 className="text-4xl font-bold text-white leading-tight">
                 Learn together,<br />
-                <span className="text-[#6366F1]">grow together.</span>
+                <span className="text-white/75">grow together.</span>
               </h2>
-              <p className="text-white/50 text-base leading-relaxed max-w-xs mt-4">
+              <p className="text-white/60 text-base leading-relaxed max-w-xs">
                 A cohort-based learning platform built for structured, collaborative education.
               </p>
             </div>
+            <div className="flex justify-center">
+              <svg viewBox="0 0 480 300" fill="none" xmlns="http://www.w3.org/2000/svg"
+                className="w-full max-w-sm drop-shadow-xl">
 
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { label: "Active Learners", value: "2,400+" },
-                { label: "Courses", value: "48" },
-                { label: "Completion Rate", value: "94%" },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-4">
-                  <div className="text-2xl font-bold text-white">{stat.value}</div>
-                  <div className="text-white/40 text-xs mt-1">{stat.label}</div>
-                </div>
-              ))}
+                {/* ── Shadow under everything ── */}
+                <ellipse cx="240" cy="292" rx="160" ry="8" fill="rgba(0,0,0,0.15)" />
+
+                {/* ── Desk surface ── */}
+                <rect x="60" y="245" width="360" height="12" rx="6" fill="white" fillOpacity="0.25" />
+
+                {/* ── Monitor stand ── */}
+                <rect x="216" y="222" width="48" height="24" rx="4" fill="white" fillOpacity="0.3" />
+                <rect x="196" y="244" width="88" height="8" rx="4" fill="white" fillOpacity="0.35" />
+
+                {/* ── Monitor body ── */}
+                <rect x="100" y="60" width="280" height="164" rx="14" fill="white" fillOpacity="0.18" stroke="white" strokeOpacity="0.4" strokeWidth="2" />
+
+                {/* ── Screen bezel ── */}
+                <rect x="112" y="72" width="256" height="140" rx="8" fill="#0C4A6E" fillOpacity="0.55" />
+
+                {/* ── Screen: header bar ── */}
+                <rect x="112" y="72" width="256" height="22" rx="8" fill="white" fillOpacity="0.12" />
+                <circle cx="126" cy="83" r="4" fill="#F87171" fillOpacity="0.8" />
+                <circle cx="139" cy="83" r="4" fill="#FBBF24" fillOpacity="0.8" />
+                <circle cx="152" cy="83" r="4" fill="#34D399" fillOpacity="0.8" />
+                {/* URL bar */}
+                <rect x="168" y="78" width="140" height="10" rx="5" fill="white" fillOpacity="0.15" />
+                <rect x="172" y="81" width="80" height="4" rx="2" fill="white" fillOpacity="0.4" />
+
+                {/* ── Screen: sidebar ── */}
+                <rect x="112" y="94" width="48" height="118" fill="white" fillOpacity="0.06" />
+                <rect x="120" y="104" width="32" height="5" rx="2.5" fill="white" fillOpacity="0.3" />
+                <rect x="120" y="114" width="28" height="4" rx="2" fill="white" fillOpacity="0.2" />
+                <rect x="120" y="123" width="30" height="4" rx="2" fill="white" fillOpacity="0.2" />
+                <rect x="120" y="132" width="26" height="4" rx="2" fill="white" fillOpacity="0.2" />
+                <rect x="120" y="141" width="30" height="4" rx="2" fill="white" fillOpacity="0.2" />
+                <rect x="120" y="150" width="24" height="4" rx="2" fill="white" fillOpacity="0.2" />
+
+                {/* ── Screen: main content ── */}
+                {/* Course title */}
+                <rect x="170" y="100" width="130" height="8" rx="4" fill="white" fillOpacity="0.55" />
+                <rect x="170" y="113" width="100" height="5" rx="2.5" fill="white" fillOpacity="0.25" />
+
+                {/* Video thumbnail */}
+                <rect x="170" y="124" width="100" height="56" rx="6" fill="#0EA5E9" fillOpacity="0.45" />
+                {/* Play button */}
+                <circle cx="220" cy="152" r="14" fill="white" fillOpacity="0.25" />
+                <polygon points="215,145 215,159 229,152" fill="white" fillOpacity="0.85" />
+
+                {/* Progress section */}
+                <rect x="170" y="186" width="80" height="5" rx="2.5" fill="white" fillOpacity="0.3" />
+                <rect x="170" y="196" width="120" height="6" rx="3" fill="white" fillOpacity="0.12" />
+                <rect x="170" y="196" width="78" height="6" rx="3" fill="white" fillOpacity="0.6" />
+
+                {/* Right panel — list items */}
+                <rect x="284" y="100" width="72" height="6" rx="3" fill="white" fillOpacity="0.4" />
+                {[110, 122, 134, 146, 158, 170, 182].map((y, i) => (
+                  <g key={i}>
+                    <circle cx="292" cy={y + 4} r="3" fill="white" fillOpacity={i < 3 ? 0.7 : 0.25} />
+                    <rect x="300" cy={y} y={y + 1} width={i < 3 ? 44 : 38} height="4" rx="2"
+                      fill="white" fillOpacity={i < 3 ? 0.45 : 0.18} />
+                  </g>
+                ))}
+
+                {/* ── Person / character ── */}
+                {/* Body */}
+                <ellipse cx="370" cy="210" rx="30" ry="34" fill="#FDE68A" />
+                {/* Shirt / torso */}
+                <path d="M340 225 Q355 215 370 218 Q385 215 400 225 L400 256 Q385 262 370 262 Q355 262 340 256 Z"
+                  fill="white" fillOpacity="0.85" />
+                {/* Head */}
+                <circle cx="370" cy="182" r="24" fill="#FDE68A" />
+                {/* Hair */}
+                <path d="M346 176 Q370 155 394 176 Q394 162 370 158 Q346 162 346 176Z" fill="#92400E" />
+                {/* Eyes */}
+                <circle cx="362" cy="182" r="3" fill="#1E293B" />
+                <circle cx="378" cy="182" r="3" fill="#1E293B" />
+                <circle cx="363" cy="181" r="1" fill="white" />
+                <circle cx="379" cy="181" r="1" fill="white" />
+                {/* Smile */}
+                <path d="M363 191 Q370 196 377 191" stroke="#92400E" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+                {/* Left arm pointing at screen */}
+                <path d="M340 232 Q310 218 280 210" stroke="#FDE68A" strokeWidth="14" strokeLinecap="round" />
+                <ellipse cx="276" cy="209" rx="9" ry="7" fill="#FDE68A" />
+                {/* Right arm down */}
+                <path d="M400 232 Q412 246 408 258" stroke="#FDE68A" strokeWidth="14" strokeLinecap="round" />
+
+                {/* ── Floating badge: Certificate ── */}
+                <g filter="url(#shadow1)">
+                  <rect x="14" y="40" width="150" height="62" rx="14" fill="white" fillOpacity="0.95" />
+                  <rect x="14" y="40" width="150" height="62" rx="14" stroke="white" strokeOpacity="0.5" strokeWidth="1" />
+                  {/* icon */}
+                  <rect x="26" y="52" width="32" height="32" rx="8" fill="#DBEAFE" />
+                  <text x="42" y="73" textAnchor="middle" fontSize="16">🏆</text>
+                  {/* text */}
+                  <rect x="66" y="53" width="84" height="6" rx="3" fill="#1E3A5F" fillOpacity="0.7" />
+                  <rect x="66" y="64" width="64" height="5" rx="2.5" fill="#1E3A5F" fillOpacity="0.35" />
+                  <rect x="66" y="74" width="76" height="4" rx="2" fill="#1E3A5F" fillOpacity="0.25" />
+                  {/* progress pill */}
+                  <rect x="26" y="88" width="126" height="6" rx="3" fill="#DBEAFE" />
+                  <rect x="26" y="88" width="90" height="6" rx="3" fill="#2563EB" fillOpacity="0.85" />
+                </g>
+
+                {/* ── Floating badge: Streak ── */}
+                <g filter="url(#shadow2)">
+                  <rect x="316" y="18" width="150" height="56" rx="14" fill="white" fillOpacity="0.95" />
+                  <rect x="316" y="18" width="150" height="56" rx="14" stroke="white" strokeOpacity="0.5" strokeWidth="1" />
+                  <rect x="328" y="30" width="32" height="32" rx="8" fill="#FEF3C7" />
+                  <text x="344" y="51" textAnchor="middle" fontSize="16">🔥</text>
+                  <rect x="368" y="32" width="84" height="6" rx="3" fill="#1E3A5F" fillOpacity="0.7" />
+                  <rect x="368" y="43" width="60" height="5" rx="2.5" fill="#1E3A5F" fillOpacity="0.35" />
+                  {/* stars */}
+                  {[0,1,2,3,4].map(i => (
+                    <text key={i} x={368 + i * 14} y="62" fontSize="10" fill="#FBBF24">★</text>
+                  ))}
+                </g>
+
+                {/* Filters */}
+                <defs>
+                  <filter id="shadow1" x="-10%" y="-10%" width="120%" height="130%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000" floodOpacity="0.12" />
+                  </filter>
+                  <filter id="shadow2" x="-10%" y="-10%" width="120%" height="130%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000" floodOpacity="0.12" />
+                  </filter>
+                </defs>
+              </svg>
             </div>
+
+           
           </div>
 
-          <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-5">
-            <p className="text-white/70 text-sm italic leading-relaxed">
-             &quot;CohortLMS transformed how our team learns. The structured cohort model keeps everyone accountable.&quot;
+          <div className="rounded-2xl p-5 bg-white/10 backdrop-blur border border-white/20">
+            <p className="text-white/80 text-sm italic leading-relaxed">
+              &quot;CohortLMS transformed how our team learns. The structured cohort model keeps everyone accountable.&quot;
             </p>
             <div className="flex items-center gap-3 mt-4">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4F46E5] to-[#06B6D4] flex items-center justify-center text-white text-xs font-bold">FB</div>
+              <div className="w-8 h-8 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white text-xs font-bold">
+                FB
+              </div>
               <div>
                 <div className="text-white text-sm font-medium">Freddy Bijanja</div>
-                <div className="text-white/40 text-xs">Lead Instructor</div>
+                <div className="text-white/50 text-xs">Lead Instructor</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
+   
       <div className="flex-1 flex items-center justify-center px-6 py-12 bg-[#F9FAFB]">
         <div className="w-full max-w-md">
           <div className="flex lg:hidden items-center gap-2 mb-8 justify-center">
@@ -113,7 +244,7 @@ export default function LoginPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-[#111827]">Password</label>
-                  <Link href="/login/forgot-password" className="text-xs text-[#4F46E5] hover:underline font-medium">
+                  <Link href="/login/forgot-password" className="text-xs text-blue-600 hover:underline font-medium">
                     Forgot password?
                   </Link>
                 </div>
@@ -151,18 +282,15 @@ export default function LoginPage() {
               </div>
 
               <div className="flex items-start gap-2.5 bg-indigo-50 border border-indigo-100 rounded-xl p-3.5">
-                <svg className="w-4 h-4 text-[#4F46E5] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                <p className="text-xs text-indigo-700 leading-relaxed">
-                  2FA is required for all Admin and Instructor accounts. You&apos;ll be prompted after login.
-                </p>
               </div>
-            
-            <button
+
+              <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold py-3 rounded-xl transition-all duration-200 text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 disabled:opacity-70"
+                className="w-full bg-gradient-to-br from-blue-600 to-cyan-500  text-white font-semibold py-3 rounded-xl transition-all duration-200 text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 disabled:opacity-70"
               >
                 {loading ? (
                   <>
@@ -176,7 +304,6 @@ export default function LoginPage() {
                   "Sign in to CohortLMS"
                 )}
               </button>
-              
             </form>
 
             <div className="flex items-center gap-3 my-6">
@@ -197,7 +324,9 @@ export default function LoginPage() {
           </div>
 
           <p className="text-center text-xs text-gray-400 mt-6">
-            &copy; {new Date().getFullYear()} CohortLMS · <a href="#" className="hover:underline">Privacy</a> · <a href="#" className="hover:underline">Terms</a>
+            &copy; {new Date().getFullYear()} CohortLMS ·{" "}
+            <a href="#" className="hover:underline">Privacy</a> ·{" "}
+            <a href="#" className="hover:underline">Terms</a>
           </p>
         </div>
       </div>
