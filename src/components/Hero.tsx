@@ -6,6 +6,8 @@ import { AvatarStack } from "./herro-section/AvatarStark";
 import StatCard from "./herro-section/SetCart";
 import Badge from "./herro-section/Badget";
 import { Book, GraduationCap, Star, User } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 
 
@@ -50,12 +52,16 @@ export default function HeroSection() {
                 </div>
 
                 <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
-                  <CTAButton primary>Browse courses</CTAButton>
+                 <Link href="courses"> <CTAButton primary>Browse courses</CTAButton></Link>
+                  
                   <CTAButton>
+                    <Link href="cohorts">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
                     </svg>
                     View cohorts
+                    </Link>
+                    
                   </CTAButton>
                 </div>
 
@@ -74,7 +80,7 @@ export default function HeroSection() {
           <div className="blob-blue" />
           <div className="blob-peach" />
           <div className="blob-photo">
-            <img src="/image.png" alt="hero-image" />
+            <Image src="/image.png" alt="hero-image" width={500} height={500} priority />
           </div>
         </div>
       </div>

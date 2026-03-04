@@ -8,6 +8,7 @@ import LanguageSelector from "./navbar/LanguageSelector";
 import ThemeToggle from "./navbar/ThemeToggle";
 import AuthButtons from "./navbar/AuthButtons";
 import MobileMenu from "./navbar/MobileMenu";
+import Link from "next/link";
 
 const categoryItems = ["Development", "Design", "Business", "Marketing", "Data Science", "Personal Growth"];
 
@@ -32,6 +33,16 @@ export default function Header() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+      document.body.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      document.body.classList.remove("dark");
+    }
+  }, [theme]);
 
   const isDark = theme === "dark";
 
@@ -80,7 +91,9 @@ export default function Header() {
 
           <div className={`${bg} border-b ${border} transition-all duration-300 ${shadow}`}>
             <div className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-              <Logo textMain={textMain} />
+             <Link href="/">
+             <Logo textMain={textMain} />
+             </Link> 
 
               <nav className="hidden lg:flex items-center gap-1">
                 <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-amber-600 bg-amber-50 border border-amber-200 hover:bg-amber-100 hover:border-amber-300 transition-all duration-200">
