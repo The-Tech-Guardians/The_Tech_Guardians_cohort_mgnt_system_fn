@@ -1,39 +1,14 @@
-import axios from 'axios';
+const isDevelopment = import.meta.env.DEV;
 
-export const API_BASE_URL = 'https://community-support-flatform-backend-1.onrender.com/api';
+export const API_BASE_URL = isDevelopment 
+  ? 'http://localhost:8080/api'
+  : 'https://community-support-flatform-backend-1-0ghf.onrender.com/api';
 
-export const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 60000, 
-  headers: {
-    'Content-Type': 'application/json',
-  },
+export const SOCKET_URL = isDevelopment
+  ? 'http://localhost:8080'
+  : 'https://community-support-flatform-backend-1-0ghf.onrender.com';
+
+console.log('🔧 API Configuration (production):', {
+  API_BASE_URL,
+  SOCKET_URL
 });
-
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-    
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
-      }
-    }
-    return Promise.reject(error);
-  }
-);
-
-export default api;
