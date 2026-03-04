@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import Logo from "@/components/ui/Logo";
+import Logo from "@/components/ui/navbar/Logo";
 import { BookCopy, ChartColumnStacked, GraduationCap, Trophy } from "lucide-react";
 
 export default function SignupPage() {
@@ -110,7 +110,6 @@ export default function SignupPage() {
           <Logo />
 
           <div className="space-y-8">
-            {/* Headline */}
             <div>
               <div className="w-10 h-1 bg-white/60 rounded-full mb-4" />
               <h2 className="text-4xl font-bold text-white leading-tight">
@@ -121,27 +120,20 @@ export default function SignupPage() {
                 Join an active cohort and gain access to structured courses, expert instructors, and a community of learners.
               </p>
             </div>
-
-            {/* ── Undraw-style "Online Education" illustration ── */}
             <div className="flex justify-center">
               <svg viewBox="0 0 480 280" fill="none" xmlns="http://www.w3.org/2000/svg"
                 className="w-full max-w-sm drop-shadow-xl">
-
-                {/* Ground shadow */}
                 <ellipse cx="240" cy="274" rx="170" ry="6" fill="rgba(0,0,0,0.12)" />
-
-                {/* ── Bookshelf / Board background ── */}
                 <rect x="60" y="30" width="260" height="180" rx="12" fill="white" fillOpacity="0.15" stroke="white" strokeOpacity="0.3" strokeWidth="1.5" />
 
-                {/* Board header */}
+               
                 <rect x="60" y="30" width="260" height="32" rx="12" fill="white" fillOpacity="0.2" />
                 <circle cx="82" cy="46" r="5" fill="white" fillOpacity="0.5" />
                 <circle cx="97" cy="46" r="5" fill="white" fillOpacity="0.5" />
                 <circle cx="112" cy="46" r="5" fill="white" fillOpacity="0.5" />
-                {/* Title bar text */}
+             
                 <rect x="128" y="42" width="100" height="8" rx="4" fill="white" fillOpacity="0.35" />
 
-                {/* Board body content */}
                 {/* Section title */}
                 <rect x="78" y="76" width="120" height="8" rx="4" fill="white" fillOpacity="0.6" />
                 <rect x="78" y="90" width="80" height="5" rx="2.5" fill="white" fillOpacity="0.3" />

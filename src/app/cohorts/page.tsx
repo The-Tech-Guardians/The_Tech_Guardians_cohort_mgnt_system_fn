@@ -2,19 +2,11 @@
 
 import { FileText } from "lucide-react";
 import { useState } from "react";
-import { COHORTS } from "../app";
+import { COHORTS, TYPE_CONFIG } from "@/lib/api";
 import getStatus from "@/components/cohorts/get-status";
 import FeaturedCohort from "@/components/cohorts/feature-cohort";
 import CohortCard from "@/components/cohorts/cohort-cart";
 import Link from "next/link";
-
-const TYPE_CONFIG = {
-  development: { label: "Development",    color: "bg-blue-50 text-blue-600" },
-  design:      { label: "Design",         color: "bg-violet-50 text-violet-600" },
-  data:        { label: "Data Science",   color: "bg-emerald-50 text-emerald-600" },
-  business:    { label: "Business",       color: "bg-amber-50 text-amber-600" },
-  personal:    { label: "Personal Growth",color: "bg-sky-50 text-sky-600" },
-};
 
 const COURSE_TYPES = ["All", "development", "design", "data", "business", "personal"];
 
@@ -24,7 +16,7 @@ export default function CohortsPage() {
   const [search, setSearch]       = useState("");
   const [enrolled, setEnrolled]   = useState(new Set());
 
-  const handleEnroll = (id) => setEnrolled((prev) => new Set([...prev, id]));
+  const handleEnroll = (id: string) => setEnrolled((prev) => new Set([...prev, id]));
 
   const featured = COHORTS.find((c) => c.featured);
 
@@ -43,7 +35,7 @@ export default function CohortsPage() {
     <>
      
 
-      <div className="cpf cpbg min-h-screen pt-20">
+      <div className="cpf cpbg min-h-screen pt-28">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
 
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
@@ -93,8 +85,8 @@ export default function CohortsPage() {
           </div>
 
           <div className="nosb flex gap-1.5 overflow-x-auto pb-1 mb-8">
-            {COURSE_TYPES.map((t) => {
-              const label = t === "All" ? "All Types" : (TYPE_CONFIG[t]?.label || t);
+            {COURSE_TYPES.map((t: string) => {
+              const label = t === "All" ? "All Types" : (TYPE_CONFIG[t as keyof typeof TYPE_CONFIG]?.label || t);
               return (
                 <button key={t} onClick={() => setActiveCat(t)}
                   className={`text-[12.5px] font-semibold px-4 py-2 rounded-full border whitespace-nowrap transition-all flex-shrink-0 ${

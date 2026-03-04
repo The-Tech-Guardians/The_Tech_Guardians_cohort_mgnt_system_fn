@@ -1,242 +1,19 @@
 "use client"
 
-import { Clock, Computer, Trophy, Rocket, Zap, Target, GraduationCap, BookOpen, Globe, Flame, CheckCircle, RefreshCw } from "lucide-react";
+import { FAQItem } from "@/components/course-details/faq-item";
+import { SectionTitle, Stars } from "@/components/course-details/helper";
+import { Sidebar } from "@/components/course-details/side-bar";
+import { COHORTS, COURSE, CURRICULUM, FAQS, HIGHLIGHTS, INSTRUCTOR, OUTCOMES } from "@/lib/course-data";
+import { Clock, Computer, Trophy, Rocket, BookOpen, Globe, Flame } from "lucide-react";
 import { useState } from "react";
 
-// ── Course data (matches DB schema) ─────────────────────────
-const COURSE = {
-  id: "crs-0001-uuid",
-  title: "Full-Stack Web Development Bootcamp",
-  description: "The most complete full-stack program on the platform. Go from writing your first line of HTML to deploying production-grade web applications — with real projects, live sessions, and an expert instructor guiding you every step of the way.",
-  instructor_id: "ins-001",
-  cohort_id: "coh-001",
-  course_type: "development",
-  is_published: true,
-  created_at: "2026-01-10",
-};
 
-const INSTRUCTOR = {
-  id: "ins-001",
-  name: "Freddy Bijanja",
-  title: "Lead Instructor",
-  bio: "Full-stack engineer & educator. Former engineer at Andela, Google Developer Expert, and founder of two EdTech startups across East Africa.",
-  credentials: "Google Dev Expert · ex-Andela · 10k+ students taught",
-  avatar_gradient: "from-blue-500 to-cyan-400",
-  rating: 4.9,
-  reviews: 148,
-  students: 2400,
-  courses: 6,
-};
-
-const COHORTS = [
-  { id: "coh-001", name: "Apr 14 — Jul 7, 2026",  start: "2026-04-14", end: "2026-07-07", enrollment_close: "2026-04-10", seats_left: 6,  urgent: true  },
-  { id: "coh-002", name: "May 12 — Aug 4, 2026",  start: "2026-05-12", end: "2026-08-04", enrollment_close: "2026-05-08", seats_left: 18, urgent: false },
-  { id: "coh-003", name: "Jun 9 — Sep 2, 2026",   start: "2026-06-09", end: "2026-09-02", enrollment_close: "2026-06-05", seats_left: 24, urgent: false },
-  { id: "coh-004", name: "Sep 7 — Nov 28, 2026",  start: "2026-09-07", end: "2026-11-28", enrollment_close: "2026-09-03", seats_left: 30, urgent: false },
-];
-
-const HIGHLIGHTS = [
-  { emoji: <Computer className="w-5 h-5"/>, title: "Become a full-stack developer", body: "Build, deploy, and maintain complete web applications — front-end and back-end — using industry-standard tools and workflows." },
-  { emoji: <Zap className="w-5 h-5"/>, title: "Work with modern tech stacks", body: "Real tools real teams use: React, Node.js, PostgreSQL, REST APIs, Git, Docker, and deployment on Vercel & Railway." },
-  { emoji: <Target className="w-5 h-5"/>, title: "Project-driven learning", body: "Ship 4 complete projects from scratch — a portfolio site, a SaaS dashboard, a REST API, and a full-stack capstone app." },
-  { emoji: <GraduationCap className="w-5 h-5"/>, title: "Learn from a practitioner", body: "Your instructor has built products used by thousands. Every lesson is grounded in real-world engineering, not just theory." },
-];
-
-const CURRICULUM = [
-  { week: "Week 1–2",  title: "Web Foundations",        lessons: 14, topics: "HTML5, CSS3, Flexbox, Grid, Responsive Design" },
-  { week: "Week 3–5",  title: "JavaScript & ES6+",      lessons: 22, topics: "Functions, DOM, Fetch, Async/Await, Modules" },
-  { week: "Week 6–8",  title: "React & State Management",lessons: 20, topics: "Components, Hooks, Context, React Router, Redux" },
-  { week: "Week 9–10", title: "Backend with Node.js",   lessons: 16, topics: "Express, REST APIs, Authentication, JWT" },
-  { week: "Week 11",   title: "Databases",              lessons: 10, topics: "PostgreSQL, Prisma ORM, Migrations, Queries" },
-  { week: "Week 12",   title: "Capstone & Deployment",  lessons:  8, topics: "Docker, CI/CD, Vercel, Railway, Portfolio Polish" },
-];
-
-const OUTCOMES = [
-  "Build and deploy full-stack web applications independently",
-  "Write clean, maintainable JavaScript and React code",
-  "Design and consume REST APIs with Node.js & Express",
-  "Model and query relational databases with PostgreSQL",
-  "Use Git, GitHub, and professional development workflows",
-  "Deploy projects to the cloud and manage environments",
-  "Present and explain your work in a technical interview",
-];
-
-const FAQS = [
-  { q: "Do I need any prior experience?", a: "No prior coding experience required. We start from absolute zero and move at a structured pace through every concept." },
-  { q: "How much time per week does this require?", a: "Expect 10–15 hours per week — 3 live sessions plus independent project work. It is intensive by design." },
-  { q: "What happens if I miss a live session?", a: "All sessions are recorded and available within 24 hours. You also get access to the session notes and exercises." },
-  { q: "Is there a certificate upon completion?", a: "Yes. Learners who complete all modules and submit the capstone project receive a verified CohortLMS certificate." },
-  { q: "Can I switch to a different cohort date?", a: "Yes, up to 7 days before your cohort's start date you can transfer to any future cohort at no extra cost." },
-];
-
-// ── Helpers ─────────────────────────────────────────────────
-function Stars({ rating, reviews, size = "sm" }) {
-  const full = Math.floor(rating);
-  const sz   = size === "lg" ? "text-lg" : "text-sm";
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className={`text-amber-400 ${sz} leading-none`}>{"★".repeat(full)}{"☆".repeat(5 - full)}</span>
-      <span className={`font-bold text-slate-800 ${size === "lg" ? "text-base" : "text-[13px]"}`}>{rating}</span>
-      {reviews > 0 && <span className="text-slate-400 text-[12px]">({reviews} reviews)</span>}
-    </div>
-  );
-}
-
-function SectionTitle({ children }) {
-  return <h2 className="text-[22px] font-black text-slate-900 mb-5 tracking-tight">{children}</h2>;
-}
-
-// ── Sticky sidebar ───────────────────────────────────────────
-function Sidebar({ cohorts }) {
-  const [selected, setSelected]   = useState(cohorts[0].id);
-  const [email, setEmail]         = useState("");
-  const [enrolled, setEnrolled]   = useState(false);
-  const selectedCohort = cohorts.find((c) => c.id === selected);
-
-  return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.08)] overflow-hidden">
-
-      {/* Price */}
-      <div className="px-6 pt-6 pb-4 border-b border-slate-100">
-        <div className="flex items-end gap-2 mb-1">
-          <span className="text-[28px] font-black text-slate-900">Free</span>
-          <span className="text-slate-400 text-sm mb-1">during enrollment</span>
-        </div>
-        <Stars rating={4.9} reviews={148} />
-      </div>
-
-      <div className="px-6 py-5 space-y-5">
-
-        {/* Cohort selector */}
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3">Select Cohort</p>
-          <div className="space-y-2">
-            {cohorts.map((c) => (
-              <label key={c.id}
-                className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 cursor-pointer transition-all ${
-                  selected === c.id
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-slate-200 hover:border-slate-300 bg-white"
-                }`}>
-                <input
-                  type="radio"
-                  name="cohort"
-                  value={c.id}
-                  checked={selected === c.id}
-                  onChange={() => setSelected(c.id)}
-                  className="accent-blue-600 flex-shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <span className={`text-[13px] font-semibold ${selected === c.id ? "text-blue-700" : "text-slate-700"}`}>
-                    {c.name}
-                  </span>
-                  {c.urgent && (
-                    <span className="ml-2 text-[10px] font-bold bg-rose-500 text-white px-1.5 py-0.5 rounded-full">
-                      {c.seats_left} seats left
-                    </span>
-                  )}
-                </div>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* Seats left warning */}
-        {selectedCohort?.urgent && (
-          <div className="flex items-center gap-2 bg-rose-50 border border-rose-100 rounded-xl px-3 py-2">
-            <Flame className="w-4 h-4 text-rose-600"/>
-            <span className="text-[12px] font-semibold text-rose-700">
-              Only {selectedCohort.seats_left} seats remaining in this cohort
-            </span>
-          </div>
-        )}
-
-        {/* Enroll CTA */}
-        {enrolled ? (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3.5 text-center">
-            <p className="text-emerald-700 font-bold text-sm flex items-center justify-center gap-1.5"><CheckCircle className="w-4 h-4"/> You're enrolled!</p>
-            <p className="text-emerald-600 text-[12px] mt-0.5">Check your email for next steps.</p>
-          </div>
-        ) : (
-          <button
-            onClick={() => setEnrolled(true)}
-            className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-black text-[15px] py-4 rounded-xl hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/30 active:translate-y-0 transition-all duration-200 relative overflow-hidden"
-          >
-            <span className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
-            <span className="relative">Enroll Now</span>
-          </button>
-        )}
-
-        {/* Email updates */}
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Get Course Updates</p>
-          <div className="flex gap-2">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition min-w-0"
-            />
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-3.5 rounded-xl transition-colors flex-shrink-0">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Trust badges */}
-        <div className="space-y-2 pt-1">
-          {[
-            { icon: <Clock className="w-4 h-4"/>, text: "Secure enrollment · No payment required" },
-            { icon: <RefreshCw className="w-4 h-4"/>, text: "Switch cohort anytime before start date" },
-            { icon: <Trophy className="w-4 h-4"/>, text: "Verified certificate on completion" },
-          ].map((b) => (
-            <div key={b.text} className="flex items-center gap-2.5 text-[12px] text-slate-500">
-              <span className="leading-none">{b.icon}</span>
-              <span>{b.text}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── FAQ Item ────────────────────────────────────────────────
-function FAQItem({ faq }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="border-b border-slate-100 last:border-0">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between gap-4 py-4 text-left"
-      >
-        <span className="text-[14.5px] font-semibold text-slate-800">{faq.q}</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-          className={`flex-shrink-0 text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}>
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
-      </button>
-      {open && (
-        <p className="text-[13.5px] text-slate-500 leading-relaxed pb-4 -mt-1">{faq.a}</p>
-      )}
-    </div>
-  );
-}
-
-// ── Main Page ───────────────────────────────────────────────
 export default function CourseDetailPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const TABS = ["overview", "curriculum", "instructor", "faqs"];
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=Instrument+Serif:ital@0;1&display=swap');
-        .cpf  { font-family: 'DM Sans', sans-serif; }
-        .cps  { font-family: 'Instrument Serif', serif; }
-        .lc3  { display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden }
-      `}</style>
 
       <div className="cpf bg-white min-h-screen pt-25">
 
@@ -379,7 +156,7 @@ export default function CourseDetailPage() {
                     <h2 className="text-[24px] md:text-[28px] font-black text-slate-900 leading-tight mb-3">
                       Become a job-ready full-stack developer from idea to deployed product
                     </h2>
-                    <p className="text-[13.5px] font-bold text-blue-600 mb-4">CohortLMS's most complete development program · 2,400+ alumni</p>
+                    <p className="text-[13.5px] font-bold text-blue-600 mb-4">CohortLMS&apos;s most complete development program · 2,400+ alumni</p>
 
                     <div className="space-y-5">
                       {HIGHLIGHTS.map((h) => (

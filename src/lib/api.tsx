@@ -1,3 +1,7 @@
+"use client"
+
+import { BarChartBigIcon, ChartLine, Computer, Palette, Sprout } from "lucide-react";
+
 export const COHORTS = [
   {
     id: "a1b2c3d4-0001",
@@ -130,7 +134,7 @@ export const COHORTS = [
 
 export const INSTRUCTORS = {
   "ins-001": { name: "Freddy Bijanja",    role: "Lead Instructor",  initials: "FB", gradient: "from-blue-500 to-cyan-400" },
-  "ins-002": { name: "IRADUKUNDA Boris",  role: "Design Lead",       initials: "IB", gradient: "from-violet-500 to-pink-400" },
+  "ins-002": { name: "IRADUKUNDA Boris",  role: "Design Lead",       initials: "IB", gradient: "from-blue-500 to-cyan-400" },
   "ins-003": { name: "Olivier Nduwayesu", role: "Data Engineer",     initials: "ON", gradient: "from-emerald-500 to-teal-400" },
   "ins-004": { name: "Sarah Amara",       role: "Marketing Expert",  initials: "SA", gradient: "from-amber-400 to-orange-400" },
   "ins-005": { name: "Amara Diallo",      role: "Coach",             initials: "AD", gradient: "from-sky-400 to-blue-400" },
@@ -138,7 +142,7 @@ export const INSTRUCTORS = {
 
 export const COHORT = {
   "coh-001": { name: "Full-Stack Cohort · Apr 2026",     gradient: "from-blue-600 to-cyan-500" },
-  "coh-002": { name: "UI/UX Design Cohort · Apr 2026",   gradient: "from-violet-500 to-pink-500" },
+  "coh-002": { name: "UI/UX Design Cohort · Apr 2026",   gradient: "from-blue-500 to-cyan-400" },
   "coh-003": { name: "Data Science Cohort · Feb 2026",   gradient: "from-emerald-500 to-teal-400" },
   "coh-004": { name: "Marketing Cohort · May 2026",      gradient: "from-amber-400 to-orange-400" },
   "coh-005": { name: "Mobile Dev Cohort · Apr 2026",     gradient: "from-rose-500 to-pink-500" },
