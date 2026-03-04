@@ -5,9 +5,9 @@ import { useRouter, usePathname } from "next/navigation";
 import { Icon, I } from "@/components/instructor/ui/Icon";
 import { Badge, Btn } from "@/components/instructor/ui/SharedUI";
 import { MESSAGES_DATA } from "@/lib/data/instructorData";
-import SafedLogo from "@/components/ui/seftLogo";
 import InstructorProfileSidebar from "@/components/profile/instructor-profile/InstructorProfileSidebar";
 import { ChevronRight, Menu } from "lucide-react";
+import Logo from "@/components/ui/navbar/Logo";
 
 function NavItem({ icon, label, active, badge, onClick, collapsed }: { 
   icon: string; 
@@ -58,7 +58,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
       <div className={`px-5 pt-6 pb-5 flex items-center justify-between`}>
         {!collapsed && (
           <div className="flex items-center gap-3 mb-0.5">
-            <div className="text-[10px] text-gray-400"><SafedLogo/></div>
+            <div className="text-[10px]"><Logo/></div>
           </div>
         )}
         <button

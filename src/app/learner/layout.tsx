@@ -4,7 +4,8 @@ import { useState, createContext, useContext } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { BookOpen, TrendingUp, Megaphone, Home, Menu, Bell, LogOut, ChevronRight } from "lucide-react";
 import ProfileSidebar from '@/components/profile/learner-profile/ProfileSidebar';
-import SafedLogo from "@/components/ui/seftLogo";
+import Logo from "@/components/ui/navbar/Logo";
+
 
 const SidebarContext = createContext({ collapsed: false });
 
@@ -96,7 +97,8 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
       <div className={`px-5 pt-6 pb-5 flex items-center justify-between ${collapsed ? '' : 'max-w-6xl- mx-auto-'} `}>
         {!collapsed && (
           <div className="flex items-center gap-3 mb-0.5">
-            <div className="text-[10px] text-gray-400"><SafedLogo/></div>
+            <div className="text-[10px]">   <Logo/></div>
+         
           </div>
         )}
         <button

@@ -93,7 +93,7 @@ export default function WhyJoinSection() {
     <>
 
 
-      <section className="wj-font wj-bg py-24 lg:py-32 pt-24">
+      <section className="wj-font wj-bg py-24 lg:py-32 pt-24np">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
 
           <div className="text-center max-w-2xl mx-auto mb-16">

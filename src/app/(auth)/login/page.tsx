@@ -42,8 +42,8 @@ export default function LoginPage() {
           <div className="space-y-8">
 
             <div className="space-y-3">
-              <div className="w-10 h-1 bg-white/60 rounded-full" />
-              <h2 className="text-4xl font-bold text-white leading-tight">
+            
+              <h2 className="text-4xl font-bold text-white leading-tight pt-4">
                 Learn together,<br />
                 <span className="text-white/75">grow together.</span>
               </h2>
@@ -55,32 +55,26 @@ export default function LoginPage() {
               <svg viewBox="0 0 480 300" fill="none" xmlns="http://www.w3.org/2000/svg"
                 className="w-full max-w-sm drop-shadow-xl">
 
-                {/* ── Shadow under everything ── */}
                 <ellipse cx="240" cy="292" rx="160" ry="8" fill="rgba(0,0,0,0.15)" />
 
-                {/* ── Desk surface ── */}
                 <rect x="60" y="245" width="360" height="12" rx="6" fill="white" fillOpacity="0.25" />
 
-                {/* ── Monitor stand ── */}
                 <rect x="216" y="222" width="48" height="24" rx="4" fill="white" fillOpacity="0.3" />
                 <rect x="196" y="244" width="88" height="8" rx="4" fill="white" fillOpacity="0.35" />
 
-                {/* ── Monitor body ── */}
+            
                 <rect x="100" y="60" width="280" height="164" rx="14" fill="white" fillOpacity="0.18" stroke="white" strokeOpacity="0.4" strokeWidth="2" />
 
-                {/* ── Screen bezel ── */}
                 <rect x="112" y="72" width="256" height="140" rx="8" fill="#0C4A6E" fillOpacity="0.55" />
 
-                {/* ── Screen: header bar ── */}
                 <rect x="112" y="72" width="256" height="22" rx="8" fill="white" fillOpacity="0.12" />
                 <circle cx="126" cy="83" r="4" fill="#F87171" fillOpacity="0.8" />
                 <circle cx="139" cy="83" r="4" fill="#FBBF24" fillOpacity="0.8" />
                 <circle cx="152" cy="83" r="4" fill="#34D399" fillOpacity="0.8" />
-                {/* URL bar */}
+
                 <rect x="168" y="78" width="140" height="10" rx="5" fill="white" fillOpacity="0.15" />
                 <rect x="172" y="81" width="80" height="4" rx="2" fill="white" fillOpacity="0.4" />
 
-                {/* ── Screen: sidebar ── */}
                 <rect x="112" y="94" width="48" height="118" fill="white" fillOpacity="0.06" />
                 <rect x="120" y="104" width="32" height="5" rx="2.5" fill="white" fillOpacity="0.3" />
                 <rect x="120" y="114" width="28" height="4" rx="2" fill="white" fillOpacity="0.2" />
@@ -89,23 +83,17 @@ export default function LoginPage() {
                 <rect x="120" y="141" width="30" height="4" rx="2" fill="white" fillOpacity="0.2" />
                 <rect x="120" y="150" width="24" height="4" rx="2" fill="white" fillOpacity="0.2" />
 
-                {/* ── Screen: main content ── */}
-                {/* Course title */}
                 <rect x="170" y="100" width="130" height="8" rx="4" fill="white" fillOpacity="0.55" />
                 <rect x="170" y="113" width="100" height="5" rx="2.5" fill="white" fillOpacity="0.25" />
 
-                {/* Video thumbnail */}
                 <rect x="170" y="124" width="100" height="56" rx="6" fill="#0EA5E9" fillOpacity="0.45" />
-                {/* Play button */}
-                <circle cx="220" cy="152" r="14" fill="white" fillOpacity="0.25" />
-                <polygon points="215,145 215,159 229,152" fill="white" fillOpacity="0.85" />
 
-                {/* Progress section */}
+                <circle cx="220" cy="152" r="14" fill="white" fillOpacity="0.25" />
+     
                 <rect x="170" y="186" width="80" height="5" rx="2.5" fill="white" fillOpacity="0.3" />
                 <rect x="170" y="196" width="120" height="6" rx="3" fill="white" fillOpacity="0.12" />
                 <rect x="170" y="196" width="78" height="6" rx="3" fill="white" fillOpacity="0.6" />
 
-                {/* Right panel — list items */}
                 <rect x="284" y="100" width="72" height="6" rx="3" fill="white" fillOpacity="0.4" />
                 {[110, 122, 134, 146, 158, 170, 182].map((y, i) => (
                   <g key={i}>
@@ -118,43 +106,38 @@ export default function LoginPage() {
                 {/* ── Person / character ── */}
                 {/* Body */}
                 <ellipse cx="370" cy="210" rx="30" ry="34" fill="#FDE68A" />
-                {/* Shirt / torso */}
+              
                 <path d="M340 225 Q355 215 370 218 Q385 215 400 225 L400 256 Q385 262 370 262 Q355 262 340 256 Z"
                   fill="white" fillOpacity="0.85" />
-                {/* Head */}
+                
                 <circle cx="370" cy="182" r="24" fill="#FDE68A" />
-                {/* Hair */}
+            
                 <path d="M346 176 Q370 155 394 176 Q394 162 370 158 Q346 162 346 176Z" fill="#92400E" />
-                {/* Eyes */}
+             
                 <circle cx="362" cy="182" r="3" fill="#1E293B" />
                 <circle cx="378" cy="182" r="3" fill="#1E293B" />
                 <circle cx="363" cy="181" r="1" fill="white" />
                 <circle cx="379" cy="181" r="1" fill="white" />
-                {/* Smile */}
                 <path d="M363 191 Q370 196 377 191" stroke="#92400E" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-                {/* Left arm pointing at screen */}
+              
                 <path d="M340 232 Q310 218 280 210" stroke="#FDE68A" strokeWidth="14" strokeLinecap="round" />
                 <ellipse cx="276" cy="209" rx="9" ry="7" fill="#FDE68A" />
-                {/* Right arm down */}
+              
                 <path d="M400 232 Q412 246 408 258" stroke="#FDE68A" strokeWidth="14" strokeLinecap="round" />
 
-                {/* ── Floating badge: Certificate ── */}
                 <g filter="url(#shadow1)">
                   <rect x="14" y="40" width="150" height="62" rx="14" fill="white" fillOpacity="0.95" />
                   <rect x="14" y="40" width="150" height="62" rx="14" stroke="white" strokeOpacity="0.5" strokeWidth="1" />
-                  {/* icon */}
-                  <rect x="26" y="52" width="32" height="32" rx="8" fill="#DBEAFE" />
-                  <text x="42" y="73" textAnchor="middle" fontSize="16">🏆</text>
-                  {/* text */}
+                
+                
                   <rect x="66" y="53" width="84" height="6" rx="3" fill="#1E3A5F" fillOpacity="0.7" />
                   <rect x="66" y="64" width="64" height="5" rx="2.5" fill="#1E3A5F" fillOpacity="0.35" />
                   <rect x="66" y="74" width="76" height="4" rx="2" fill="#1E3A5F" fillOpacity="0.25" />
-                  {/* progress pill */}
+                
                   <rect x="26" y="88" width="126" height="6" rx="3" fill="#DBEAFE" />
                   <rect x="26" y="88" width="90" height="6" rx="3" fill="#2563EB" fillOpacity="0.85" />
                 </g>
 
-                {/* ── Floating badge: Streak ── */}
                 <g filter="url(#shadow2)">
                   <rect x="316" y="18" width="150" height="56" rx="14" fill="white" fillOpacity="0.95" />
                   <rect x="316" y="18" width="150" height="56" rx="14" stroke="white" strokeOpacity="0.5" strokeWidth="1" />
@@ -162,13 +145,12 @@ export default function LoginPage() {
                   <text x="344" y="51" textAnchor="middle" fontSize="16">🔥</text>
                   <rect x="368" y="32" width="84" height="6" rx="3" fill="#1E3A5F" fillOpacity="0.7" />
                   <rect x="368" y="43" width="60" height="5" rx="2.5" fill="#1E3A5F" fillOpacity="0.35" />
-                  {/* stars */}
+
                   {[0,1,2,3,4].map(i => (
                     <text key={i} x={368 + i * 14} y="62" fontSize="10" fill="#FBBF24">★</text>
                   ))}
                 </g>
 
-                {/* Filters */}
                 <defs>
                   <filter id="shadow1" x="-10%" y="-10%" width="120%" height="130%">
                     <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000" floodOpacity="0.12" />
@@ -279,12 +261,6 @@ export default function LoginPage() {
                     )}
                   </button>
                 </div>
-              </div>
-
-              <div className="flex items-start gap-2.5 bg-indigo-50 border border-indigo-100 rounded-xl p-3.5">
-                <svg className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
               </div>
 
               <button
