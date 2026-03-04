@@ -1,5 +1,6 @@
 "use client"
 
+import { Clock, Computer, Trophy } from "lucide-react";
 import { useState } from "react";
 
 // ── Course data (matches DB schema) ─────────────────────────
@@ -35,7 +36,7 @@ const COHORTS = [
 ];
 
 const HIGHLIGHTS = [
-  { emoji: "💻", title: "Become a full-stack developer", body: "Build, deploy, and maintain complete web applications — front-end and back-end — using industry-standard tools and workflows." },
+  { emoji: <Computer/>, title: "Become a full-stack developer", body: "Build, deploy, and maintain complete web applications — front-end and back-end — using industry-standard tools and workflows." },
   { emoji: "⚡", title: "Work with modern tech stacks", body: "Real tools real teams use: React, Node.js, PostgreSQL, REST APIs, Git, Docker, and deployment on Vercel & Railway." },
   { emoji: "🎯", title: "Project-driven learning", body: "Ship 4 complete projects from scratch — a portfolio site, a SaaS dashboard, a REST API, and a full-stack capstone app." },
   { emoji: "👨‍🏫", title: "Learn from a practitioner", body: "Your instructor has built products used by thousands. Every lesson is grounded in real-world engineering, not just theory." },
@@ -186,9 +187,9 @@ function Sidebar({ cohorts }) {
         {/* Trust badges */}
         <div className="space-y-2 pt-1">
           {[
-            { icon: "🔒", text: "Secure enrollment · No payment required" },
+            { icon: <Clock/>, text: "Secure enrollment · No payment required" },
             { icon: "🔄", text: "Switch cohort anytime before start date" },
-            { icon: "🏆", text: "Verified certificate on completion" },
+            { icon: <Trophy/>, text: "Verified certificate on completion" },
           ].map((b) => (
             <div key={b.text} className="flex items-center gap-2.5 text-[12px] text-slate-500">
               <span className="text-base leading-none">{b.icon}</span>
@@ -237,7 +238,7 @@ export default function CourseDetailPage() {
         .lc3  { display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden }
       `}</style>
 
-      <div className="cpf bg-white min-h-screen">
+      <div className="cpf bg-white min-h-screen pt-25">
 
         {/* ── HERO SECTION ───────────────────────────────── */}
         <div className="bg-white border-b border-slate-100">
