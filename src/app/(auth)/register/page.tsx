@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import Logo from "@/components/ui/Logo";
+
 import { BookCopy, ChartColumnStacked, GraduationCap, Trophy } from "lucide-react";
+import Logo from "@/components/ui/navbar/Logo";
 
 export default function SignupPage() {
   const [step, setStep] = useState(1);
