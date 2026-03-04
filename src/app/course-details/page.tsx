@@ -1,6 +1,6 @@
 "use client"
 
-import { Clock, Computer, Trophy } from "lucide-react";
+import { Clock, Computer, Trophy, Rocket, Zap, Target, GraduationCap, BookOpen, Globe, Flame, CheckCircle, RefreshCw } from "lucide-react";
 import { useState } from "react";
 
 // ── Course data (matches DB schema) ─────────────────────────
@@ -36,10 +36,10 @@ const COHORTS = [
 ];
 
 const HIGHLIGHTS = [
-  { emoji: <Computer/>, title: "Become a full-stack developer", body: "Build, deploy, and maintain complete web applications — front-end and back-end — using industry-standard tools and workflows." },
-  { emoji: "⚡", title: "Work with modern tech stacks", body: "Real tools real teams use: React, Node.js, PostgreSQL, REST APIs, Git, Docker, and deployment on Vercel & Railway." },
-  { emoji: "🎯", title: "Project-driven learning", body: "Ship 4 complete projects from scratch — a portfolio site, a SaaS dashboard, a REST API, and a full-stack capstone app." },
-  { emoji: "👨‍🏫", title: "Learn from a practitioner", body: "Your instructor has built products used by thousands. Every lesson is grounded in real-world engineering, not just theory." },
+  { emoji: <Computer className="w-5 h-5"/>, title: "Become a full-stack developer", body: "Build, deploy, and maintain complete web applications — front-end and back-end — using industry-standard tools and workflows." },
+  { emoji: <Zap className="w-5 h-5"/>, title: "Work with modern tech stacks", body: "Real tools real teams use: React, Node.js, PostgreSQL, REST APIs, Git, Docker, and deployment on Vercel & Railway." },
+  { emoji: <Target className="w-5 h-5"/>, title: "Project-driven learning", body: "Ship 4 complete projects from scratch — a portfolio site, a SaaS dashboard, a REST API, and a full-stack capstone app." },
+  { emoji: <GraduationCap className="w-5 h-5"/>, title: "Learn from a practitioner", body: "Your instructor has built products used by thousands. Every lesson is grounded in real-world engineering, not just theory." },
 ];
 
 const CURRICULUM = [
@@ -144,7 +144,7 @@ function Sidebar({ cohorts }) {
         {/* Seats left warning */}
         {selectedCohort?.urgent && (
           <div className="flex items-center gap-2 bg-rose-50 border border-rose-100 rounded-xl px-3 py-2">
-            <span className="text-sm">🔥</span>
+            <Flame className="w-4 h-4 text-rose-600"/>
             <span className="text-[12px] font-semibold text-rose-700">
               Only {selectedCohort.seats_left} seats remaining in this cohort
             </span>
@@ -154,7 +154,7 @@ function Sidebar({ cohorts }) {
         {/* Enroll CTA */}
         {enrolled ? (
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3.5 text-center">
-            <p className="text-emerald-700 font-bold text-sm">✓ You're enrolled!</p>
+            <p className="text-emerald-700 font-bold text-sm flex items-center justify-center gap-1.5"><CheckCircle className="w-4 h-4"/> You're enrolled!</p>
             <p className="text-emerald-600 text-[12px] mt-0.5">Check your email for next steps.</p>
           </div>
         ) : (
@@ -187,12 +187,12 @@ function Sidebar({ cohorts }) {
         {/* Trust badges */}
         <div className="space-y-2 pt-1">
           {[
-            { icon: <Clock/>, text: "Secure enrollment · No payment required" },
-            { icon: "🔄", text: "Switch cohort anytime before start date" },
-            { icon: <Trophy/>, text: "Verified certificate on completion" },
+            { icon: <Clock className="w-4 h-4"/>, text: "Secure enrollment · No payment required" },
+            { icon: <RefreshCw className="w-4 h-4"/>, text: "Switch cohort anytime before start date" },
+            { icon: <Trophy className="w-4 h-4"/>, text: "Verified certificate on completion" },
           ].map((b) => (
             <div key={b.text} className="flex items-center gap-2.5 text-[12px] text-slate-500">
-              <span className="text-base leading-none">{b.icon}</span>
+              <span className="leading-none">{b.icon}</span>
               <span>{b.text}</span>
             </div>
           ))}
@@ -260,7 +260,7 @@ export default function CourseDetailPage() {
               <div className="flex-1">
                 {/* Featured badge */}
                 <div className="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-3 py-1.5 mb-5">
-                  <span className="text-sm">🚀</span>
+                  <Rocket className="w-3.5 h-3.5 text-slate-600"/>
                   <span className="text-[11.5px] font-semibold text-slate-600 uppercase tracking-wider">Featured in CohortLMS</span>
                 </div>
 
@@ -291,14 +291,14 @@ export default function CourseDetailPage() {
                 {/* Quick stats chips */}
                 <div className="flex flex-wrap gap-2 mb-6">
                   {[
-                    { i: "📚", v: "65 lessons" },
-                    { i: "⏱️", v: "25h+ content" },
-                    { i: "📡", v: "3x live / week" },
-                    { i: "🏆", v: "Certificate" },
-                    { i: "🌍", v: "English" },
+                    { i: <BookOpen className="w-3 h-3"/>, v: "65 lessons" },
+                    { i: <Clock className="w-3 h-3"/>, v: "25h+ content" },
+                    { i: <Computer className="w-3 h-3"/>, v: "3x live / week" },
+                    { i: <Trophy className="w-3 h-3"/>, v: "Certificate" },
+                    { i: <Globe className="w-3 h-3"/>, v: "English" },
                   ].map((m) => (
                     <div key={m.v} className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-full px-3 py-1.5">
-                      <span className="text-xs">{m.i}</span>
+                      <span className="leading-none">{m.i}</span>
                       <span className="text-[12.5px] font-medium text-slate-700">{m.v}</span>
                     </div>
                   ))}
@@ -311,7 +311,7 @@ export default function CourseDetailPage() {
                     View Syllabus
                   </button>
                   <div className="flex items-center gap-2 text-[13px] text-slate-500">
-                    <span className="text-base">🔥</span>
+                    <Flame className="w-4 h-4 text-orange-500"/>
                     <span><strong className="text-slate-800">25 people</strong> enrolled this week</span>
                   </div>
                 </div>

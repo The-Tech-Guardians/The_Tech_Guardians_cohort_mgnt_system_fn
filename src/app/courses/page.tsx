@@ -4,184 +4,10 @@ import { BarChartBigIcon, Book, ChartLine, Clock, Computer } from "lucide-react"
 import Link from "next/link";
 import { useState } from "react";
 
-const INSTRUCTORS = {
-  "ins-001": { name: "Freddy Bijanja",    role: "Lead Instructor",  initials: "FB", gradient: "from-blue-500 to-cyan-400" },
-  "ins-002": { name: "IRADUKUNDA Boris",  role: "Design Lead",       initials: "IB", gradient: "from-violet-500 to-pink-400" },
-  "ins-003": { name: "Olivier Nduwayesu", role: "Data Engineer",     initials: "ON", gradient: "from-emerald-500 to-teal-400" },
-  "ins-004": { name: "Sarah Amara",       role: "Marketing Expert",  initials: "SA", gradient: "from-amber-400 to-orange-400" },
-  "ins-005": { name: "Amara Diallo",      role: "Coach",             initials: "AD", gradient: "from-sky-400 to-blue-400" },
-};
+import { Target, BookOpen, Users, FileText,  Palette, Sprout, Star } from "lucide-react";
+import { COHORT, INSTRUCTORS, TYPE_CONFIG } from "../app";
 
-const COHORTS = {
-  "coh-001": { name: "Full-Stack Cohort · Apr 2026",     gradient: "from-blue-600 to-cyan-500" },
-  "coh-002": { name: "UI/UX Design Cohort · Apr 2026",   gradient: "from-violet-500 to-pink-500" },
-  "coh-003": { name: "Data Science Cohort · Feb 2026",   gradient: "from-emerald-500 to-teal-400" },
-  "coh-004": { name: "Marketing Cohort · May 2026",      gradient: "from-amber-400 to-orange-400" },
-  "coh-005": { name: "Mobile Dev Cohort · Apr 2026",     gradient: "from-rose-500 to-pink-500" },
-};
 
-const COURSES = [
-  {
-    id: "crs-0001-uuid",
-    title: "Introduction to HTML & CSS",
-    description: "Build solid foundations in web markup and styling. You will learn semantic HTML5, Flexbox, Grid, and responsive design patterns used in real production projects.",
-    instructor_id: "ins-001",
-    cohort_id: "coh-001",
-    course_type: "development",
-    is_published: true,
-    created_at: "2026-01-10",
-    // UI extras
-    duration: "2 weeks", lessons: 14, level: "Beginner",
-    rating: 4.9, reviews: 112, enrolled: 240,
-    topics: ["HTML5", "CSS3", "Flexbox", "Grid", "Responsive"],
-    gradient: "from-blue-600 to-cyan-500",
-    featured: true,
-  },
-  {
-    id: "crs-0002-uuid",
-    title: "JavaScript Fundamentals",
-    description: "Master the language of the web. From variables and functions to DOM manipulation and async programming — this course covers everything you need to write real JavaScript.",
-    instructor_id: "ins-001",
-    cohort_id: "coh-001",
-    course_type: "development",
-    is_published: true,
-    created_at: "2026-01-12",
-    duration: "3 weeks", lessons: 22, level: "Beginner",
-    rating: 4.8, reviews: 98, enrolled: 210,
-    topics: ["Variables", "Functions", "DOM", "Async/Await", "ES6+"],
-    gradient: "from-blue-500 to-indigo-500",
-    featured: false,
-  },
-  {
-    id: "crs-0003-uuid",
-    title: "React — Build Modern UIs",
-    description: "Dive deep into the most popular front-end library. Components, hooks, state management, routing, and connecting to APIs. Build three complete projects from scratch.",
-    instructor_id: "ins-001",
-    cohort_id: "coh-001",
-    course_type: "development",
-    is_published: true,
-    created_at: "2026-01-20",
-    duration: "4 weeks", lessons: 30, level: "Intermediate",
-    rating: 4.9, reviews: 87, enrolled: 195,
-    topics: ["Components", "Hooks", "Redux", "React Router", "APIs"],
-    gradient: "from-cyan-500 to-blue-600",
-    featured: false,
-  },
-  {
-    id: "crs-0004-uuid",
-    title: "Figma for Product Designers",
-    description: "Go from sketch to polished prototype. Learn auto-layout, components, variants, design tokens, and how to hand off designs to developers like a senior designer.",
-    instructor_id: "ins-002",
-    cohort_id: "coh-002",
-    course_type: "design",
-    is_published: true,
-    created_at: "2026-01-15",
-    duration: "2 weeks", lessons: 16, level: "All Levels",
-    rating: 4.8, reviews: 74, enrolled: 168,
-    topics: ["Auto-layout", "Components", "Variants", "Tokens", "Handoff"],
-    gradient: "from-violet-500 to-pink-500",
-    featured: false,
-  },
-  {
-    id: "crs-0005-uuid",
-    title: "User Research & UX Strategy",
-    description: "Great products start with deep user understanding. Learn interviews, surveys, usability testing, and how to synthesize insights into product decisions that stick.",
-    instructor_id: "ins-002",
-    cohort_id: "coh-002",
-    course_type: "design",
-    is_published: false,
-    created_at: "2026-01-18",
-    duration: "2 weeks", lessons: 12, level: "Intermediate",
-    rating: null, reviews: 0, enrolled: 0,
-    topics: ["Interviews", "Surveys", "Usability Testing", "Personas", "Journey Maps"],
-    gradient: "from-fuchsia-500 to-violet-500",
-    featured: false,
-  },
-  {
-    id: "crs-0006-uuid",
-    title: "Python for Data Analysis",
-    description: "Hands-on data work with Python. You will manipulate large datasets with Pandas, visualize patterns with Matplotlib and Seaborn, and query databases using SQL.",
-    instructor_id: "ins-003",
-    cohort_id: "coh-003",
-    course_type: "data",
-    is_published: true,
-    created_at: "2025-12-20",
-    duration: "3 weeks", lessons: 20, level: "Intermediate",
-    rating: 4.9, reviews: 63, enrolled: 140,
-    topics: ["Python", "Pandas", "Matplotlib", "Seaborn", "SQL"],
-    gradient: "from-emerald-500 to-teal-400",
-    featured: false,
-  },
-  {
-    id: "crs-0007-uuid",
-    title: "Machine Learning Basics",
-    description: "Demystify machine learning. Understand supervised and unsupervised learning, train your first models with scikit-learn, and evaluate them with real-world datasets.",
-    instructor_id: "ins-003",
-    cohort_id: "coh-003",
-    course_type: "data",
-    is_published: false,
-    created_at: "2026-01-05",
-    duration: "3 weeks", lessons: 18, level: "Advanced",
-    rating: null, reviews: 0, enrolled: 0,
-    topics: ["scikit-learn", "Supervised Learning", "Clustering", "Model Evaluation"],
-    gradient: "from-teal-500 to-cyan-500",
-    featured: false,
-  },
-  {
-    id: "crs-0008-uuid",
-    title: "SEO & Content Marketing",
-    description: "Learn how to get your content found and loved. Keyword research, on-page SEO, content calendars, and measuring performance — the full content marketing playbook.",
-    instructor_id: "ins-004",
-    cohort_id: "coh-004",
-    course_type: "business",
-    is_published: true,
-    created_at: "2026-02-01",
-    duration: "2 weeks", lessons: 14, level: "All Levels",
-    rating: 4.7, reviews: 38, enrolled: 90,
-    topics: ["Keyword Research", "On-Page SEO", "Backlinks", "Analytics", "Content Strategy"],
-    gradient: "from-amber-400 to-orange-400",
-    featured: false,
-  },
-  {
-    id: "crs-0009-uuid",
-    title: "React Native — Mobile Apps",
-    description: "Build polished iOS and Android apps with a single codebase. Navigation, native APIs, push notifications, and publishing to the App Store and Google Play.",
-    instructor_id: "ins-001",
-    cohort_id: "coh-005",
-    course_type: "development",
-    is_published: true,
-    created_at: "2026-02-05",
-    duration: "4 weeks", lessons: 28, level: "Intermediate",
-    rating: 4.7, reviews: 45, enrolled: 110,
-    topics: ["React Native", "Expo", "Navigation", "Push Notifications", "App Store"],
-    gradient: "from-rose-500 to-pink-500",
-    featured: false,
-  },
-  {
-    id: "crs-0010-uuid",
-    title: "Public Speaking Masterclass",
-    description: "Communicate ideas that move people. From structuring arguments to controlling nerves, mastering body language and delivering presentations with poise and power.",
-    instructor_id: "ins-005",
-    cohort_id: "coh-001",
-    course_type: "personal",
-    is_published: true,
-    created_at: "2025-11-20",
-    duration: "2 weeks", lessons: 10, level: "All Levels",
-    rating: 5.0, reviews: 41, enrolled: 130,
-    topics: ["Storytelling", "Body Language", "Slide Design", "Q&A Handling", "Confidence"],
-    gradient: "from-sky-400 to-blue-500",
-    featured: false,
-  },
-];
-
-// ── Config ──────────────────────────────────────────────────
-const TYPE_CONFIG = {
-  development: { label: "Development",     color: "bg-blue-50 text-blue-600",     icon: <Computer/> },
-  design:      { label: "Design",          color: "bg-violet-50 text-violet-600", icon: "🎨 "},
-  data:        { label: "Data Science",    color: "bg-emerald-50 text-emerald-600",icon: <BarChartBigIcon/> },
-  business:    { label: "Business",        color: "bg-amber-50 text-amber-600",   icon: <ChartLine/> },
-  personal:    { label: "Personal Growth", color: "bg-sky-50 text-sky-600",       icon: "🌱" },
-};
 
 const LEVEL_COLOR = {
   "Beginner":     "bg-green-50 text-green-700 border-green-200",
@@ -192,19 +18,19 @@ const LEVEL_COLOR = {
 
 const COURSE_TYPES = ["All", "development", "design", "data", "business", "personal"];
 
-function fmtDate(iso) {
+function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 // ── Published pill ──────────────────────────────────────────
-function PublishedPill({ is_published }) {
+function PublishedPill({ is_published }: { is_published: boolean }) {
   return is_published
     ? <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/>Published</span>
     : <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full"><span className="w-1.5 h-1.5 rounded-full bg-amber-400"/>Draft</span>;
 }
 
 // ── Star Rating ─────────────────────────────────────────────
-function Stars({ rating }) {
+function Stars({ rating }: { rating: number | null }) {
   if (!rating) return <span className="text-[11px] text-slate-400">No ratings yet</span>;
   return (
     <div className="flex items-center gap-1">
@@ -215,11 +41,11 @@ function Stars({ rating }) {
 }
 
 // ── Course Card ─────────────────────────────────────────────
-function CourseCard({ course }) {
+function CourseCard({ course }: { course: any }) {
   const [expanded, setExpanded] = useState(false);
-  const instructor = INSTRUCTORS[course.instructor_id];
-  const cohort     = COHORTS[course.cohort_id];
-  const type       = TYPE_CONFIG[course.course_type] || { label: course.course_type, color: "bg-slate-100 text-slate-600", icon: "📚" };
+  const instructor = INSTRUCTORS[course.instructor_id as keyof typeof INSTRUCTORS];
+  const cohort     = COHORT[course.cohort_id as keyof typeof COHORT];
+  const type       = TYPE_CONFIG[course.course_type as keyof typeof TYPE_CONFIG] || { label: course.course_type, color: "bg-slate-100 text-slate-600", icon: <Book className="w-3 h-3"/> };
 
   return (
     <div className="group bg-white rounded-2xl border border-slate-100 hover:shadow-[0_8px_32px_rgba(0,0,0,0.09)] hover:-translate-y-0.5 transition-all duration-300 overflow-hidden flex flex-col">
@@ -235,7 +61,7 @@ function CourseCard({ course }) {
             <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${type.color}`}>
               {type.icon} {type.label}
             </span>
-            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${LEVEL_COLOR[course.level] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
+            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${LEVEL_COLOR[course.level as keyof typeof LEVEL_COLOR] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
               {course.level}
             </span>
           </div>
@@ -265,12 +91,12 @@ function CourseCard({ course }) {
         {/* Meta row */}
         <div className="grid grid-cols-3 gap-2">
           {[
-            { i: "📚", v: course.lessons + " lessons" },
-            { i: "⏱️", v: course.duration },
-            { i: "👥", v: course.enrolled > 0 ? course.enrolled + " enrolled" : "Not started" },
+            { i: <BookOpen className="w-3.5 h-3.5"/>, v: course.lessons + " lessons" },
+            { i: <Clock className="w-3.5 h-3.5"/>, v: course.duration },
+            { i: <Users className="w-3.5 h-3.5"/>, v: course.enrolled > 0 ? course.enrolled + " enrolled" : "Not started" },
           ].map((m) => (
             <div key={m.v} className="bg-slate-50 rounded-xl px-2 py-2 text-center border border-slate-100">
-              <div className="text-sm leading-none mb-1">{m.i}</div>
+              <div className="flex justify-center mb-1">{m.i}</div>
               <div className="text-[10.5px] font-medium text-slate-600 leading-tight">{m.v}</div>
             </div>
           ))}
@@ -339,9 +165,9 @@ function CourseCard({ course }) {
 
 // ── Featured Course Hero ────────────────────────────────────
 function FeaturedCourse({ course }) {
-  const instructor = INSTRUCTORS[course.instructor_id];
-  const cohort     = COHORTS[course.cohort_id];
-  const type       = TYPE_CONFIG[course.course_type] || { label: course.course_type, color: "", icon: "📚" };
+  const instructor = INSTRUCTOR[course.instructor_id];
+  const cohort     = COHORT[course.cohort_id];
+  const type       = TYPE_CONFIG[course.course_type] || { label: course.course_type, color: "", icon: <Book/> };
 
   return (
     <div className={`relative rounded-3xl bg-gradient-to-br ${course.gradient} p-8 md:p-10 shadow-[0_16px_48px_rgba(37,99,235,0.22)] mb-10 overflow-hidden`}>
@@ -354,7 +180,7 @@ function FeaturedCourse({ course }) {
         {/* Left */}
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            <span className="bg-white/20 border border-white/30 text-white text-[11px] font-bold px-3 py-1 rounded-full">⭐ Featured Course</span>
+            <span className="bg-white/20 border border-white/30 text-white text-[11px] font-bold px-3 py-1 rounded-full inline-flex items-center gap-1.5"><Star className="w-3 h-3 fill-white"/> Featured Course</span>
             <PublishedPill is_published={course.is_published} />
             <span className="bg-white/15 border border-white/25 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full">{type.icon} {type.label}</span>
           </div>
@@ -365,13 +191,13 @@ function FeaturedCourse({ course }) {
           {/* Meta chips */}
           <div className="flex flex-wrap gap-2 mb-5">
             {[
-              { i: <Book/>, v: course.lessons + " lessons" },
-              { i: <Clock/>, v: course.duration },
-              { i: "🎯", v: course.level },
-              { i: "👥", v: course.enrolled + " learners" },
+              { i: <Book className="w-3 h-3"/>, v: course.lessons + " lessons" },
+              { i: <Clock className="w-3 h-3"/>, v: course.duration },
+              { i: <Target className="w-3 h-3"/>, v: course.level },
+              { i: <Users className="w-3 h-3"/>, v: course.enrolled + " learners" },
             ].map((m) => (
               <div key={m.v} className="flex items-center gap-1.5 bg-white/15 border border-white/20 rounded-full px-3 py-1.5">
-                <span className="text-xs leading-none">{m.i}</span>
+                <span className="leading-none">{m.i}</span>
                 <span className="text-white text-[12px] font-medium">{m.v}</span>
               </div>
             ))}
@@ -478,7 +304,7 @@ export default function CoursesPage() {
         .lc3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
       `}</style>
 
-      <div className="cpf cpbg min-h-screen pt-20">
+      <div className="cpf cpbg min-h-screen pt-30">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
 
           {/* ── Header ── */}
@@ -546,10 +372,10 @@ export default function CoursesPage() {
 
           {/* ── Course type tabs ── */}
           <div className="nosb flex gap-1.5 overflow-x-auto pb-1 mb-8">
-            {COURSE_TYPES.map((t) => {
-              const cfg   = TYPE_CONFIG[t];
+            {COURSE_TYPES.map((t: string) => {
+              const cfg   = TYPE_CONFIG[t as keyof typeof TYPE_CONFIG];
               const label = t === "All" ? "All Types" : cfg?.label || t;
-              const icon  = t === "All" ? "📚" : cfg?.icon || "";
+              const icon  = t === "All" ? <Book className="w-3 h-3"/> : cfg?.icon || "";
               return (
                 <button key={t} onClick={() => setActiveCat(t)}
                   className={`text-[12.5px] font-semibold px-4 py-2 rounded-full border whitespace-nowrap transition-all flex-shrink-0 ${
@@ -580,7 +406,7 @@ export default function CoursesPage() {
           {/* ── Grid ── */}
           {filtered.length === 0 ? (
             <div className="text-center py-20 bg-white rounded-2xl border border-slate-100">
-              <div className="text-5xl mb-4">🔍</div>
+              <div className="flex justify-center mb-4"><FileText className="w-16 h-16 text-slate-300"/></div>
               <h3 className="text-lg font-bold text-slate-700 mb-1">No courses found</h3>
               <p className="text-slate-500 text-sm">Try adjusting your filters or search term.</p>
             </div>

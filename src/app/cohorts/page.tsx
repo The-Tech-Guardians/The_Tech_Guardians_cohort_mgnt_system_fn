@@ -1,7 +1,8 @@
 "use client";
 
+import { FileText } from "lucide-react";
 import { useState } from "react";
-import { COHORTS } from "../cohort";
+import { COHORTS } from "../app";
 import getStatus from "@/components/cohorts/get-status";
 import FeaturedCohort from "@/components/cohorts/feature-cohort";
 import CohortCard from "@/components/cohorts/cohort-cart";
@@ -122,7 +123,7 @@ export default function CohortsPage() {
 
           {filtered.length === 0 ? (
             <div className="text-center py-20 bg-white rounded-2xl border border-slate-100">
-              <div className="text-5xl mb-4">🔍</div>
+              <div className="flex justify-center mb-4"><FileText className="w-16 h-16 text-slate-300"/></div>
               <h3 className="text-lg font-bold text-slate-700 mb-1">No cohorts found</h3>
               <p className="text-slate-500 text-sm">Try adjusting your filters or search term.</p>
             </div>
