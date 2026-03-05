@@ -3,6 +3,8 @@ import SeatsBar from "./seatBar";
 import getStatus from "./get-status";
 import { cohortWeeks, daysUntil, fmtDate } from "./format-data-helper";
 import ActivePill from "./active-pill";
+import Link from "next/link";
+
 
 export default function FeaturedCohort({ cohort, onEnroll }) {
   const status = getStatus(cohort);
@@ -107,13 +109,14 @@ export default function FeaturedCohort({ cohort, onEnroll }) {
             <SeatsBar seats={cohort.seats} seatsLeft={cohort.seatsLeft} status={status} />
             <p className="text-white/50 text-[11px] mt-1.5">Only {cohort.seatsLeft} of {cohort.seats} seats remaining</p>
           </div>
-
+          <Link href="/course-details">
           <button
             onClick={() => onEnroll(cohort.id)}
             className="w-full bg-white text-blue-600 font-black text-[14px] py-3.5 rounded-xl hover:bg-blue-50 hover:-translate-y-0.5 active:translate-y-0 transition-all shadow-lg"
           >
             Enroll in This Cohort
           </button>
+          </Link>
         </div>
       </div>
     </div>

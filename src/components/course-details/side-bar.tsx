@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Stars } from "./helper";
-import { Clock, Flame, RefreshCw, Trophy, CheckCircle, Link } from "lucide-react";
+import { Clock, Flame, RefreshCw, Trophy, CheckCircle } from "lucide-react";
+import Link from "next/link";
 
 export function Sidebar({ cohorts }: { cohorts: any[] }) {
   const [selected, setSelected]   = useState(cohorts[0].id);
