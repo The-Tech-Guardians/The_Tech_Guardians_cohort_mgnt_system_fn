@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight, X } from "lucide-react";
 import Logo from "@/components/ui/navbar/Logo";
 
 function NavItem({ icon: Icon, label, active, onClick, collapsed }: { 
@@ -60,8 +60,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const view = pathname === '/admin' ? 'dashboard' : pathname.split('/').pop() || 'dashboard';
+
+  // Sample notifications
+  const notifications = [
+    { id: 1, title: "New user registered", message: "John Doe just signed up", time: "2 min ago", unread: true },
+    { id: 2, title: "Course completed", message: "Sarah completed React Basics", time: "1 hour ago", unread: true },
+    { id: 3, title: "Ban request pending", message: "Review flagged content", time: "3 hours ago", unread: true },
+    { id: 4, title: "System update", message: "Platform updated to v2.1", time: "1 day ago", unread: false },
+  ];
+
+  const unreadCount = notifications.filter(n => n.unread).length;
 
   const nav = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
@@ -92,10 +103,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const SidebarContent = (
     <div className="flex flex-col h-full">
-      <div className={`px-5 pt-6 pb-5 flex items-center justify-between ${collapsed ? '' : ''}`}>
+      <div className={`px-5 pt-6 pb-5 flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
         {!collapsed && (
-          <div className="flex items-center gap-3 mb-0.5">
-            <div className="text-[10px]"><Logo textMain="text-gray-900" /></div>
+          <Logo textMain="text-gray-900" />
+        )}
+        {collapsed && (
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-cyan-500 flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
           </div>
         )}
         <button
@@ -208,10 +224,66 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="relative w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-all duration-200">
-              <Bell size={17} strokeWidth={1.8} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-white" />
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className="relative w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-all duration-200"
+              >
+                <Bell size={17} strokeWidth={1.8} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-white" />
+                )}
+              </button>
+
+              {notificationsOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setNotificationsOpen(false)}
+                  />
+                  <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+                    <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-sm">Notifications</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">{unreadCount} unread</p>
+                      </div>
+                      <button 
+                        onClick={() => setNotificationsOpen(false)}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <X size={14} className="text-gray-400" />
+                      </button>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {notifications.map((notif) => (
+                        <div 
+                          key={notif.id}
+                          className={`p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${
+                            notif.unread ? 'bg-indigo-50/30' : ''
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                              notif.unread ? 'bg-indigo-600' : 'bg-gray-300'
+                            }`} />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-semibold text-gray-900 truncate">{notif.title}</h4>
+                              <p className="text-xs text-gray-600 mt-1">{notif.message}</p>
+                              <p className="text-xs text-gray-400 mt-1.5">{notif.time}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="p-3 border-t border-gray-100">
+                      <button className="w-full text-center text-xs font-semibold text-indigo-600 hover:text-indigo-700 py-2 rounded-lg hover:bg-indigo-50 transition-colors">
+                        View all notifications
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
 
             <div className="w-px h-6 bg-gray-200 mx-0.5" />
 

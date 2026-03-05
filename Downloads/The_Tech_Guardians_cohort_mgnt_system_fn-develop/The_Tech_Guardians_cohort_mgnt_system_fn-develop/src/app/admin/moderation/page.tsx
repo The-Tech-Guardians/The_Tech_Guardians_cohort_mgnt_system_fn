@@ -32,6 +32,7 @@ export default function ModerationPage() {
 
   const [showBanModal, setShowBanModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [banForm, setBanForm] = useState({ email: "", reason: "" });
 
   const handleApprove = (requestId: number) => {
     setBanRequests(banRequests.map(req => 
@@ -152,11 +153,29 @@ export default function ModerationPage() {
 
       {/* Create Ban Request Modal */}
       <Modal isOpen={showBanModal} onClose={() => setShowBanModal(false)} title="Create Ban Request" size="md">
-        <form className="space-y-4">
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          const newRequest: BanRequest = {
+            id: banRequests.length + 1,
+            targetUser: { name: banForm.email.split('@')[0], email: banForm.email, role: "learner" },
+            requestedBy: "Current Admin",
+            reason: banForm.reason,
+            approvals: 0,
+            requiredApprovals: 2,
+            status: "pending",
+            createdAt: new Date().toISOString().split('T')[0],
+          };
+          setBanRequests([...banRequests, newRequest]);
+          setBanForm({ email: "", reason: "" });
+          setShowBanModal(false);
+        }} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">User Email</label>
             <input
               type="email"
+              required
+              value={banForm.email}
+              onChange={(e) => setBanForm({ ...banForm, email: e.target.value })}
               placeholder="user@example.com"
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
@@ -165,6 +184,9 @@ export default function ModerationPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Reason for Ban</label>
             <textarea
               rows={4}
+              required
+              value={banForm.reason}
+              onChange={(e) => setBanForm({ ...banForm, reason: e.target.value })}
               placeholder="Provide detailed reason for ban request..."
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
