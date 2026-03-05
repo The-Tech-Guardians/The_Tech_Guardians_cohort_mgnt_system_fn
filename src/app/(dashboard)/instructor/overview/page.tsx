@@ -40,7 +40,7 @@ export default function InstructorOverviewPage() {
               <div key={c.id}>
                 <div className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => setExpanded(expanded===c.id ? null : c.id)}>
-                  <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black flex-shrink-0">{c.title[0]}</div>
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white flex items-center justify-center font-black flex-shrink-0">{c.title[0]}</div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="font-semibold text-sm text-gray-900 truncate">{c.title}</span>
@@ -86,7 +86,7 @@ export default function InstructorOverviewPage() {
             <div className="space-y-3">
               {ANNOUNCEMENTS.map(a => (
                 <div key={a.id} className="flex gap-3 items-start">
-                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 mt-1.5 flex-shrink-0"/>
+                  <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 mt-1.5 flex-shrink-0"/>
                   <div>
                     <p className="text-xs font-medium text-gray-800 leading-snug">{a.title}</p>
                     <div className="flex items-center gap-2 mt-1">

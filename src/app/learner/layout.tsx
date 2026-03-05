@@ -25,7 +25,7 @@ function NavItem({ icon: Icon, label, active, onClick, collapsed }: {
         w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium
         transition-all duration-200 group relative overflow-hidden
         ${active
-          ? "bg-indigo-600 text-white shadow-sm"
+          ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm"
           : "text-gray-400 hover:bg-indigo-300 hover:text-gray-800"
         }
         ${collapsed ? "justify-center" : ""}
@@ -137,7 +137,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
           className={`w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-gray-50 transition-all duration-200 group ${collapsed ? 'justify-center' : ''}`}
         >
           <div className="relative flex-shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-xs">
               FB
             </div>
             <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />
@@ -229,7 +229,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
               className="relative flex-shrink-0 group"
               aria-label="Open profile"
             >
-              <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-xs font-bold
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 flex items-center justify-center text-white text-xs font-bold
                 group-hover:bg-indigo-700 transition-all duration-200 shadow-sm group-hover:shadow-md group-hover:scale-105">
                 FB
               </div>
