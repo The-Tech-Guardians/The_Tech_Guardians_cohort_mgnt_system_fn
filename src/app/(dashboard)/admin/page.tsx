@@ -1,7 +1,7 @@
 'use client';
 
 import { Users, GraduationCap, BookOpen, TrendingUp, Activity, Clock, ArrowUp, ArrowDown } from "lucide-react";
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import {LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const enrollmentData = [
   { month: 'Jan', enrollments: 120 },
@@ -19,7 +19,7 @@ const courseData = [
   { name: 'Design', value: 180 },
 ];
 
-const COLORS = ['#4F46E5', '#06B6D4', '#10B981', '#F59E0B'];
+const COLORS = ['#2563EB', '#06B6D4', '#10B981', '#F59E0B'];
 
 function StatCard({ title, value, icon: Icon, trend, color }: any) {
   const colorClasses = {
@@ -118,7 +118,7 @@ export default function AdminDashboard() {
                   fontSize: '12px'
                 }} 
               />
-              <Line type="monotone" dataKey="enrollments" stroke="#4F46E5" strokeWidth={3} dot={{ fill: '#4F46E5', r: 5 }} />
+              <Line type="monotone" dataKey="enrollments" stroke="#2563EB" strokeWidth={3} dot={{ fill: '#2563EB', r: 5 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
