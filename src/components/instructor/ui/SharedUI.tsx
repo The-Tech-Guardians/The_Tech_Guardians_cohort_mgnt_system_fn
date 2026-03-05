@@ -6,16 +6,16 @@ export function Badge({ variant = "gray", children }: { variant?: "gray" | "gree
     green: "bg-green-100 text-green-700",
     rose: "bg-rose-100 text-rose-700",
     amber: "bg-amber-100 text-amber-700",
-    dark: "bg-gray-900 text-white",
-    indigo:"indigo-600"
+    dark: "bg-gradient-to-r from-blue-600 to-cyan-500 text-white",
+    indigo:"bg-gradient-to-r from-blue-600 to-cyan-500 text-white"
   };
   return <span className={`text-xs font-semibold px-2 py-0.5 rounded-lg ${colors[variant]}`}>{children}</span>;
 }
 
 export function ProgressBar({ value, color = "green" }: { value: number; color?: "dark" | "green" | "amber" | "rose" | "indigo" }) {
   const colors = {
-    dark: "bg-gray-900",  
-    indigo: "bg-indigo-600",
+    dark: "bg-gradient-to-r from-blue-600 to-cyan-500",  
+    indigo: "bg-gradient-to-r from-blue-600 to-cyan-500",
     green: "bg-green-500",
     amber: "bg-amber-500",
     rose: "bg-rose-500",
@@ -30,7 +30,7 @@ export function ProgressBar({ value, color = "green" }: { value: number; color?:
 export function Avatar({ initials, size = "md" }: { initials: string; size?: "md" | "lg" }) {
   const sizes = { md: "w-8 h-8 text-xs", lg: "w-12 h-12 text-sm" };
   return (
-    <div className={`${sizes[size]} rounded-xl bg-gray-900 text-white flex items-center justify-center font-bold flex-shrink-0`}>
+    <div className={`${sizes[size]} rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white flex items-center justify-center font-bold flex-shrink-0`}>
       {initials}
     </div>
   );
@@ -56,8 +56,8 @@ export function Btn({
   children: ReactNode 
 }) {
   const variants = {
-    indigo: "bg-indigo-600 text-white hover:bg-indigo-700",
-    primary: "bg-gray-900 text-white hover:bg-gray-700",
+    indigo: "bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:bg-indigo-700",
+    primary: "bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:bg-gray-700",
     outline: "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50",
     ghost: "bg-transparent text-gray-600 hover:bg-gray-100",
     danger: "bg-rose-500 text-white hover:bg-rose-600",

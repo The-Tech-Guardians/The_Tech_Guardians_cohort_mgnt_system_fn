@@ -16,7 +16,7 @@ export default function InstructorCoursesPage() {
       {COURSES.map(c => (
         <div key={c.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="flex items-center gap-4 p-5 border-b border-gray-100 flex-wrap">
-            <div className="w-12 h-12 rounded-2xl bg-gray-900 text-white flex items-center justify-center text-xl font-black flex-shrink-0">{c.title[0]}</div>
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white flex items-center justify-center text-xl font-black flex-shrink-0">{c.title[0]}</div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <h3 className="font-black text-gray-900" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>{c.title}</h3>

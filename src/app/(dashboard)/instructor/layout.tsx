@@ -20,7 +20,7 @@ function NavItem({ icon, label, active, badge, onClick, collapsed }: {
   return (
     <button onClick={onClick}
       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group
-        ${active?"bg-indigo-600 text-white":"text-gray-500 hover:bg-indigo-100 hover:text-gray-900"}
+        ${active?"bg-gradient-to-r from-blue-600 to-cyan-500 text-white":"text-gray-500 hover:bg-indigo-100 hover:text-gray-900"}
         ${collapsed ? "justify-center" : ""}`}>
       <Icon d={I[icon as keyof typeof I]} size={17} className={active?"text-white":"text-gray-400 group-hover:text-gray-700"}/>
       {!collapsed && <span className="flex-1 text-left">{label}</span>}
@@ -80,7 +80,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
       <div className="p-4 border-t border-gray-100">
         <button onClick={()=>setProfileOpen(!profileOpen)}
           className={`w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 transition-colors ${collapsed ? "justify-center" : ""}`}>
-          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">JK</div>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">JK</div>
           {!collapsed && (
             <>
               <div className="flex-1 text-left min-w-0">
@@ -143,7 +143,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full"/>
             </button>
 
-            <button onClick={()=>setProfileOpen(!profileOpen)} className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-sm font-bold cursor-pointer hover:bg-gray-700 transition-colors flex-shrink-0">
+            <button onClick={()=>setProfileOpen(!profileOpen)} className="w-9 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 flex items-center justify-center text-white text-sm font-bold cursor-pointer hover:bg-gray-700 transition-colors flex-shrink-0">
               JK
             </button>
           </header>
