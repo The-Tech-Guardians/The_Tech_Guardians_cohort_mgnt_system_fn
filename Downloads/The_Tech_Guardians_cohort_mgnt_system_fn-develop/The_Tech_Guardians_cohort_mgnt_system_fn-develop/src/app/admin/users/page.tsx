@@ -27,6 +27,13 @@ export default function UsersPage() {
   const [showPromoteModal, setShowPromoteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [inviteForm, setInviteForm] = useState({ email: "", name: "" });
+
+  const handleBanUser = (userId: number) => {
+    setUsers(users.map(u => 
+      u.id === userId ? { ...u, status: "banned" as const } : u
+    ));
+  };
 
   const handlePromoteToAdmin = (user: User) => {
     setSelectedUser(user);
@@ -124,7 +131,10 @@ export default function UsersPage() {
                     </button>
                   )}
                   {user.role !== "admin" && user.status === "active" && (
-                    <button className="p-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all">
+                    <button 
+                      onClick={() => handleBanUser(user.id)}
+                      className="p-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all"
+                    >
                       <Ban className="w-4 h-4" />
                     </button>
                   )}
@@ -142,11 +152,28 @@ export default function UsersPage() {
         title="Invite Instructor"
         size="md"
       >
-        <form className="space-y-4">
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          const newUser: User = {
+            id: users.length + 1,
+            name: inviteForm.name,
+            email: inviteForm.email,
+            role: "instructor",
+            has2FA: false,
+            status: "active",
+            joinedAt: new Date().toISOString().split('T')[0],
+          };
+          setUsers([...users, newUser]);
+          setInviteForm({ email: "", name: "" });
+          setShowInviteModal(false);
+        }} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
             <input
               type="email"
+              required
+              value={inviteForm.email}
+              onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
               placeholder="instructor@example.com"
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
@@ -155,6 +182,9 @@ export default function UsersPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
             <input
               type="text"
+              required
+              value={inviteForm.name}
+              onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
               placeholder="John Doe"
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
