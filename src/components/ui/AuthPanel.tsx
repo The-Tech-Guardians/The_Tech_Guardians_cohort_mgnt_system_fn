@@ -1,4 +1,4 @@
-import Logo from "./Logo";
+import Logo from "./navbar/Logo";
 
 interface AuthPanelProps {
   children: React.ReactNode;

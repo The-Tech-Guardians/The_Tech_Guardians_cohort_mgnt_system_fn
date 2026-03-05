@@ -296,12 +296,12 @@ export default function SignupPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-[#111827]">First name</label>
-                  <input type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder="Ada"
+                  <input type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder="Olivier"
                     className="w-full px-3.5 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition" required />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-[#111827]">Last name</label>
-                  <input type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Lovelace"
+                  <input type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Nduwayesu"
                     className="w-full px-3.5 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition" required />
                 </div>
               </div>
@@ -314,7 +314,7 @@ export default function SignupPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="you@example.com"
+                  <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="olivier@gmail.com"
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition" required />
                 </div>
               </div>

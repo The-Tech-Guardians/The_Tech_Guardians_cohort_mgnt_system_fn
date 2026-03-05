@@ -3,41 +3,100 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Logo from "@/components/ui/Logo";
+import Logo from "@/components/ui/navbar/Logo";
 import { PasswordStrength } from "@/components/banner/auth/verify-resend-success/forgot-password";
+import { authAPI } from "@/lib/auth";
 
 type Step = 1 | 2 | 3;
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [step, setStep] = useState<Step>(1);
   const [email, setEmail] = useState("");
-  const [sentEmail, setSentEmail] = useState("");
+  const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [resetDone, setResetDone] = useState(false);
-  const [resent, setResent] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [leftStep, setLeftStep] = useState(1);
 
   const updateLeftDots = (s: number) => setLeftStep(s);
 
-  const handleStep1 = (e: React.FormEvent) => {
+  const handleStep1 = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => { setLoading(false); setSentEmail(email); setStep(2); updateLeftDots(2); }, 1500);
+    setError("");
+    
+    try {
+      const response = await authAPI.forgotPassword(email);
+      if (response.success) {
+        setSuccess("OTP sent to your email");
+        setStep(2);
+        updateLeftDots(2);
+      } else {
+        setError(response.message || "Failed to send OTP");
+      }
+    } catch (error) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReset = (e: React.FormEvent) => {
+  const handleStep2 = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    
+    try {
+      const response = await authAPI.verifyOTP(email, otp);
+      if (response.success) {
+        setSuccess("");
+        setStep(3);
+        updateLeftDots(3);
+      } else {
+        setError(response.message || "Invalid OTP");
+      }
+    } catch (error) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) return;
     setLoading(true);
-    setTimeout(() => { setLoading(false); setResetDone(true); }, 1500);
+    setError("");
+    
+    try {
+      const response = await authAPI.resetPassword(email, otp, newPassword);
+      if (response.success) {
+        setSuccess("Password reset successfully!");
+        setTimeout(() => router.push('/login'), 2000);
+      } else {
+        setError(response.message || "Failed to reset password");
+      }
+    } catch (error) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleResend = () => {
-    setResent(true);
-    setTimeout(() => setResent(false), 3000);
+  const handleResend = async () => {
+    try {
+      const response = await authAPI.forgotPassword(email);
+      if (response.success) {
+        setSuccess("OTP resent to your email");
+        setTimeout(() => setSuccess(""), 3000);
+      }
+    } catch (error) {
+      setError("Failed to resend OTP");
+    }
   };
 
   const dotClass = (s: number) => {
@@ -81,8 +140,8 @@ export default function ForgotPasswordPage() {
           {/* Step tracker */}
           <div className="space-y-0">
             {[
-              { n: 1, title: "Enter your email", sub: "We'll send a secure reset link" },
-              { n: 2, title: "Check your email", sub: "Click the link to continue" },
+              { n: 1, title: "Enter your email", sub: "We'll send an OTP code" },
+              { n: 2, title: "Enter OTP code", sub: "Check your email for the code" },
               { n: 3, title: "Set new password", sub: "Choose a strong new password" },
             ].map((item, idx) => (
               <div key={item.n} className="flex gap-3.5 items-start">
@@ -169,20 +228,27 @@ export default function ForgotPasswordPage() {
                 <div className="h-2 w-2 rounded-full bg-gray-200" />
               </div>
               <h1 className="text-2xl font-extrabold text-[#111827] mb-2">Forgot your password?</h1>
-              <p className="text-sm text-gray-500 leading-relaxed mb-6">No worries. Enter your registered email address and we'll send you a secure reset link.</p>
+              <p className="text-sm text-gray-500 leading-relaxed mb-6">Enter your registered email address to receive an OTP code.</p>
+              
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm mb-4">
+                  {error}
+                </div>
+              )}
+              
               <form onSubmit={handleStep1} className="space-y-5">
                 <div>
                   <label className="block text-sm font-semibold text-[#111827] mb-1.5">Email address</label>
                   <div className="relative">
                     <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="olivier@gmail.com" required
                       className="w-full pl-10 pr-4 py-3 rounded-xl border-[1.5px] border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)] transition" />
                   </div>
-                  <p className="text-xs text-gray-400 mt-1.5">We'll send instructions to this address if it's linked to an account.</p>
+                  <p className="text-xs text-gray-400 mt-1.5">We'll send an OTP code to this address if it's linked to an account.</p>
                 </div>
                 <button type="submit" disabled={loading}
                   className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold text-sm py-3.5 rounded-xl shadow-lg shadow-blue-500/25 transition disabled:opacity-60">
-                  {loading ? (<><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Sending…</>) : (<>Send reset link <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg></>)}
+                  {loading ? (<><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Sending…</>) : (<>Send OTP code <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg></>)}
                 </button>
               </form>
               <div className="flex items-center gap-3 my-5"><div className="flex-1 h-px bg-gray-100"/><span className="text-xs text-gray-400">Remember it now?</span><div className="flex-1 h-px bg-gray-100"/></div>
@@ -190,7 +256,7 @@ export default function ForgotPasswordPage() {
             </div>
           )}
 
-          {/* STEP 2 */}
+          {/* STEP 2 - OTP Verification */}
           {step === 2 && (
             <div className="bg-white rounded-3xl shadow-xl shadow-black/5 border border-gray-100 p-8">
               <div className="flex gap-1.5 mb-6">
@@ -198,27 +264,81 @@ export default function ForgotPasswordPage() {
                 <div className="h-2 w-6 rounded-full bg-blue-600"/>
                 <div className="h-2 w-2 rounded-full bg-gray-200"/>
               </div>
-              <div className="text-center py-2 mb-5">
-                <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">📬</div>
-                <h1 className="text-xl font-extrabold text-[#111827] mb-2">Check your inbox</h1>
-                <p className="text-sm text-gray-500 leading-relaxed">We've sent a reset link to<br/><strong className="text-[#111827]">{sentEmail}</strong></p>
+              
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <span className="inline-block bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-full px-3 py-1 text-xs font-bold mb-2">
+                    📧 Email OTP
+                  </span>
+                  <h1 className="text-xl font-extrabold text-[#111827] mb-1">Enter OTP Code</h1>
+                  <p className="text-sm text-gray-500 max-w-[240px] leading-relaxed">
+                    We've sent a 6-digit code to <strong className="text-[#111827]">{email}</strong>
+                  </p>
+                </div>
               </div>
-              <div className="flex gap-2.5 bg-blue-50 border border-blue-100 rounded-xl p-3.5 mb-5">
-                <svg className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <p className="text-xs text-blue-700 leading-relaxed">This link expires in <strong>15 minutes</strong>. Check your spam folder if you don't see it.</p>
+              
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm mb-4">
+                  {error}
+                </div>
+              )}
+              
+              {success && (
+                <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-xl text-sm mb-4">
+                  {success}
+                </div>
+              )}
+              
+              <form onSubmit={handleStep2} className="space-y-5">
+                <div className="flex gap-2 justify-center">
+                  {[0, 1, 2, 3, 4, 5].map((index) => (
+                    <input
+                      key={index}
+                      type="text"
+                      maxLength={1}
+                      value={otp[index] || ''}
+                      onChange={(e) => {
+                        const newOtp = otp.split('');
+                        newOtp[index] = e.target.value;
+                        setOtp(newOtp.join(''));
+                        
+                        // Auto-focus next input
+                        if (e.target.value && index < 5) {
+                          const nextInput = e.target.parentElement?.children[index + 1] as HTMLInputElement;
+                          nextInput?.focus();
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        // Handle backspace
+                        if (e.key === 'Backspace' && !otp[index] && index > 0) {
+                          const prevInput = e.target.parentElement?.children[index - 1] as HTMLInputElement;
+                          prevInput?.focus();
+                        }
+                      }}
+                      className="w-12 h-12 text-center text-lg font-bold border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition"
+                    />
+                  ))}
+                </div>
+                
+                <p className="text-center text-xs text-red-500 min-h-[20px]" role="alert">
+                  {error && otp.length === 6 ? "Incorrect code. Please try again." : ""}
+                </p>
+                
+                <button type="submit" disabled={loading || otp.length !== 6}
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold text-sm py-3.5 rounded-xl shadow-lg shadow-blue-500/25 transition disabled:opacity-60">
+                  {loading ? (<><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Verifying…</>) : "Verify & Continue"}
+                </button>
+              </form>
+              
+              <div className="text-center mt-4">
+                <span className="text-xs text-gray-400">Didn't receive the code? </span>
+                <button onClick={handleResend} className="text-xs font-bold text-blue-600 hover:underline">
+                  Resend OTP
+                </button>
               </div>
-              <button onClick={() => { setStep(3); updateLeftDots(3); }}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold text-sm py-3.5 rounded-xl shadow-lg shadow-blue-500/25 transition mb-3">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                Simulate: open reset link
-              </button>
-              <div className="text-center mb-4">
-                <span className="text-xs text-gray-400">Didn't receive it? </span>
-                <button onClick={handleResend} className={`text-xs font-bold transition ${resent ? "text-green-600" : "text-blue-600 hover:underline"}`}>{resent ? "Sent! ✓" : "Resend email"}</button>
-              </div>
-              <div className="flex items-center gap-3 my-4"><div className="flex-1 h-px bg-gray-100"/><div className="flex-1 h-px bg-gray-100"/></div>
-              <button onClick={() => { setStep(1); updateLeftDots(1); }} className="w-full flex items-center justify-center gap-2 text-sm font-medium text-gray-500 hover:text-blue-600 transition">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+              
+              <button onClick={() => { setStep(1); updateLeftDots(1); setError(""); }} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-blue-600 transition mt-5 mx-auto">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
                 Use a different email
               </button>
             </div>
@@ -232,19 +352,25 @@ export default function ForgotPasswordPage() {
                 <div className="h-2 w-2 rounded-full bg-green-500"/>
                 <div className="h-2 w-6 rounded-full bg-blue-600"/>
               </div>
-              {resetDone ? (
+              {success ? (
                 <div className="text-center py-4">
                   <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
                     <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                   </div>
                   <h3 className="text-lg font-extrabold text-[#111827] mb-2">Password updated!</h3>
-                  <p className="text-sm text-gray-500 mb-5">Your password has been changed successfully.</p>
-                  <Link href="/login" className="inline-block w-full text-center bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold text-sm py-3.5 rounded-xl shadow-lg shadow-blue-500/25 transition">Continue to Login</Link>
+                  <p className="text-sm text-gray-500 mb-5">{success}</p>
                 </div>
               ) : (
                 <>
                   <h1 className="text-2xl font-extrabold text-[#111827] mb-2">Set new password</h1>
                   <p className="text-sm text-gray-500 mb-6">Choose a strong password you haven't used before.</p>
+                  
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm mb-4">
+                      {error}
+                    </div>
+                  )}
+                  
                   <form onSubmit={handleReset} className="space-y-4">
                     <div>
                       <label className="block text-sm font-semibold text-[#111827] mb-1.5">New password</label>

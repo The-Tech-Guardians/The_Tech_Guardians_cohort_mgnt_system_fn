@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 import AuthPanel    from "@/components/ui/AuthPanel";
 import AuthCard     from "@/components/ui/AuthCard";
@@ -13,26 +14,38 @@ import UserPill from "@/components/banner/auth/audit-note/UserPill";
 import MethodSelector from "@/components/banner/auth/role-badge/MethodSelector";
 import OtpVerifyForm from "@/components/banner/auth/Continue-button/OtpVerifyForm";
 import { OtpStatus, TwoFAMethod, TwoFAStep } from "@/components/banner/auth/two-fa/types";
-
-
-
-const DEMO_USER = {
-  initials: "FB",
-  name:     "Freddy Bijanja",
-  email:    "freddybijanja31@gmail.com",
-  role:     "Instructor" as const,
-};
+import { authAPI, tokenManager } from "@/lib/auth";
 
 const OTP_DURATION = 30;
 
 export default function TwoFAPage() {
-  const [step,           setStep]           = useState<TwoFAStep>("method");
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [step, setStep] = useState<TwoFAStep>("method");
   const [selectedMethod, setSelectedMethod] = useState<TwoFAMethod>("app");
-  const [otp,            setOtp]            = useState<string[]>(Array(6).fill(""));
-  const [otpStatus,      setOtpStatus]      = useState<OtpStatus>("idle");
-  const [timeLeft,       setTimeLeft]       = useState(OTP_DURATION);
-  const [canResend,      setCanResend]      = useState(false);
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
+  const [otpStatus, setOtpStatus] = useState<OtpStatus>("idle");
+  const [timeLeft, setTimeLeft] = useState(OTP_DURATION);
+  const [canResend, setCanResend] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const userData = tokenManager.getUser();
+    const userEmail = userData?.email;
+    
+    if (userEmail) {
+      // For now, use the email to get basic info
+      // In a real app, you'd fetch full user data from backend
+      setUser({
+        initials: userEmail === 'oriviernduwayesu@gmail.com' ? 'NO' : 'AB',
+        name: userEmail === 'oriviernduwayesu@gmail.com' ? 'Nduwayesu Olivier' : 'Admin User',
+        email: userEmail,
+        role: userEmail === 'oriviernduwayesu@gmail.com' ? 'ADMIN' : 'Admin'
+      });
+    } else {
+      router.push('/login');
+    }
+  }, [router]);
 
   const startTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -54,12 +67,51 @@ export default function TwoFAPage() {
     if (autoSubmit) setTimeout(() => verifyOTP(value.join("")), 150);
   };
 
-  const verifyOTP = (code: string) => {
+  const verifyOTP = async (code: string) => {
+    if (!user?.email) return;
+    
     setOtpStatus("loading");
-    setTimeout(() => {
-      if (code === "123456") { setOtpStatus("success"); clearInterval(timerRef.current!); }
-      else { setOtpStatus("error"); setTimeout(() => setOtpStatus("idle"), 800); }
-    }, 1200);
+    try {
+      const response = await authAPI.verify2FA(user.email, code);
+      console.log('2FA verification response:', response);
+      
+      if (response.success) {
+        setOtpStatus("success");
+        clearInterval(timerRef.current!);
+        
+        // Get user role from response or stored data
+        const userRole = response.data?.user?.role || response.role || user.role;
+        console.log('User role for redirect:', userRole);
+        
+        // Redirect based on user role
+        setTimeout(() => {
+          switch (userRole) {
+            case 'ADMIN':
+              console.log('Redirecting to admin dashboard');
+              router.push('/admin');
+              break;
+            case 'INSTRUCTOR':
+              console.log('Redirecting to instructor dashboard');
+              router.push('/instructor');
+              break;
+            case 'LEARNER':
+              console.log('Redirecting to learner dashboard');
+              router.push('/learner');
+              break;
+            default:
+              console.log('Redirecting to admin dashboard (default)');
+              router.push('/admin');
+          }
+        }, 1000);
+      } else {
+        setOtpStatus("error");
+        setTimeout(() => setOtpStatus("idle"), 800);
+      }
+    } catch (error) {
+      console.error('2FA verification failed:', error);
+      setOtpStatus("error");
+      setTimeout(() => setOtpStatus("idle"), 800);
+    }
   };
 
   const handleResend = () => {
@@ -89,7 +141,7 @@ export default function TwoFAPage() {
             {step === "method" ? (
               <>
                 <BackButton href="/login" label="Back to login" />
-                <UserPill {...DEMO_USER} />
+                {user && <UserPill {...user} />}
                 <MethodSelector
                   selected={selectedMethod}
                   onSelect={setSelectedMethod}

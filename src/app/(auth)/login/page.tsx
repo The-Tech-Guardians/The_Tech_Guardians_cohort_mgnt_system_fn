@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Logo from "@/components/ui/navbar/Logo";
+import { authAPI, tokenManager } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,14 +12,55 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    setError("");
+    setSuccess("");
+
+    try {
+      console.log('Attempting login with:', { email, password: '***' });
+      const response = await authAPI.login({ email, password });
+      console.log('Login response:', JSON.stringify(response, null, 2));
+      console.log('Response success:', response.success);
+      console.log('Response data:', response.data);
+      console.log('Response message:', response.message);
+      
+      if ((response.success && response.data?.token && response.data?.user) || (response.requires_2fa && response.token && response.user_id)) {
+        console.log('Login successful, storing data and showing message');
+        
+        // Handle different response formats
+        if (response.requires_2fa) {
+          // Backend format: { requires_2fa: true, token, user_id, message }
+          tokenManager.setToken(response.token);
+          tokenManager.setUser({ id: response.user_id, email });
+        } else {
+          // Standard format: { success: true, data: { token, user } }
+          tokenManager.setToken(response.data.token);
+          tokenManager.setUser(response.data.user);
+        }
+        
+        // Show success message
+        setSuccess("2FA code sent to your email");
+        
+        // Redirect to 2FA verification after showing message
+        setTimeout(() => {
+          console.log('Redirecting to 2FA page');
+          router.push("/login/verify-2fa");
+        }, 2000);
+      } else {
+        console.log('Login failed:', response);
+        setError(response.message || "Login failed. Please check your credentials.");
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError("Network error. Please try again.");
+    } finally {
       setLoading(false);
-      router.push("/login/verify-2fa");
-    }, 2000);
+    }
   };
 
   return (
@@ -204,6 +246,21 @@ export default function LoginPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
+                  {error}
+                </div>
+              )}
+              
+              {success && (
+                <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  {success}
+                </div>
+              )}
+              
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-[#111827]">Email address</label>
                 <div className="relative">
@@ -216,7 +273,7 @@ export default function LoginPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
+                    placeholder="olivier@gmail.com"
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition"
                     required
                   />
