@@ -5,9 +5,9 @@ import { useState } from "react";
 import { useSidebar } from "../layout";
 
 const LEARNER_COURSES = [
-  { id: 1, title: "Full-Stack Web Development", instructor: "Dr. James Kowalski", progress: 67, modules: 5, lessons: 24, nextLesson: "React Hooks Deep Dive", dueDate: "Mar 15", status: "active", thumbnail: "F" },
-  { id: 2, title: "Advanced JavaScript Patterns", instructor: "Prof. Sarah Chen", progress: 42, modules: 3, lessons: 14, nextLesson: "Design Patterns Overview", dueDate: "Mar 20", status: "active", thumbnail: "A" },
-  { id: 3, title: "Database Design & SQL", instructor: "Dr. Michael Torres", progress: 15, modules: 4, lessons: 18, nextLesson: "Introduction to Databases", dueDate: "Apr 5", status: "not-started", thumbnail: "D" },
+  { id: 1, title: "Full-Stack Web Development", instructor: "Dr. James Kowalski", progress: 67, modules: 5, lessons: 24, nextLesson: "React Hooks Deep Dive", dueDate: "Mar 15", status: "active", thumbnail: "F" , color: "bg-gray-900" },
+  { id: 2, title: "Advanced JavaScript Patterns", instructor: "Prof. Sarah Chen", progress: 42, modules: 3, lessons: 14, nextLesson: "Design Patterns Overview", dueDate: "Mar 20", status: "active", thumbnail: "A", color : "bg-orange-400" },
+  { id: 3, title: "Database Design & SQL", instructor: "Dr. Michael Torres", progress: 15, modules: 4, lessons: 18, nextLesson: "Introduction to Databases", dueDate: "Apr 5", status: "not-started", thumbnail: "D", color: "bg-gradient-to-r from-blue-600 to-cyan-500"  },
 ];
 
 export default function LearnerMyCoursesPage() {
@@ -38,11 +38,11 @@ export default function LearnerMyCoursesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid md:grid-cols-3 gap-2">
         {filtered.map(course => (
          
           <div key={course.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden group cursor-pointer">
-            <div className="relative h-32 bg-gradient-to-r from-blue-600 to-cyan-500 flex items-center justify-center">
+            <div className={`relative h-32 ${course.color} flex items-center justify-center`}>
               <span className="text-6xl font-black text-white/20" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>{course.thumbnail}</span>
               <div className="absolute top-3 right-3">
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
@@ -91,7 +91,7 @@ export default function LearnerMyCoursesPage() {
               <div className="flex gap-2">
                
                
-                <button className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-indigo-700 transition-colors">
+                <button className={`flex-1  text-white ${course.color} text-sm font-semibold py-2.5 rounded-xl hover:bg-indigo-700 transition-colors`}>
                   <Link href="my-courses/my-learning"> {course.progress > 0 ? "Continue" : "Start Course"}</Link>
                 </button>
                 <button className="w-10 h-10 flex items-center justify-center border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">

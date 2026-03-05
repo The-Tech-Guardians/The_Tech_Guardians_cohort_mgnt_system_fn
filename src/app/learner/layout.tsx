@@ -26,7 +26,7 @@ function NavItem({ icon: Icon, label, active, onClick, collapsed }: {
         transition-all duration-200 group relative overflow-hidden
         ${active
           ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm"
-          : "text-gray-400 hover:bg-indigo-300 hover:text-gray-800"
+          : "text-gray-400 hover:bg-cyan-500 hover:text-gray-800"
         }
         ${collapsed ? "justify-center" : ""}
       `}
