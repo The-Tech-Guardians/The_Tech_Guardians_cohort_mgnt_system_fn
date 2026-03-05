@@ -133,6 +133,16 @@ export const authAPI = {
     return response.json();
   },
 
+  async fixAdminRole(): Promise<AuthResponse> {
+    const response = await fetch(`${API_BASE_URL}/admin/fix-admin-role`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    return response.json();
+  },
+
   async getLearnerCourses(): Promise<any> {
     const token = tokenManager.getToken();
     const response = await fetch(`${API_BASE_URL}/learner/courses`, {
@@ -220,6 +230,20 @@ export const tokenManager = {
       return payload.uuid || payload.user_id || payload.id;
     } catch (error) {
       console.error('Error decoding token:', error);
+      return null;
+    }
+  },
+
+  getRoleFromToken(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+    
+    try {
+      // Decode JWT token (without verification for client-side)
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.role;
+    } catch (error) {
+      console.error('Error decoding token role:', error);
       return null;
     }
   },

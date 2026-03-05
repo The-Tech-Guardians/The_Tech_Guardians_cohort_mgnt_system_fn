@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight, X } from "lucide-react";
 import Logo from "@/components/ui/navbar/Logo";
+import { tokenManager } from "@/lib/auth";
 
 function NavItem({ icon: Icon, label, active, onClick, collapsed }: { 
   icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>; 
@@ -61,6 +62,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  // Role-based routing guard
+  useEffect(() => {
+    const userRole = tokenManager.getRoleFromToken();
+
+    if (userRole) {
+      switch (userRole) {
+        case 'LEARNER':
+          router.replace('/learner');
+          break;
+        case 'INSTRUCTOR':
+          router.replace('/instructor');
+          break;
+        case 'ADMIN':
+          // Allow access to admin section
+          break;
+        default:
+          // Default to admin for unknown roles
+          break;
+      }
+    } else {
+      // No token, redirect to login
+      router.replace('/login');
+    }
+  }, [router]);
 
   const view = pathname === '/admin' ? 'dashboard' : pathname.split('/').pop() || 'dashboard';
 

@@ -78,9 +78,9 @@ export default function TwoFAPage() {
         setOtpStatus("success");
         clearInterval(timerRef.current!);
         
-        // Get user role from response or stored data
-        const userRole = response.data?.user?.role || response.role || user.role;
-        console.log('User role for redirect:', userRole);
+        // Get user role from JWT token (most reliable source)
+        const userRole = tokenManager.getRoleFromToken();
+        console.log('User role from token:', userRole);
         
         // Redirect based on user role
         setTimeout(() => {
@@ -98,8 +98,8 @@ export default function TwoFAPage() {
               router.push('/learner');
               break;
             default:
-              console.log('Redirecting to admin dashboard (default)');
-              router.push('/admin');
+              console.log('Unknown role, redirecting to learner dashboard');
+              router.push('/learner');
           }
         }, 1000);
       } else {
