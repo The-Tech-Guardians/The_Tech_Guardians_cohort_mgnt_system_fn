@@ -132,6 +132,55 @@ export const authAPI = {
     });
     return response.json();
   },
+
+  async getLearnerCourses(): Promise<any> {
+    const token = tokenManager.getToken();
+    const response = await fetch(`${API_BASE_URL}/learner/courses`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return response.json();
+  },
+
+  async getLearnerCohort(): Promise<any> {
+    const token = tokenManager.getToken();
+    const response = await fetch(`${API_BASE_URL}/learner/cohort`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return response.json();
+  },
+
+  async getAvailableCohorts(): Promise<any> {
+    const token = tokenManager.getToken();
+    const response = await fetch(`${API_BASE_URL}/learner/available-cohorts`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return response.json();
+  },
+
+  async joinCohort(cohort_id: string): Promise<any> {
+    const token = tokenManager.getToken();
+    const response = await fetch(`${API_BASE_URL}/cohorts/join`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ cohort_id })
+    });
+    return response.json();
+  },
 };
 
 // Token management

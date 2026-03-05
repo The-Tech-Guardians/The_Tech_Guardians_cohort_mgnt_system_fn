@@ -1,215 +1,214 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useSidebar } from "@/components/ui/SideBarContext";
 import { Monitor, BookOpen, BarChart3, Bot, Gamepad2, Camera, Leaf, Smartphone, FileText, Lightbulb, TrendingUp, BookMarked, Users, Clock } from "lucide-react";
-
-const RECOMMENDED = [
-  { id:1, level:"Beginner", levelColor:"text-emerald-600", title:"Three-month Course to Learn the Basics of Python and Start Coding", instructor:"Alison Walsh", instructorGrad:"from-orange-400 to-pink-400", students:118, rating:5.0, gradient:"from-slate-700 to-slate-900", icon: Monitor },
-  { id:2, level:"Beginner", levelColor:"text-emerald-600", title:"Beginner's Guide to Successful Company Management: Business An...", instructor:"Patty Kutch", instructorGrad:"from-purple-400 to-pink-400", students:234, rating:4.8, gradient:"from-rose-400 to-orange-300", icon: BookOpen },
-  { id:3, level:"Intermediate", levelColor:"text-amber-600", title:"A Fascinating Theory of Probability. Practice. Application. How to Outpla...", instructor:"Alonzo Murray", instructorGrad:"from-blue-400 to-cyan-400", students:57, rating:4.9, gradient:"from-amber-500 to-yellow-400", icon: BarChart3 },
-  { id:4, level:"Advanced", levelColor:"text-rose-600", title:"Introduction to Machine Learning and LLM. Implementation in Modern Soft...", instructor:"Gregory Harris", instructorGrad:"from-emerald-500 to-teal-400", students:19, rating:5.0, gradient:"from-blue-600 to-indigo-500", icon: Bot },
-];
-
-const MY_COURSES = [
-  { id:1, title:"AI & Virtual Reality",             icon: Gamepad2, progress:9,  total:12, avatars:["FB","IB","ON","SA","AD"], extra:17, color:"from-purple-500 to-violet-400" },
-  { id:2, title:"Photography",                       icon: Camera, progress:16, total:24, avatars:["FK","AM","PK","GH"],       extra:9,  color:"from-amber-500 to-orange-400" },
-  { id:3, title:"Business Ecosystem: Introduction",  icon: Leaf, progress:11, total:18, avatars:["ON","SA","FB","IB","AD"], extra:11, color:"from-emerald-500 to-teal-400" },
-  { id:4, title:"React Native Development",          icon: Smartphone, progress:18, total:37, avatars:["FB","GH","AM"],            extra:8,  color:"from-blue-500 to-cyan-400" },
-];
-
-const UPCOMING = [
-  { type:"Course",   icon: FileText, iconBg:"bg-gray-900",  title:"Business Prospect Analysis",   date:"Apr 25", time:"11:00–12:00" },
-  { type:"Tutoring", icon: Lightbulb, iconBg:"bg-cyan-500",   title:"AI & Virtual Reality: Intro",  date:"Apr 27", time:"14:30–15:30" },
-];
-
-const OVERALL = [
-  { label:"Score",            value:"210", trend:"+13%", up:true,  icon: TrendingUp },
-  { label:"Completed Course", value:"34h", trend:"+15%", up:true,  icon: BookMarked },
-  { label:"Total Student",    value:"17",  trend:"-2%",  up:false, icon: Users },
-  { label:"Total Hours",      value:"11",  trend:"-9%",  up:false, icon: Clock },
-];
-
-const PRODUCTIVITY = [
-  { day:"Mon", Mentoring:60, SelfImprove:40, Student:50 },
-  { day:"Tue", Mentoring:45, SelfImprove:70, Student:80 },
-  { day:"Wed", Mentoring:55, SelfImprove:50, Student:65 },
-  { day:"Thu", Mentoring:30, SelfImprove:60, Student:45 },
-  { day:"Fri", Mentoring:70, SelfImprove:45, Student:75 },
-  { day:"Sat", Mentoring:40, SelfImprove:55, Student:60 },
-  { day:"Sun", Mentoring:50, SelfImprove:65, Student:85 },
-];
-
-const CAL_DAYS = [
-  { d:23, dots:[] as string[], today:false },
-  { d:24, dots:["blue"] as string[], today:true },
-  { d:25, dots:["blue","blue"] as string[], today:false },
-  { d:26, dots:[] as string[], today:false },
-  { d:27, dots:["purple"] as string[], today:false },
-  { d:28, dots:["blue","black"] as string[], today:false },
-  { d:29, dots:[] as string[], today:false },
-];
-
-const AVATAR_COLORS = [
-  "from-blue-500 to-cyan-400",
-  "from-violet-500 to-pink-400",
-  "from-emerald-500 to-teal-400",
-  "from-amber-400 to-orange-400",
-  "from-rose-500 to-pink-500",
-];
-
-function MiniCalendar() {
-  return (
-    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <button className="w-6 h-6 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <div className="flex items-center gap-1.5 text-[12.5px] font-bold text-gray-700">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          April 2024
-        </div>
-        <button className="w-6 h-6 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-      </div>
-      <div className="grid grid-cols-7 gap-0.5 mb-1">
-        {["Mo","Tu","We","Th","Fr","Sa","Su"].map(d => (
-          <div key={d} className="text-center text-[10px] font-semibold text-gray-400 py-0.5">{d}</div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-0.5">
-        {CAL_DAYS.map((day) => (
-          <div key={day.d} className="flex flex-col items-center gap-0.5">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-semibold cursor-pointer transition-all
-              ${day.today ? "bg-blue-600 text-white shadow-md shadow-blue-200" : "text-gray-600 hover:bg-gray-100"}`}>
-              {day.d}
-            </div>
-            <div className="flex gap-0.5 h-1">
-              {day.dots.map((dot: string, i: number) => (
-                <span key={i} className={`w-1 h-1 rounded-full ${dot==="blue"?"bg-blue-500":dot==="purple"?"bg-purple-500":"bg-gray-800"}`}/>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function CourseThumbnail({ course }: { course: typeof RECOMMENDED[0] }) {
-  const Icon = course.icon;
-  return (
-    <div className={`relative h-[120px] rounded-xl overflow-hidden bg-gradient-to-br ${course.gradient} flex items-center justify-center`}>
-      <Icon className="w-12 h-12 text-white opacity-75" />
-      <button className="absolute top-2 right-2 w-6 h-6 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white/30 transition-colors">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-      </button>
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-2">
-        <div className="flex items-center justify-between">
-          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white ${course.levelColor}`}>{course.level}</span>
-          <div className="flex items-center gap-1.5">
-            <span className="text-white text-[10px] font-medium flex items-center gap-0.5">
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-              {course.students}
-            </span>
-            <span className="text-white text-[10px] font-medium">⭐{course.rating}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AvatarStack({ avatars, extra }: { avatars: string[]; extra: number }) {
-  return (
-    <div className="flex items-center flex-shrink-0">
-      <div className="flex -space-x-1.5">
-        {avatars.slice(0,4).map((a,i) => (
-          <div key={i} className={`w-6 h-6 rounded-full bg-gradient-to-br ${AVATAR_COLORS[i%AVATAR_COLORS.length]} border-2 border-white flex items-center justify-center text-white text-[8px] font-bold`}>
-            {a}
-          </div>
-        ))}
-      </div>
-      {extra > 0 && (
-        <div className="ml-1 bg-blue-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">+{extra}</div>
-      )}
-    </div>
-  );
-}
+import { authAPI } from "@/lib/auth";
 
 export default function LearnerDashboardPage() {
   const { collapsed } = useSidebar();
+  const [user, setUser] = useState({ name: 'Loading...', initials: 'L' });
+  const [recommendedCourses, setRecommendedCourses] = useState([]);
+  const [myCourses, setMyCourses] = useState([]);
+  const [currentCohort, setCurrentCohort] = useState<any>(null);
+  const [availableCohorts, setAvailableCohorts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [enrolling, setEnrolling] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch user data
+        const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+        if (userData) {
+          const name = userData.name || userData.email?.split('@')[0] || 'User';
+          const initials = name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+          setUser({ name, initials });
+        }
+
+        // Fetch courses data
+        const coursesResponse = await authAPI.getLearnerCourses();
+        if (coursesResponse.success) {
+          setMyCourses(coursesResponse.data || []);
+        }
+
+        // Fetch current cohort
+        const cohortResponse = await authAPI.getLearnerCohort();
+        console.log('Cohort Response:', cohortResponse);
+        if (cohortResponse.success) {
+          setCurrentCohort(cohortResponse.data);
+        }
+
+        // Fetch available cohorts
+        const availableResponse = await authAPI.getAvailableCohorts();
+        console.log('Available Cohorts Response:', availableResponse);
+        if (availableResponse.success) {
+          setAvailableCohorts(availableResponse.data || []);
+        }
+
+        // For now, set empty arrays for recommended courses
+        setRecommendedCourses([]);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleEnrollCohort = async (cohortId: string) => {
+    try {
+      setEnrolling(cohortId);
+      const response = await authAPI.joinCohort(cohortId);
+      
+      if (response.success) {
+        // Refresh cohort data
+        const cohortResponse = await authAPI.getLearnerCohort();
+        if (cohortResponse.success) {
+          setCurrentCohort(cohortResponse.data);
+        }
+
+        // Refresh available cohorts
+        const availableResponse = await authAPI.getAvailableCohorts();
+        if (availableResponse.success) {
+          setAvailableCohorts(availableResponse.data || []);
+        }
+
+        console.log('Successfully joined cohort:', response.data);
+      } else {
+        console.error('Error joining cohort:', response.message);
+        alert('Failed to join cohort: ' + response.message);
+      }
+    } catch (error) {
+      console.error('Error enrolling in cohort:', error);
+      alert('Failed to join cohort');
+    } finally {
+      setEnrolling(null);
+    }
+  };
 
   const today = new Date();
   const dayName = today.toLocaleDateString("en-US", { weekday: "long" });
   const dateStr = today.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
+  if (loading) {
+    return (
+      <div className={`flex gap-5 min-h-full ${collapsed ? "p-4 sm:p-5" : ""}`}>
+        <div className="flex-1 min-w-0 space-y-5">
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+            <div className="grid grid-cols-2 gap-4">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="space-y-2">
+                  <div className="h-32 bg-gray-200 rounded-xl"></div>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="w-[280px] xl:w-[300px] flex-shrink-0 space-y-4">
+          <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-48 bg-gray-200 rounded-2xl animate-pulse"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`flex gap-5 min-h-full ${collapsed ? "p-4 sm:p-5" : ""}`}>
-
-      {/* LEFT */}
       <div className="flex-1 min-w-0 space-y-5">
-
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[14px] font-bold text-gray-900">Top courses you may like</h2>
-            <button className="text-[12px] font-semibold text-blue-600 hover:underline">View all</button>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            {RECOMMENDED.map(c => (
-              <div key={c.id} className="group cursor-pointer">
-                <CourseThumbnail course={c} />
-                <div className="pt-2.5">
-                  <p className="text-[12.5px] font-semibold text-gray-800 leading-snug mb-1.5 line-clamp-2 group-hover:text-blue-600 transition-colors">{c.title}</p>
-                  <div className="flex items-center gap-1.5">
-                    <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${c.instructorGrad} flex items-center justify-center flex-shrink-0`}>
-                      <span className="text-white text-[7px] font-bold">{c.instructor.split(" ").map((n:string)=>n[0]).join("")}</span>
-                    </div>
-                    <span className="text-[11px] text-gray-400 font-medium truncate">{c.instructor}</span>
-                  </div>
+        {currentCohort && (
+          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-5 border border-blue-100 shadow-sm">
+            <h2 className="text-[14px] font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <Users size={16} className="text-blue-600"/>
+              My Current Cohort
+            </h2>
+            <div className="space-y-3">
+              <div>
+                <p className="text-[13px] text-gray-600 font-medium">Cohort Name</p>
+                <p className="text-[15px] font-bold text-gray-900 mt-1">{currentCohort.name || 'N/A'}</p>
+              </div>
+              {currentCohort.description && (
+                <div>
+                  <p className="text-[13px] text-gray-600 font-medium">Description</p>
+                  <p className="text-[12px] text-gray-600 mt-1">{currentCohort.description}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-3 gap-3 pt-3 border-t border-blue-200">
+                <div>
+                  <p className="text-[11px] text-gray-500 font-medium">Status</p>
+                  <p className="text-[12px] font-bold text-blue-600 capitalize mt-1">{currentCohort.status || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-gray-500 font-medium">Students</p>
+                  <p className="text-[12px] font-bold text-blue-600 mt-1">{currentCohort.currentStudents || 0}/{currentCohort.maxStudents || 0}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-gray-500 font-medium">Start Date</p>
+                  <p className="text-[12px] font-bold text-blue-600 mt-1">
+                    {currentCohort.startDate ? new Date(currentCohort.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A'}
+                  </p>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[14px] font-bold text-gray-900">My Courses</h2>
-            <button className="text-[12px] font-semibold text-blue-600 hover:underline">View all</button>
+        {!currentCohort && !loading && (
+          <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-5 border border-yellow-100 shadow-sm">
+            <h2 className="text-[14px] font-bold text-gray-900 mb-2 flex items-center gap-2">
+              <Users size={16} className="text-yellow-600"/>
+              No Cohort
+            </h2>
+            <p className="text-[12px] text-gray-600">You're not enrolled in any cohort yet. Check available cohorts on the right to join one!</p>
           </div>
-          <div className="space-y-2">
-            {MY_COURSES.map(c => {
-              const pct = Math.round((c.progress / c.total) * 100);
-              const Icon = c.icon;
-              return (
-                <div key={c.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group">
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${c.color} flex items-center justify-center flex-shrink-0 shadow-sm`}>
-                    <Icon className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12.5px] font-bold text-gray-800 truncate group-hover:text-blue-600 transition-colors">{c.title}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full bg-gradient-to-r ${c.color}`} style={{width:`${pct}%`}}/>
+        )}
+
+        {myCourses.length > 0 && (
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[14px] font-bold text-gray-900">My Courses</h2>
+              <button className="text-[12px] font-semibold text-blue-600 hover:underline">View all</button>
+            </div>
+            <div className="space-y-2">
+              {myCourses.slice(0, 4).map((course: any) => {
+                const pct = Math.round((course.progress || 0));
+                return (
+                  <div key={course.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <span className="text-white text-sm font-bold">{course.title?.charAt(0) || 'C'}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12.5px] font-bold text-gray-800 truncate group-hover:text-blue-600 transition-colors">{course.title}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400" style={{width:`${pct}%`}}/>
+                        </div>
+                        <span className="text-[10.5px] text-gray-400 font-medium flex-shrink-0">Progress: {pct}%</span>
                       </div>
-                      <span className="text-[10.5px] text-gray-400 font-medium flex-shrink-0">Sessions completed: {c.progress}/{c.total}</span>
                     </div>
                   </div>
-                  <AvatarStack avatars={c.avatars} extra={c.extra} />
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
+        {myCourses.length === 0 && !loading && (
+          <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm text-center">
+            <div className="text-gray-400 text-lg font-semibold mb-2">No courses enrolled</div>
+            <p className="text-gray-500 text-sm">Start your learning journey by enrolling in a course.</p>
+          </div>
+        )}
       </div>
 
-      {/* RIGHT */}
       <div className="w-[280px] xl:w-[300px] flex-shrink-0 space-y-4">
-
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-[18px] font-black text-gray-900 leading-tight">{dayName}</h2>
@@ -223,91 +222,91 @@ export default function LearnerDashboardPage() {
               <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-rose-500 rounded-full"/>
             </button>
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white text-[10px] font-bold shadow-sm">
-              FB
+              {user.initials}
             </div>
           </div>
         </div>
 
-        <MiniCalendar />
+        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm text-center py-8">
+          <div className="text-gray-400 text-sm font-semibold mb-2">Welcome to your dashboard</div>
+          <p className="text-gray-500 text-xs">Your learning activities will appear here.</p>
+        </div>
 
-        <div className="space-y-2.5">
-          {UPCOMING.map((u, i) => {
-            const Icon = u.icon;
-            return (
-            <div key={i} className="bg-white rounded-2xl p-3.5 border border-gray-100 shadow-sm flex items-center gap-3 cursor-pointer hover:shadow-md transition-all group">
-              <div className={`w-9 h-9 rounded-xl ${u.iconBg} flex items-center justify-center flex-shrink-0`}>
-                <Icon className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[9.5px] font-bold text-gray-400 uppercase tracking-wider">{u.type}</p>
-                <p className="text-[12.5px] font-bold text-gray-800 leading-tight truncate">{u.title}</p>
-                <div className="flex items-center gap-2.5 mt-0.5">
-                  <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    {u.date}
-                  </span>
-                  <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    {u.time}
-                  </span>
+        {currentCohort && (
+          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-4 border border-blue-100 shadow-sm">
+            <h3 className="text-[12px] font-bold text-gray-700 mb-3 flex items-center gap-2">
+              <Users size={14} className="text-blue-600"/>
+              Current Cohort
+            </h3>
+            <div className="space-y-2">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-bold text-gray-900 truncate" title={currentCohort.name || 'Cohort'}>
+                    {currentCohort.name ? currentCohort.name : 'Unnamed Cohort'}
+                  </p>
+                  {currentCohort.description && (
+                    <p className="text-[11px] text-gray-500 mt-1 line-clamp-2">{currentCohort.description}</p>
+                  )}
                 </div>
               </div>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0"><polyline points="9 18 15 12 9 6"/></svg>
+              <div className="flex items-center gap-4 text-[11px] pt-2 border-t border-blue-200">
+                <div>
+                  <p className="text-gray-500 font-medium">Status</p>
+                  <p className="text-blue-600 font-bold capitalize">{currentCohort.status || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 font-medium">Students</p>
+                  <p className="text-blue-600 font-bold">{currentCohort.currentStudents || 0}/{currentCohort.maxStudents || 0}</p>
+                </div>
+              </div>
             </div>
-            );
-          })}
-        </div>
+          </div>
+        )}
 
-        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-          <h3 className="text-[13.5px] font-bold text-gray-900 mb-3">Overall Information</h3>
-          <div className="grid grid-cols-2 gap-2.5">
-            {OVERALL.map(s => {
-              const Icon = s.icon;
-              return (
-              <div key={s.label} className="bg-gray-50 rounded-xl p-2.5 border border-gray-100">
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <Icon className="w-4 h-4 text-gray-600" />
-                  <span className="text-[10px] font-semibold text-gray-500 leading-tight">{s.label}</span>
+        {availableCohorts.length > 0 && (
+          <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+            <h3 className="text-[12px] font-bold text-gray-700 mb-3 flex items-center gap-2">
+              <BookMarked size={14} className="text-cyan-600"/>
+              Available Cohorts ({availableCohorts.length})
+            </h3>
+            <div className="space-y-2 max-h-[200px] overflow-y-auto">
+              {availableCohorts.slice(0, 3).map((cohort: any) => (
+                <div key={cohort.cohortId} className="p-2.5 rounded-lg bg-gray-50 hover:bg-cyan-50 transition-colors cursor-pointer border border-transparent hover:border-cyan-200">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11.5px] font-bold text-gray-800 truncate">{cohort.name}</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">
+                        {new Date(cohort.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </p>
+                    </div>
+                    <span className={`text-[9px] font-bold px-2 py-1 rounded-full flex-shrink-0 ${
+                      cohort.status === 'active' 
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {cohort.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mt-2 text-[10px]">
+                    <span className="text-gray-500">{cohort.currentStudents}/{cohort.maxStudents} students</span>
+                    <button 
+                      onClick={() => handleEnrollCohort(cohort.cohortId)}
+                      disabled={enrolling === cohort.cohortId}
+                      className="text-cyan-600 font-bold hover:text-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {enrolling === cohort.cohortId ? 'Enrolling...' : 'Enroll'}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-end gap-1">
-                  <span className="text-[18px] font-black text-gray-900 leading-none">{s.value}</span>
-                  <span className={`text-[10px] font-bold mb-0.5 ${s.up?"text-emerald-500":"text-rose-500"}`}>{s.up?"▲":"▼"} {s.trend}</span>
-                </div>
-              </div>
-              );
-            })}
+              ))}
+              {availableCohorts.length > 3 && (
+                <button className="w-full text-[11px] font-semibold text-cyan-600 hover:text-cyan-700 py-2 rounded-lg hover:bg-cyan-50 transition-colors">
+                  View all cohorts
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-[13.5px] font-bold text-gray-900">Productivity</h3>
-            <button className="flex items-center gap-0.5 text-[11px] font-semibold text-blue-600 hover:underline">
-              View details
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-          </div>
-          <ResponsiveContainer width="100%" height={140}>
-            <BarChart data={PRODUCTIVITY} barSize={5} barCategoryGap="28%" margin={{top:0,right:0,left:-28,bottom:0}}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false}/>
-              <XAxis dataKey="day" tick={{fontSize:9,fill:"#94A3B8",fontWeight:600}} axisLine={false} tickLine={false}/>
-              <YAxis tick={{fontSize:9,fill:"#94A3B8"}} tickFormatter={(v:number)=>`${v}%`} domain={[0,100]} ticks={[0,25,50,75,90]}/>
-              <Tooltip contentStyle={{fontSize:10,borderRadius:8,border:"1px solid #E2E8F0",padding:"6px 10px"}} labelStyle={{fontWeight:700,color:"#1E293B",marginBottom:2}}/>
-              <Bar dataKey="Mentoring"   fill="#C4B5FD" radius={[3,3,0,0]}/>
-              <Bar dataKey="SelfImprove" fill="#1E293B"  radius={[3,3,0,0]}/>
-              <Bar dataKey="Student"     fill="#38BDF8"  radius={[3,3,0,0]}/>
-            </BarChart>
-          </ResponsiveContainer>
-          <div className="flex items-center justify-center gap-3 mt-1">
-            {[{c:"bg-violet-300",l:"Mentoring"},{c:"bg-slate-900",l:"Self Improve"},{c:"bg-sky-400",l:"Student"}].map(l=>(
-              <div key={l.l} className="flex items-center gap-1">
-                <span className={`w-2 h-2 rounded-sm ${l.c}`}/>
-                <span className="text-[10px] text-gray-400 font-medium">{l.l}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
+        )}
       </div>
     </div>
   );

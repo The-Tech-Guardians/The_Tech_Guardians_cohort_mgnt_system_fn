@@ -1,24 +1,92 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSidebar } from "../layout";
+import { authAPI } from "@/lib/auth";
 
-const LEARNER_COURSES = [
-  { id: 1, title: "Full-Stack Web Development", instructor: "Dr. James Kowalski", progress: 67, modules: 5, lessons: 24, nextLesson: "React Hooks Deep Dive", dueDate: "Mar 15", status: "active", thumbnail: "F" },
-  { id: 2, title: "Advanced JavaScript Patterns", instructor: "Prof. Sarah Chen", progress: 42, modules: 3, lessons: 14, nextLesson: "Design Patterns Overview", dueDate: "Mar 20", status: "active", thumbnail: "A" },
-  { id: 3, title: "Database Design & SQL", instructor: "Dr. Michael Torres", progress: 15, modules: 4, lessons: 18, nextLesson: "Introduction to Databases", dueDate: "Apr 5", status: "not-started", thumbnail: "D" },
-];
+interface Course {
+  id: string;
+  title: string;
+  instructor: string;
+  progress: number;
+  modules: number;
+  lessons: number;
+  nextLesson: string;
+  status: string;
+  thumbnail: string;
+}
 
 export default function LearnerMyCoursesPage() {
   const [filter, setFilter] = useState("all");
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
   const { collapsed } = useSidebar();
 
-  const filtered = LEARNER_COURSES.filter(c => 
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await authAPI.getLearnerCourses();
+        
+        if (response.success) {
+          // Transform backend data to match frontend interface
+          const transformedCourses = response.data?.map((course: any) => ({
+            id: course._id || course.id,
+            title: course.title || 'Untitled Course',
+            instructor: course.instructor || 'Unknown Instructor',
+            progress: course.progress || 0,
+            modules: course.modules || 0,
+            lessons: course.lessons || 0,
+            nextLesson: course.nextLesson || 'Getting Started',
+            status: course.progress > 0 ? 'active' : 'not-started',
+            thumbnail: course.title?.charAt(0).toUpperCase() || 'C'
+          })) || [];
+          setCourses(transformedCourses);
+        } else {
+          console.error('Failed to fetch courses:', response.message);
+          setCourses([]);
+        }
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+        setCourses([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  const filtered = courses.filter(c => 
     filter === "all" || 
     (filter === "in-progress" && c.progress > 0 && c.progress < 100) ||
     (filter === "not-started" && c.progress === 0)
   );
+
+  if (loading) {
+    return (
+      <div className={`transition-all duration-300 space-y-6 ${collapsed ? 'mx-4' : 'max-w-6xl mx-auto'}`}>
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-black text-gray-900" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>My Courses</h1>
+            <p className="text-sm text-gray-500 mt-1">Loading your courses...</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {[1,2,3].map(i => (
+            <div key={i} className="bg-white rounded-2xl border border-gray-200 shadow-sm animate-pulse">
+              <div className="h-32 bg-gray-200"></div>
+              <div className="p-5 space-y-3">
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                <div className="h-2 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`transition-all duration-300 space-y-6 ${collapsed ? 'mx-4' : 'max-w-6xl mx-auto'}`}>
@@ -108,7 +176,6 @@ export default function LearnerMyCoursesPage() {
       {filtered.length === 0 && (
         <div className="text-center py-16">
           <div className="text-gray-400 text-lg font-semibold">No courses found</div>
-          <p className="text-gray-500 text-sm mt-2">Try adjusting your filters</p>
         </div>
       )}
     </div>

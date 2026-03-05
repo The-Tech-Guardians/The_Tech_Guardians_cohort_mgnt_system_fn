@@ -34,13 +34,12 @@ export default function TwoFAPage() {
     const userEmail = userData?.email;
     
     if (userEmail) {
-      // For now, use the email to get basic info
-      // In a real app, you'd fetch full user data from backend
+      // Use actual user data from token manager
       setUser({
-        initials: userEmail === 'oriviernduwayesu@gmail.com' ? 'NO' : 'AB',
-        name: userEmail === 'oriviernduwayesu@gmail.com' ? 'Nduwayesu Olivier' : 'Admin User',
+        initials: userData?.name ? userData.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U',
+        name: userData?.name || 'User',
         email: userEmail,
-        role: userEmail === 'oriviernduwayesu@gmail.com' ? 'ADMIN' : 'Admin'
+        role: userData?.role || 'LEARNER' // Use actual role from backend
       });
     } else {
       router.push('/login');

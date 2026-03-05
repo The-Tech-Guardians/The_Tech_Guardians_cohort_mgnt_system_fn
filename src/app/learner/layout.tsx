@@ -68,18 +68,14 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [user, setUser] = useState({ name: 'Freddy Bijanja', initials: 'FB' });
+  const [user, setUser] = useState({ name: 'Loading...', initials: 'L' });
 
   useEffect(() => {
     const userData = tokenManager.getUser();
-    const userEmail = userData?.email;
-    
-    if (userEmail === 'oriviernduwayesu@gmail.com') {
-      setUser({ name: 'Nduwayesu Olivier', initials: 'NO' });
-    } else if (userEmail === 'freddybijanja31@gmail.com') {
-      setUser({ name: 'Freddy Bijanja', initials: 'FB' });
-    } else {
-      setUser({ name: 'Learner User', initials: 'LU' });
+    if (userData) {
+      const name = userData.name || userData.email?.split('@')[0] || 'User';
+      const initials = name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+      setUser({ name, initials });
     }
   }, []);
 
@@ -161,7 +157,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
             <>
               <div className="flex-1 text-left min-w-0">
                 <div className="text-gray-900 text-xs font-semibold truncate leading-tight">{user.name}</div>
-                <div className="text-gray-400 text-[10px] mt-0.5 font-medium">Active · Cohort 2025-A</div>
+                <div className="text-gray-400 text-[10px] mt-0.5 font-medium">Active · Online</div>
               </div>
 
               <ChevronRight
@@ -220,7 +216,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
                 {titles[view]}
               </h1>
               <span className="hidden sm:inline-flex items-center text-[10px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                2025-A
+                Online
               </span>
             </div>
             <p className="text-xs text-gray-400 hidden sm:block mt-0.5 font-medium">
