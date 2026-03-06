@@ -1,3 +1,5 @@
+
+
 "use client";
 
 import Button from "@/components/ui/Button";
@@ -23,11 +25,10 @@ export default function MethodSelector({
         Choose how you&apos;d like to receive your verification code.
       </p>
 
+      
       <div className="space-y-2.5 mb-6" role="radiogroup" aria-label="2FA method">
         {METHODS.map((m) => {
           const isSelected = selected === m.id;
-          const IconComponent = m.icon;
-          
           return (
             <button
               key={m.id}
@@ -41,19 +42,18 @@ export default function MethodSelector({
                   : "border-gray-200 hover:border-indigo-200 hover:bg-gray-50"
               }`}
             >
+            
               <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-lg flex-shrink-0">
-                {typeof IconComponent === 'string' ? (
-                  IconComponent
-                ) : (
-                  <IconComponent className="w-5 h-5 text-indigo-600" />
-                )}
+                {m.icon}
               </div>
 
+          
               <div className="flex-1">
                 <p className="text-sm font-bold text-[#111827]">{m.label}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{m.sub}</p>
               </div>
 
+            
               <div
                 className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                   isSelected ? "bg-[#4F46E5]" : "bg-gray-200"

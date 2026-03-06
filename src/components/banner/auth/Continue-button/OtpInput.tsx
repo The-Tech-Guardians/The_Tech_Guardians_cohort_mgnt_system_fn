@@ -1,3 +1,6 @@
+// components/auth/two-fa/OtpInput.tsx
+// Renders six individual digit inputs split into two groups of three (XXX–XXX).
+// Auto-advances focus, handles Backspace and Arrow keys.
 
 "use client";
 
@@ -5,7 +8,7 @@ import { useRef } from "react";
 import { OtpStatus } from "../two-fa/types";
 
 interface OtpInputProps {
-  value: string[];               
+  value: string[];               // array of 6 single-char strings
   status: OtpStatus;
   onChange: (value: string[], autoSubmit: boolean) => void;
 }
@@ -45,6 +48,7 @@ export default function OtpInput({ value, status, onChange }: OtpInputProps) {
 
   return (
     <div className="flex gap-2 justify-center" role="group" aria-label="One-time passcode">
+      {/* First triplet */}
       {[0, 1, 2].map((i) => (
         <input
           key={i}
@@ -60,9 +64,13 @@ export default function OtpInput({ value, status, onChange }: OtpInputProps) {
           onKeyDown={(e) => handleKeyDown(e, i)}
         />
       ))}
+
+      {/* Separator */}
       <div className="flex items-center text-gray-300 font-bold text-xl px-0.5" aria-hidden="true">
         –
       </div>
+
+      {/* Second triplet */}
       {[3, 4, 5].map((i) => (
         <input
           key={i}

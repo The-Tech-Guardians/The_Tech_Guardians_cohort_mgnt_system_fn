@@ -1,38 +1,37 @@
-export type OtpStatus = "idle" | "loading" | "success" | "error";
-import { Lock, Mail, MessageCircle } from "lucide-react";
+// components/auth/two-fa/types.ts
 
-export type TwoFAMethod = "email" | "sms" | "app";
+export type TwoFAMethod = "app" | "sms" | "email";
+export type OtpStatus   = "idle" | "loading" | "error" | "success";
+export type TwoFAStep   = "method" | "otp";
 
-export type TwoFAStep = "method" | "otp";
-
-export interface MethodInfo {
+export interface MethodOption {
   id: TwoFAMethod;
+  icon: string;
   label: string;
-  icon: string | React.ComponentType<{ className?: string }>;
   sub: string;
   otpSubtitle: string;
 }
 
-export const METHODS: MethodInfo[] = [
+export const METHODS: MethodOption[] = [
   {
-    id: "email",
-    label: "Email",
-    icon: Mail,
-    sub: "Receive code via email",
-    otpSubtitle: "We sent a 6-digit code to your email address.",
+    id: "app",
+    icon: "📱",
+    label: "Authenticator App",
+    sub: "Google Authenticator, Authy, etc.",
+    otpSubtitle: "Open your authenticator app and enter the 6-digit code.",
   },
   {
     id: "sms",
-    label: "SMS",
-    icon:  MessageCircle,
-    sub: "Receive code via text message",
-    otpSubtitle: "We sent a 6-digit code to your phone number.",
+    icon: "💬",
+    label: "SMS Code",
+    sub: "Send to ·· ·· ·· 47",
+    otpSubtitle: "We sent a 6-digit code to your phone ending in ··47.",
   },
   {
-    id: "app",
-    label: "Authenticator App",
-    icon: Lock,
-    sub: "Use your authenticator app",
-    otpSubtitle: "Enter the 6-digit code from your authenticator app.",
+    id: "email",
+    icon: "📧",
+    label: "Email Code",
+    sub: "Send to a.k***@cohortlms.io",
+    otpSubtitle: "We sent a 6-digit code to your email address.",
   },
 ];

@@ -2,6 +2,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+<<<<<<< HEAD
 import { useRouter } from "next/navigation";
 import Logo from "@/components/ui/navbar/Logo";
 import { PasswordStrength } from "@/components/banner/auth/verify-resend-success/forgot-password";
@@ -9,6 +10,59 @@ import { authAPI } from "@/lib/auth";
 
 type Step = 1 | 2 | 3;
 
+=======
+
+const LOGO = (
+  <svg viewBox="0 0 40 40" className="w-7 h-7" fill="none">
+    <circle cx="14" cy="10" r="5" fill="#4F46E5" />
+    <circle cx="26" cy="10" r="5" fill="#2563EB" />
+    <circle cx="20" cy="6" r="5" fill="#06B6D4" />
+    <path d="M4 28 Q20 18 36 28" stroke="#4F46E5" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+    <path d="M6 33 Q20 23 34 33" stroke="#2563EB" strokeWidth="2" fill="none" strokeLinecap="round" />
+    <path d="M9 38 Q20 30 31 38" stroke="#06B6D4" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+  </svg>
+);
+
+type Step = 1 | 2 | 3;
+
+function PasswordStrength({ password }: { password: string }) {
+  if (!password) return null;
+  const checks = {
+    len: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    num: /[0-9]/.test(password),
+    special: /[^A-Za-z0-9]/.test(password),
+  };
+  const score = Object.values(checks).filter(Boolean).length;
+  const colors = ["", "#EF4444", "#F59E0B", "#3B82F6", "#10B981"];
+  const labels = ["", "Weak", "Fair", "Good", "Strong"];
+
+  return (
+    <div className="mt-2 space-y-2">
+      <div className="flex gap-1">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="flex-1 h-1 rounded-full transition-all duration-300" style={{ background: i <= score ? colors[score] : "#E5E7EB" }} />
+        ))}
+      </div>
+      <p className="text-xs font-medium" style={{ color: colors[score] }}>{labels[score]} password</p>
+      <div className="space-y-1">
+        {[
+          { key: "len", label: "At least 8 characters", ok: checks.len },
+          { key: "upper", label: "One uppercase letter", ok: checks.upper },
+          { key: "num", label: "One number", ok: checks.num },
+          { key: "special", label: "One special character", ok: checks.special },
+        ].map((r) => (
+          <div key={r.key} className="flex items-center gap-1.5 text-xs transition-colors" style={{ color: r.ok ? "#10B981" : "#9CA3AF" }}>
+            <span>{r.ok ? "✓" : "○"}</span>
+            <span>{r.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
@@ -108,6 +162,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen flex bg-white">
+<<<<<<< HEAD
 
       {/* ═══════════════════════════════════════
           LEFT PANEL
@@ -122,6 +177,17 @@ export default function ForgotPasswordPage() {
 
         <div className="relative z-10">
           <Logo />
+=======
+     
+      <div className="hidden lg:flex w-[46%] bg-[#0F0C29] relative overflow-hidden flex-col justify-between p-12">
+        <div className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] rounded-full bg-[#4F46E5] opacity-20 blur-[80px] animate-pulse" />
+        <div className="absolute bottom-[5%] left-[-8%] w-[50%] h-[50%] rounded-full bg-[#06B6D4] opacity-15 blur-[80px] animate-pulse" style={{ animationDelay: "2s" }} />
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(rgba(79,70,229,1) 1px,transparent 1px),linear-gradient(90deg,rgba(79,70,229,1) 1px,transparent 1px)", backgroundSize: "60px 60px" }} />
+
+        <div className="flex items-center gap-3 relative z-10">
+          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">{LOGO}</div>
+          <span className="text-white font-extrabold text-xl">CohortLMS</span>
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
         </div>
 
         <div className="relative z-10 space-y-8">
@@ -201,11 +267,16 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
 
+<<<<<<< HEAD
         {/* Bottom notice */}
         <div className="relative z-10 bg-white/10 border border-white/20 rounded-2xl p-4">
           <p className="text-white/60 text-xs leading-relaxed">
             Reset links expire after <strong className="text-white/80">15 minutes</strong>. For Admins & Instructors, 2FA will still be required after reset.
           </p>
+=======
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 relative z-10">
+          <p className="text-white/35 text-xs leading-relaxed">🔒 Reset links expire after <strong className="text-white/55">15 minutes</strong>. For Admins & Instructors, 2FA will still be required after reset.</p>
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
         </div>
       </div>
 
@@ -227,6 +298,11 @@ export default function ForgotPasswordPage() {
                 <div className="h-2 w-2 rounded-full bg-gray-200" />
                 <div className="h-2 w-2 rounded-full bg-gray-200" />
               </div>
+<<<<<<< HEAD
+=======
+
+              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-2xl mb-4">🔑</div>
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
               <h1 className="text-2xl font-extrabold text-[#111827] mb-2">Forgot your password?</h1>
               <p className="text-sm text-gray-500 leading-relaxed mb-6">Enter your registered email address to receive an OTP code.</p>
               
@@ -362,6 +438,10 @@ export default function ForgotPasswordPage() {
                 </div>
               ) : (
                 <>
+<<<<<<< HEAD
+=======
+                  <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-2xl mb-4">🔐</div>
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
                   <h1 className="text-2xl font-extrabold text-[#111827] mb-2">Set new password</h1>
                   <p className="text-sm text-gray-500 mb-6">Choose a strong password you haven't used before.</p>
                   
