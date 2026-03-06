@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export interface LoginData {
   email: string;
@@ -26,6 +26,22 @@ export interface AuthResponse {
     };
   };
 }
+
+// Safe localStorage helpers — no-ops during SSR
+const storage = {
+  get(key: string): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(key);
+  },
+  set(key: string, value: string): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(key, value);
+  },
+  remove(key: string): void {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(key);
+  },
+};
 
 export const authAPI = {
   async login(data: LoginData): Promise<AuthResponse> {
@@ -60,11 +76,11 @@ export const authAPI = {
   async verify2FA(email: string, code: string): Promise<AuthResponse> {
     try {
       const userId = tokenManager.getUserIdFromToken();
-      
+
       if (!userId) {
         return { success: false, message: 'User ID not found in token. Please login again.' };
       }
-      
+
       const response = await fetch(`${API_BASE_URL}/auth/Verify2fa`, {
         method: 'POST',
         headers: {
@@ -76,7 +92,7 @@ export const authAPI = {
       if (!response.ok) {
         return { success: false, message: `Server error: ${response.status}` };
       }
-      
+
       const result = await response.json();
       return { success: true, ...result };
     } catch (error) {
@@ -127,8 +143,8 @@ export const authAPI = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
+        'Authorization': `Bearer ${token}`,
+      },
     });
     return response.json();
   },
@@ -138,7 +154,7 @@ export const authAPI = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-      }
+      },
     });
     return response.json();
   },
@@ -149,8 +165,8 @@ export const authAPI = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
+        'Authorization': `Bearer ${token}`,
+      },
     });
     return response.json();
   },
@@ -161,22 +177,41 @@ export const authAPI = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
+        'Authorization': `Bearer ${token}`,
+      },
     });
     return response.json();
   },
 
   async getAvailableCohorts(): Promise<any> {
     const token = tokenManager.getToken();
-    const response = await fetch(`${API_BASE_URL}/learner/available-cohorts`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+    const url = `${API_BASE_URL}/learner/available-cohorts`;
+
+    console.debug('[getAvailableCohorts] Fetching:', url);
+    console.debug('[getAvailableCohorts] Token present:', !!token);
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        console.error('[getAvailableCohorts] HTTP error:', response.status, response.statusText);
+        return { success: false, message: `Server error: ${response.status} ${response.statusText}` };
       }
-    });
-    return response.json();
+
+      return response.json();
+    } catch (error: any) {
+      // "Failed to fetch" lands here — log the actual cause
+      console.error('[getAvailableCohorts] Network error:', error?.message ?? error);
+      console.error('[getAvailableCohorts] Attempted URL:', url);
+      console.error('[getAvailableCohorts] Is the API server running? Check NEXT_PUBLIC_API_URL in your .env');
+      return { success: false, message: 'Network error: could not reach the API server.' };
+    }
   },
 
   async joinCohort(cohort_id: string): Promise<any> {
@@ -185,9 +220,9 @@ export const authAPI = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ cohort_id })
+      body: JSON.stringify({ cohort_id }),
     });
     return response.json();
   },
@@ -196,36 +231,35 @@ export const authAPI = {
 // Token management
 export const tokenManager = {
   setToken(token: string) {
-    localStorage.setItem('auth_token', token);
+    storage.set('auth_token', token);
   },
 
   getToken(): string | null {
-    return localStorage.getItem('auth_token');
+    return storage.get('auth_token');
   },
 
   removeToken() {
-    localStorage.removeItem('auth_token');
+    storage.remove('auth_token');
   },
 
   setUser(user: any) {
-    localStorage.setItem('user_data', JSON.stringify(user));
+    storage.set('user_data', JSON.stringify(user));
   },
 
   getUser(): any {
-    const userData = localStorage.getItem('user_data');
+    const userData = storage.get('user_data');
     return userData ? JSON.parse(userData) : null;
   },
 
   removeUser() {
-    localStorage.removeItem('user_data');
+    storage.remove('user_data');
   },
 
   getUserIdFromToken(): string | null {
     const token = this.getToken();
     if (!token) return null;
-    
+
     try {
-      // Decode JWT token (without verification for client-side)
       const payload = JSON.parse(atob(token.split('.')[1]));
       return payload.uuid || payload.user_id || payload.id;
     } catch (error) {
@@ -237,9 +271,8 @@ export const tokenManager = {
   getRoleFromToken(): string | null {
     const token = this.getToken();
     if (!token) return null;
-    
+
     try {
-      // Decode JWT token (without verification for client-side)
       const payload = JSON.parse(atob(token.split('.')[1]));
       return payload.role;
     } catch (error) {

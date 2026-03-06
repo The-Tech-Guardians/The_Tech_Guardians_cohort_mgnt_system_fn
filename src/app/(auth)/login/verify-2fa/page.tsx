@@ -14,19 +14,12 @@ import UserPill from "@/components/banner/auth/audit-note/UserPill";
 import MethodSelector from "@/components/banner/auth/role-badge/MethodSelector";
 import OtpVerifyForm from "@/components/banner/auth/Continue-button/OtpVerifyForm";
 import { OtpStatus, TwoFAMethod, TwoFAStep } from "@/components/banner/auth/two-fa/types";
-<<<<<<< HEAD
 import { authAPI, tokenManager } from "@/lib/auth";
-=======
 
 
 
-const DEMO_USER = {
-  initials: "AK",
-  name:     "Amara Kone",
-  email:    "a.kone@cohortlms.io",
-  role:     "Instructor" as const,
-};
->>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
+
+
 
 const OTP_DURATION = 30;
 

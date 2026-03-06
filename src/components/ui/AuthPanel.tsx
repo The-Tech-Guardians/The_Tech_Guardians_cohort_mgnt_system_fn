@@ -1,12 +1,8 @@
-<<<<<<< HEAD
-import Logo from "./navbar/Logo";
-=======
-// components/ui/AuthPanel.tsx
-// Dark left panel shared by Login, Signup, 2FA and ForgotPassword pages.
-// Pass children to fill the centre slot; footer is always "© 2025 CohortLMS".
 
-import Logo from "./Logo";
->>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
+import Logo from "./navbar/Logo";
+
+
+
 
 interface AuthPanelProps {
   children: React.ReactNode;
