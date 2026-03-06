@@ -29,7 +29,7 @@ export default function InstructorLearnersPage() {
           {["all","active","at-risk","inactive","2025-A","2025-B"].map(f=>(
             <button key={f} onClick={()=>setFilter(f)}
               className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors capitalize
-                ${filter===f?"bg-indigo-600 text-white":"bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{f}</button>
+                ${filter===f?"bg-blue-600 text-white":"bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{f}</button>
           ))}
         </div>
       </div>
