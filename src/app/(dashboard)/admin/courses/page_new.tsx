@@ -1,16 +1,12 @@
-// app/admin/courses/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
-import { Plus, BookOpen, Video, Search, FileText, Trash2, Loader2, Edit } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Loader2, Eye, EyeOff } from "lucide-react";
 import { 
   courseService, 
-  type Course, 
-  type BackendCourse, 
-  type Module, 
-  type Lesson,
+  type BackendCourse,
   formatCourseType
 } from "@/services/courseService";
 
@@ -21,25 +17,13 @@ const getCurrentUser = () => {
   return userData ? JSON.parse(userData) : null;
 };
 
-// Initial form states
+// Initial form state
 const initialCourseForm = {
   title: "",
   courseType: "",
   description: "",
 };
 
-const initialModuleForm = {
-  title: "",
-  description: "",
-};
-
-const initialLessonForm = {
-  title: "",
-  type: "video" as "video" | "pdf" | "text",
-  duration: "",
-};
-
-// Course type options from your backend enum
 const COURSE_TYPE_OPTIONS = [
   { value: "SOCIAL_MEDIA_BRANDING", label: "Social Media Branding" },
   { value: "COMPUTER_PROGRAMMING", label: "Computer Programming" },
@@ -48,36 +32,24 @@ const COURSE_TYPE_OPTIONS = [
   { value: "SRHR", label: "SRHR" },
 ];
 
-export default function CoursesPage() {
-  // Courses state
-  const [courses, setCourses] = useState<Course[]>([]);
+export default function AdminCoursesPage() {
+  const [courses, setCourses] = useState<BackendCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showModuleModal, setShowModuleModal] = useState(false);
-  const [showAddModuleModal, setShowAddModuleModal] = useState(false);
-  const [showAddLessonModal, setShowAddLessonModal] = useState(false);
-  const [showEditModuleModal, setShowEditModuleModal] = useState(false);
-  const [showEditLessonModal, setShowEditLessonModal] = useState(false);
-  
+
   // Selected items
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
-  
+  const [selectedCourse, setSelectedCourse] = useState<BackendCourse | null>(null);
+  const [courseToDelete, setCourseToDelete] = useState<BackendCourse | null>(null);
+
   // Search and UI states
   const [searchTerm, setSearchTerm] = useState("");
   const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
-  
-  // Form states
   const [courseForm, setCourseForm] = useState(initialCourseForm);
-  const [moduleForm, setModuleForm] = useState(initialModuleForm);
-  const [lessonForm, setLessonForm] = useState(initialLessonForm);
 
   // Pagination
   const [pagination, setPagination] = useState({
@@ -87,24 +59,14 @@ export default function CoursesPage() {
     pages: 0
   });
 
-  // Fetch courses with useCallback to prevent unnecessary re-renders
+  // Fetch courses
   const fetchCourses = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await courseService.getAllCourses(pagination.page, pagination.limit);
       
-      // Transform backend data to match frontend structure
-      const transformedCourses: Course[] = (response.courses || []).map((course: BackendCourse) => ({
-        ...course,
-        name: course.title,
-        type: formatCourseType(course.courseType),
-        modules: [], // This would come from a separate modules endpoint
-        assessments: 0, // This would come from a separate assessments endpoint
-        status: course.isPublished ? "published" : "draft",
-      }));
-      
-      setCourses(transformedCourses);
+      setCourses(response.courses || []);
       if (response.pagination) {
         setPagination(response.pagination);
       }
@@ -116,7 +78,6 @@ export default function CoursesPage() {
     }
   }, [pagination.page, pagination.limit]);
 
-  // Load courses on mount and when page changes
   useEffect(() => {
     fetchCourses();
   }, [fetchCourses]);
@@ -143,7 +104,7 @@ export default function CoursesPage() {
         description: courseForm.description,
         instructorId: user.uuid || user.id || "",
         cohortId: user.cohortId || "",
-        courseType: courseForm.courseType, // Already in the correct format (e.g., "SOCIAL_MEDIA_BRANDING")
+        courseType: courseForm.courseType,
       });
 
       if (response.course) {
@@ -168,7 +129,7 @@ export default function CoursesPage() {
       const response = await courseService.updateCourse(selectedCourse.id, {
         title: courseForm.title,
         description: courseForm.description,
-        courseType: courseForm.courseType, // Already in the correct format
+        courseType: courseForm.courseType,
       });
 
       if (response.course) {
@@ -206,21 +167,9 @@ export default function CoursesPage() {
   const handlePublishCourse = async (courseId: string) => {
     try {
       setLoading(true);
-      const response = await courseService.togglePublish(courseId);
-      
-      setCourses(prevCourses => 
-        prevCourses.map(c =>
-          c.id === courseId 
-            ? { 
-                ...c, 
-                isPublished: response.course?.isPublished ?? !c.isPublished,
-                status: response.course?.isPublished ? "published" : "draft" 
-              } 
-            : c
-        )
-      );
-      
-      showToast(`Course ${response.course?.isPublished ? 'published' : 'unpublished'} successfully!`);
+      await courseService.togglePublish(courseId);
+      showToast("Course status updated successfully!");
+      fetchCourses();
     } catch (err: any) {
       showToast(err.message || 'Failed to update course status', 'error');
     } finally {
@@ -228,49 +177,26 @@ export default function CoursesPage() {
     }
   };
 
-  const openEditModal = (course: Course) => {
+  const openEditModal = (course: BackendCourse) => {
     setSelectedCourse(course);
-    // Find the API value from the formatted type
-    const courseTypeOption = COURSE_TYPE_OPTIONS.find(
-      opt => formatCourseType(opt.value) === course.type
-    );
     setCourseForm({
-      title: course.name || "",
-      courseType: courseTypeOption?.value || course.type || "",
-      description: course.description || "",
+      title: course.title,
+      courseType: course.courseType,
+      description: course.description,
     });
     setShowEditModal(true);
   };
 
-  const openDeleteModal = (course: Course) => {
+  const openDeleteModal = (course: BackendCourse) => {
     setCourseToDelete(course);
     setShowDeleteModal(true);
   };
 
-  const openManageContent = (course: Course) => {
-    setSelectedCourse(course);
-    setShowModuleModal(true);
-    // Here you would fetch modules for this course
-    // fetchModules(course.id);
-  };
-
   const filteredCourses = courses.filter(course =>
-    course.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    course.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    course.courseType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     course.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const getLessonIcon = (type: string) => {
-    switch (type) {
-      case "video": return <Video className="w-4 h-4 text-gray-400" />;
-      case "pdf": return <FileText className="w-4 h-4 text-gray-400" />;
-      default: return <BookOpen className="w-4 h-4 text-gray-400" />;
-    }
-  };
-
-  const handlePageChange = (newPage: number) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
-  };
 
   if (loading && courses.length === 0) {
     return (
@@ -299,7 +225,10 @@ export default function CoursesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => {
+            setCourseForm(initialCourseForm);
+            setShowCreateModal(true);
+          }}
           className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm"
           disabled={loading}
         >
@@ -319,138 +248,133 @@ export default function CoursesPage() {
         </div>
       </div>
 
-      {/* Courses Grid */}
-      {courses.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-200">
-          <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No courses yet</h3>
-          <p className="text-gray-500 mb-4">Get started by creating your first course</p>
+      {/* Courses Table */}
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Title</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Course Type</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Description</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Instructor</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Created</th>
+                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredCourses.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center">
+                    <p className="text-gray-500">No courses found</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredCourses.map((course) => (
+                  <tr key={course.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-medium text-gray-900">{course.title}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600">{formatCourseType(course.courseType)}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600 max-w-xs truncate" title={course.description}>
+                        {course.description || "N/A"}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600 font-mono text-xs">{course.instructorId?.substring(0, 8)}...</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full border inline-block ${
+                        course.isPublished
+                          ? "bg-green-50 text-green-600 border-green-200"
+                          : "bg-amber-50 text-amber-600 border-amber-200"
+                      }`}>
+                        {course.isPublished ? "Published" : "Draft"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600">
+                        {course.createdAt ? new Date(course.createdAt).toLocaleDateString() : "N/A"}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => openEditModal(course)}
+                          className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                          title="Edit"
+                          disabled={loading}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handlePublishCourse(course.id)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            course.isPublished
+                              ? "bg-amber-50 text-amber-600 hover:bg-amber-100"
+                              : "bg-green-50 text-green-600 hover:bg-green-100"
+                          }`}
+                          title={course.isPublished ? "Unpublish" : "Publish"}
+                          disabled={loading}
+                        >
+                          {course.isPublished ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(course)}
+                          className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                          title="Delete"
+                          disabled={loading}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Pagination */}
+      {pagination.pages > 1 && (
+        <div className="flex justify-center gap-2">
           <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700"
+            onClick={() => setPagination(prev => ({ ...prev, page: Math.max(prev.page - 1, 1) }))}
+            disabled={pagination.page === 1 || loading}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm disabled:opacity-50 hover:bg-gray-50 transition-colors"
           >
-            Create Course
+            Previous
+          </button>
+          <span className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-sm">
+            Page {pagination.page} of {pagination.pages}
+          </span>
+          <button
+            onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.page + 1, prev.pages) }))}
+            disabled={pagination.page === pagination.pages || loading}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm disabled:opacity-50 hover:bg-gray-50 transition-colors"
+          >
+            Next
           </button>
         </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {filteredCourses.map((course) => (
-              <div key={course.id} className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition-all">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                      <BookOpen className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900">{course.name}</h3>
-                      <p className="text-xs text-gray-500">{course.type}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => openEditModal(course)}
-                      className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors"
-                      title="Edit course"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => openDeleteModal(course)}
-                      className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
-                      title="Delete course"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${
-                      course.status === "published"
-                        ? "bg-green-50 text-green-600 border-green-200"
-                        : "bg-amber-50 text-amber-600 border-amber-200"
-                    }`}>
-                      {course.status}
-                    </span>
-                  </div>
-                </div>
-                
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">{course.description}</p>
-                
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="bg-gray-50 rounded-xl p-3 text-center">
-                    <p className="text-xs text-gray-500 mb-1">Modules</p>
-                    <p className="text-lg font-bold text-gray-900">{course.modules?.length || 0}</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-xl p-3 text-center">
-                    <p className="text-xs text-gray-500 mb-1">Lessons</p>
-                    <p className="text-lg font-bold text-gray-900">
-                      {course.modules?.reduce((sum, m) => sum + (m.lessons?.length || 0), 0) || 0}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-xl p-3 text-center">
-                    <p className="text-xs text-gray-500 mb-1">Assessments</p>
-                    <p className="text-lg font-bold text-gray-900">{course.assessments || 0}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => openManageContent(course)}
-                    className="flex-1 px-4 py-2 text-sm font-medium rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all"
-                    disabled={loading}
-                  >
-                    Manage Content
-                  </button>
-                  <button 
-                    onClick={() => handlePublishCourse(course.id)}
-                    className={`px-4 py-2 text-sm font-medium rounded-xl transition-all ${
-                      course.status === "draft"
-                        ? "bg-green-50 text-green-600 hover:bg-green-100"
-                        : "bg-amber-50 text-amber-600 hover:bg-amber-100"
-                    }`}
-                    disabled={loading}
-                  >
-                    {course.status === "draft" ? "Publish" : "Unpublish"}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          {pagination.pages > 1 && (
-            <div className="flex justify-center gap-2 mt-6">
-              <button
-                onClick={() => handlePageChange(pagination.page - 1)}
-                disabled={pagination.page === 1 || loading}
-                className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm disabled:opacity-50 hover:bg-gray-50 transition-colors"
-              >
-                Previous
-              </button>
-              <span className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-sm">
-                Page {pagination.page} of {pagination.pages}
-              </span>
-              <button
-                onClick={() => handlePageChange(pagination.page + 1)}
-                disabled={pagination.page === pagination.pages || loading}
-                className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm disabled:opacity-50 hover:bg-gray-50 transition-colors"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </>
       )}
 
       {/* Create Course Modal */}
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Create New Course" size="md">
         <form onSubmit={handleCreateCourse} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Course Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Course Title</label>
             <input
               type="text"
               required
               value={courseForm.title}
               onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
-              placeholder="e.g., Web Development Fundamentals"
+              placeholder="e.g., Introduction to Programming"
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               disabled={loading}
             />
@@ -507,7 +431,7 @@ export default function CoursesPage() {
       <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Course" size="md">
         <form onSubmit={handleUpdateCourse} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Course Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Course Title</label>
             <input
               type="text"
               required
@@ -568,7 +492,7 @@ export default function CoursesPage() {
       <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Course" size="sm">
         <div className="space-y-4">
           <p className="text-gray-600">
-            Are you sure you want to delete <span className="font-semibold">{courseToDelete?.name}</span>? 
+            Are you sure you want to delete <span className="font-semibold">{courseToDelete?.title}</span>? 
             This action cannot be undone.
           </p>
           <div className="flex gap-3 pt-4">
@@ -587,30 +511,6 @@ export default function CoursesPage() {
             >
               Cancel
             </button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Manage Content Modal */}
-      <Modal isOpen={showModuleModal} onClose={() => setShowModuleModal(false)} title={`Manage Content: ${selectedCourse?.name}`} size="xl">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              Course ID: {selectedCourse?.id} | Status: {selectedCourse?.status}
-            </div>
-            <button
-              onClick={() => setShowAddModuleModal(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-all text-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Add Module
-            </button>
-          </div>
-          
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-            <p className="text-sm text-yellow-800">
-              <strong>Note:</strong> Module and lesson management will be available once you create the backend endpoints for modules and lessons.
-            </p>
           </div>
         </div>
       </Modal>

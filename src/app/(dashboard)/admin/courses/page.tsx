@@ -1,260 +1,236 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
-import { Plus, BookOpen, Video, Search, Edit, FileText, Trash2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Loader2, Eye, EyeOff } from "lucide-react";
+import { 
+  courseService, 
+  type BackendCourse,
+  formatCourseType
+} from "@/services/courseService";
 
-interface Lesson {
-  id: number;
-  title: string;
-  type: "video" | "pdf" | "text";
-  duration: string;
-}
+// Get current user from localStorage
+const getCurrentUser = () => {
+  if (typeof window === 'undefined') return null;
+  const userData = localStorage.getItem('user_data');
+  return userData ? JSON.parse(userData) : null;
+};
 
-interface Module {
-  id: number;
-  title: string;
-  description: string;
-  lessons: Lesson[];
-}
+// Initial form state
+const initialCourseForm = {
+  title: "",
+  courseType: "",
+  description: "",
+};
 
-interface Course {
-  id: number;
-  name: string;
-  type: string;
-  modules: Module[];
-  assessments: number;
-  status: "draft" | "published";
-  createdAt: string;
-}
+const COURSE_TYPE_OPTIONS = [
+  { value: "SOCIAL_MEDIA_BRANDING", label: "Social Media Branding" },
+  { value: "COMPUTER_PROGRAMMING", label: "Computer Programming" },
+  { value: "ENTREPRENEURSHIP", label: "Entrepreneurship" },
+  { value: "TEAM_MANAGEMENT", label: "Team Management" },
+  { value: "SRHR", label: "SRHR" },
+];
 
-export default function CoursesPage() {
-  const [courses, setCourses] = useState<Course[]>([
-    {
-      id: 1,
-      name: "Social Media Branding",
-      type: "Social Media Branding",
-      modules: [
-        {
-          id: 1,
-          title: "Introduction to Social Media",
-          description: "Learn the basics",
-          lessons: [
-            { id: 1, title: "What is Social Media?", type: "video", duration: "15 min" },
-            { id: 2, title: "Platform Overview", type: "pdf", duration: "10 min" },
-          ]
-        }
-      ],
-      assessments: 6,
-      status: "published",
-      createdAt: "2024-01-15",
-    },
-    {
-      id: 2,
-      name: "Beginner Level Computer Programming",
-      type: "Computer Programming",
-      modules: [],
-      assessments: 15,
-      status: "published",
-      createdAt: "2024-02-01",
-    },
-    {
-      id: 3,
-      name: "Team Management",
-      type: "Team Management",
-      modules: [],
-      assessments: 6,
-      status: "draft",
-      createdAt: "2024-05-01",
-    },
-  ]);
+export default function AdminCoursesPage() {
+  const [courses, setCourses] = useState<BackendCourse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showModuleModal, setShowModuleModal] = useState(false);
-  const [showAddModuleModal, setShowAddModuleModal] = useState(false);
-  const [showAddLessonModal, setShowAddLessonModal] = useState(false);
-  const [showEditModuleModal, setShowEditModuleModal] = useState(false);
-  const [showEditLessonModal, setShowEditLessonModal] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Selected items
+  const [selectedCourse, setSelectedCourse] = useState<BackendCourse | null>(null);
+  const [courseToDelete, setCourseToDelete] = useState<BackendCourse | null>(null);
+
+  // Search and UI states
   const [searchTerm, setSearchTerm] = useState("");
   const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
+  const [courseForm, setCourseForm] = useState(initialCourseForm);
 
-  const [courseForm, setCourseForm] = useState({ name: "", type: "", description: "" });
-  const [moduleForm, setModuleForm] = useState({ title: "", description: "" });
-  const [lessonForm, setLessonForm] = useState({ title: "", type: "video" as "video" | "pdf" | "text", duration: "" });
+  // Pagination
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 0
+  });
+
+  // Fetch courses
+  const fetchCourses = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await courseService.getAllCourses(pagination.page, pagination.limit);
+      
+      setCourses(response.courses || []);
+      if (response.pagination) {
+        setPagination(response.pagination);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch courses');
+      showToast(err.message || 'Failed to fetch courses', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [pagination.page, pagination.limit]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
 
   const showToast = (message: string, type: "success" | "error" = "success") => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
   };
 
-  const handleCreateCourse = (e: React.FormEvent) => {
+  const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newCourse: Course = {
-      id: courses.length + 1,
-      name: courseForm.name,
-      type: courseForm.type,
-      modules: [],
-      assessments: 0,
-      status: "draft",
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    setCourses([...courses, newCourse]);
-    setCourseForm({ name: "", type: "", description: "" });
-    setShowCreateModal(false);
-    showToast("Course created successfully!");
-  };
+    
+    const user = getCurrentUser();
+    if (!user) {
+      showToast('Please log in to create a course', 'error');
+      return;
+    }
 
-  const handleAddModule = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCourse) return;
-    
-    const newModule: Module = {
-      id: selectedCourse.modules.length + 1,
-      title: moduleForm.title,
-      description: moduleForm.description,
-      lessons: [],
-    };
-    
-    setCourses(courses.map(c => 
-      c.id === selectedCourse.id 
-        ? { ...c, modules: [...c.modules, newModule] }
-        : c
-    ));
-    
-    setSelectedCourse({ ...selectedCourse, modules: [...selectedCourse.modules, newModule] });
-    setModuleForm({ title: "", description: "" });
-    setShowAddModuleModal(false);
-    showToast("Module added successfully!");
-  };
+    try {
+      setLoading(true);
+      
+      const response = await courseService.createCourse({
+        title: courseForm.title,
+        description: courseForm.description,
+        instructorId: user.uuid || user.id || "",
+        cohortId: user.cohortId || "",
+        courseType: courseForm.courseType,
+      });
 
-  const handleAddLesson = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCourse || !selectedModule) return;
-    
-    const newLesson: Lesson = {
-      id: selectedModule.lessons.length + 1,
-      title: lessonForm.title,
-      type: lessonForm.type,
-      duration: lessonForm.duration,
-    };
-    
-    const updatedModules = selectedCourse.modules.map(m =>
-      m.id === selectedModule.id
-        ? { ...m, lessons: [...m.lessons, newLesson] }
-        : m
-    );
-    
-    setCourses(courses.map(c =>
-      c.id === selectedCourse.id
-        ? { ...c, modules: updatedModules }
-        : c
-    ));
-    
-    setSelectedCourse({ ...selectedCourse, modules: updatedModules });
-    setSelectedModule({ ...selectedModule, lessons: [...selectedModule.lessons, newLesson] });
-    setLessonForm({ title: "", type: "video", duration: "" });
-    setShowAddLessonModal(false);
-    showToast("Lesson added successfully!");
-  };
-
-  const handleEditModule = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCourse || !selectedModule) return;
-    
-    const updatedModules = selectedCourse.modules.map(m =>
-      m.id === selectedModule.id
-        ? { ...m, title: moduleForm.title, description: moduleForm.description }
-        : m
-    );
-    
-    setCourses(courses.map(c =>
-      c.id === selectedCourse.id
-        ? { ...c, modules: updatedModules }
-        : c
-    ));
-    
-    setSelectedCourse({ ...selectedCourse, modules: updatedModules });
-    setShowEditModuleModal(false);
-    showToast("Module updated successfully!");
-  };
-
-  const handleEditLesson = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCourse || !selectedModule || !selectedLesson) return;
-    
-    const updatedModules = selectedCourse.modules.map(m =>
-      m.id === selectedModule.id
-        ? {
-            ...m,
-            lessons: m.lessons.map(l =>
-              l.id === selectedLesson.id
-                ? { ...l, title: lessonForm.title, type: lessonForm.type, duration: lessonForm.duration }
-                : l
-            )
-          }
-        : m
-    );
-    
-    setCourses(courses.map(c =>
-      c.id === selectedCourse.id
-        ? { ...c, modules: updatedModules }
-        : c
-    ));
-    
-    setSelectedCourse({ ...selectedCourse, modules: updatedModules });
-    setShowEditLessonModal(false);
-    showToast("Lesson updated successfully!");
-  };
-
-  const handlePublishCourse = (courseId: number) => {
-    setCourses(courses.map(c =>
-      c.id === courseId ? { ...c, status: "published" as const } : c
-    ));
-    showToast("Course published successfully!");
-  };
-
-  const handleDeleteLesson = (moduleId: number, lessonId: number) => {
-    if (!selectedCourse) return;
-    
-    const updatedModules = selectedCourse.modules.map(m =>
-      m.id === moduleId
-        ? { ...m, lessons: m.lessons.filter(l => l.id !== lessonId) }
-        : m
-    );
-    
-    setCourses(courses.map(c =>
-      c.id === selectedCourse.id
-        ? { ...c, modules: updatedModules }
-        : c
-    ));
-    
-    setSelectedCourse({ ...selectedCourse, modules: updatedModules });
-    showToast("Lesson deleted successfully!");
-  };
-
-  const filteredCourses = courses.filter(course =>
-    course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.type.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const getLessonIcon = (type: string) => {
-    switch (type) {
-      case "video": return <Video className="w-4 h-4 text-gray-400" />;
-      case "pdf": return <FileText className="w-4 h-4 text-gray-400" />;
-      default: return <BookOpen className="w-4 h-4 text-gray-400" />;
+      if (response.course) {
+        showToast("Course created successfully!");
+        setCourseForm(initialCourseForm);
+        setShowCreateModal(false);
+        fetchCourses();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to create course', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleUpdateCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCourse) return;
+
+    try {
+      setLoading(true);
+      const response = await courseService.updateCourse(selectedCourse.id, {
+        title: courseForm.title,
+        description: courseForm.description,
+        courseType: courseForm.courseType,
+      });
+
+      if (response.course) {
+        showToast("Course updated successfully!");
+        setCourseForm(initialCourseForm);
+        setShowEditModal(false);
+        setSelectedCourse(null);
+        fetchCourses();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update course', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteCourse = async () => {
+    if (!courseToDelete) return;
+
+    try {
+      setLoading(true);
+      await courseService.deleteCourse(courseToDelete.id);
+      
+      showToast("Course deleted successfully!");
+      setShowDeleteModal(false);
+      setCourseToDelete(null);
+      fetchCourses();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete course', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePublishCourse = async (courseId: string) => {
+    try {
+      setLoading(true);
+      await courseService.togglePublish(courseId);
+      showToast("Course status updated successfully!");
+      fetchCourses();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update course status', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openEditModal = (course: BackendCourse) => {
+    setSelectedCourse(course);
+    setCourseForm({
+      title: course.title,
+      courseType: course.courseType,
+      description: course.description,
+    });
+    setShowEditModal(true);
+  };
+
+  const openDeleteModal = (course: BackendCourse) => {
+    setCourseToDelete(course);
+    setShowDeleteModal(true);
+  };
+
+  const filteredCourses = courses.filter(course =>
+    course.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    course.courseType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    course.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading && courses.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600 mb-4">{error}</p>
+        <button 
+          onClick={fetchCourses}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => {
+            setCourseForm(initialCourseForm);
+            setShowCreateModal(true);
+          }}
           className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm"
+          disabled={loading}
         >
           <Plus className="w-4 h-4" />
           Create Course
@@ -267,99 +243,162 @@ export default function CoursesPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-64"
+            disabled={loading}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {filteredCourses.map((course) => (
-          <div key={course.id} className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition-all">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">{course.name}</h3>
-                  <p className="text-xs text-gray-500">{course.type}</p>
-                </div>
-              </div>
-              <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${
-                course.status === "published"
-                  ? "bg-green-50 text-green-600 border-green-200"
-                  : "bg-amber-50 text-amber-600 border-amber-200"
-              }`}>
-                {course.status}
-              </span>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              <div className="bg-gray-50 rounded-xl p-3 text-center">
-                <p className="text-xs text-gray-500 mb-1">Modules</p>
-                <p className="text-lg font-bold text-gray-900">{course.modules.length}</p>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-3 text-center">
-                <p className="text-xs text-gray-500 mb-1">Lessons</p>
-                <p className="text-lg font-bold text-gray-900">
-                  {course.modules.reduce((sum, m) => sum + m.lessons.length, 0)}
-                </p>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-3 text-center">
-                <p className="text-xs text-gray-500 mb-1">Assessments</p>
-                <p className="text-lg font-bold text-gray-900">{course.assessments}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setSelectedCourse(course);
-                  setShowModuleModal(true);
-                }}
-                className="flex-1 px-4 py-2 text-sm font-medium rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all"
-              >
-                Manage Content
-              </button>
-              {course.status === "draft" && (
-                <button 
-                  onClick={() => handlePublishCourse(course.id)}
-                  className="px-4 py-2 text-sm font-medium rounded-xl bg-green-50 text-green-600 hover:bg-green-100 transition-all"
-                >
-                  Publish
-                </button>
+      {/* Courses Table */}
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Title</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Course Type</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Description</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Instructor</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Created</th>
+                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredCourses.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center">
+                    <p className="text-gray-500">No courses found</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredCourses.map((course) => (
+                  <tr key={course.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-medium text-gray-900">{course.title}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600">{formatCourseType(course.courseType)}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600 max-w-xs truncate" title={course.description}>
+                        {course.description || "N/A"}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600">
+                        {getCurrentUser()?.uuid === course.instructorId 
+                          ? (getCurrentUser()?.name || getCurrentUser()?.email || "You")
+                          : (course.instructorId?.substring(0, 8) + "...")
+                        }
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full border inline-block ${
+                        course.isPublished
+                          ? "bg-green-50 text-green-600 border-green-200"
+                          : "bg-amber-50 text-amber-600 border-amber-200"
+                      }`}>
+                        {course.isPublished ? "Published" : "Draft"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600">
+                        {course.createdAt ? new Date(course.createdAt).toLocaleDateString() : "N/A"}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => openEditModal(course)}
+                          className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                          title="Edit"
+                          disabled={loading}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handlePublishCourse(course.id)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            course.isPublished
+                              ? "bg-amber-50 text-amber-600 hover:bg-amber-100"
+                              : "bg-green-50 text-green-600 hover:bg-green-100"
+                          }`}
+                          title={course.isPublished ? "Unpublish" : "Publish"}
+                          disabled={loading}
+                        >
+                          {course.isPublished ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(course)}
+                          className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                          title="Delete"
+                          disabled={loading}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
-            </div>
-          </div>
-        ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      {/* Pagination */}
+      {pagination.pages > 1 && (
+        <div className="flex justify-center gap-2">
+          <button
+            onClick={() => setPagination(prev => ({ ...prev, page: Math.max(prev.page - 1, 1) }))}
+            disabled={pagination.page === 1 || loading}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm disabled:opacity-50 hover:bg-gray-50 transition-colors"
+          >
+            Previous
+          </button>
+          <span className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-sm">
+            Page {pagination.page} of {pagination.pages}
+          </span>
+          <button
+            onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.page + 1, prev.pages) }))}
+            disabled={pagination.page === pagination.pages || loading}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm disabled:opacity-50 hover:bg-gray-50 transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      )}
+
+      {/* Create Course Modal */}
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Create New Course" size="md">
         <form onSubmit={handleCreateCourse} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Course Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Course Title</label>
             <input
               type="text"
               required
-              value={courseForm.name}
-              onChange={(e) => setCourseForm({ ...courseForm, name: e.target.value })}
-              placeholder="e.g., Web Development Fundamentals"
+              value={courseForm.title}
+              onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
+              placeholder="e.g., Introduction to Programming"
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              disabled={loading}
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Course Type</label>
             <select 
               required
-              value={courseForm.type}
-              onChange={(e) => setCourseForm({ ...courseForm, type: e.target.value })}
+              value={courseForm.courseType}
+              onChange={(e) => setCourseForm({ ...courseForm, courseType: e.target.value })}
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              disabled={loading}
             >
               <option value="">Select type</option>
-              <option value="Social Media Branding">Social Media Branding</option>
-              <option value="Computer Programming">Computer Programming</option>
-              <option value="Entrepreneurship">Entrepreneurship</option>
-              <option value="SRHR">SRHR</option>
-              <option value="Team Management">Team Management</option>
+              {COURSE_TYPE_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -370,249 +409,124 @@ export default function CoursesPage() {
               onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
               placeholder="Course description..."
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              disabled={loading}
             />
           </div>
           <div className="flex gap-3 pt-4">
-            <button type="submit" className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all">
-              Create Course
+            <button 
+              type="submit" 
+              className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
+              disabled={loading}
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Create Course'}
             </button>
-            <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all">
+            <button 
+              type="button" 
+              onClick={() => setShowCreateModal(false)} 
+              className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all disabled:opacity-50"
+              disabled={loading}
+            >
               Cancel
             </button>
           </div>
         </form>
       </Modal>
 
-      <Modal isOpen={showModuleModal} onClose={() => setShowModuleModal(false)} title={`Manage Content: ${selectedCourse?.name}`} size="xl">
-        <div className="space-y-6">
-          <button 
-            onClick={() => setShowAddModuleModal(true)}
-            className="w-full px-4 py-3 bg-indigo-50 border-2 border-dashed border-indigo-300 rounded-xl text-indigo-600 hover:bg-indigo-100 transition-all font-medium"
-          >
-            + Add Module
-          </button>
+      {/* Edit Course Modal */}
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Course" size="md">
+        <form onSubmit={handleUpdateCourse} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Course Title</label>
+            <input
+              type="text"
+              required
+              value={courseForm.title}
+              onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              disabled={loading}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Course Type</label>
+            <select 
+              required
+              value={courseForm.courseType}
+              onChange={(e) => setCourseForm({ ...courseForm, courseType: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              disabled={loading}
+            >
+              <option value="">Select type</option>
+              {COURSE_TYPE_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <textarea
+              rows={4}
+              value={courseForm.description}
+              onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              disabled={loading}
+            />
+          </div>
+          <div className="flex gap-3 pt-4">
+            <button 
+              type="submit" 
+              className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
+              disabled={loading}
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Update Course'}
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setShowEditModal(false)} 
+              className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all disabled:opacity-50"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
 
-          <div className="space-y-4">
-            {selectedCourse?.modules.map((module) => (
-              <div key={module.id} className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-gray-900">{module.title}</h4>
-                  <button 
-                    onClick={() => {
-                      setSelectedModule(module);
-                      setModuleForm({ title: module.title, description: module.description });
-                      setShowEditModuleModal(true);
-                    }}
-                    className="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100"
-                  >
-                    Edit
-                  </button>
-                </div>
-                
-                <div className="space-y-2 ml-4">
-                  {module.lessons.map((lesson) => (
-                    <div key={lesson.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-200">
-                      <div className="flex items-center gap-3">
-                        {getLessonIcon(lesson.type)}
-                        <span className="text-sm text-gray-700">{lesson.title}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500">{lesson.duration}</span>
-                        <button 
-                          onClick={() => {
-                            setSelectedModule(module);
-                            setSelectedLesson(lesson);
-                            setLessonForm({ title: lesson.title, type: lesson.type, duration: lesson.duration });
-                            setShowEditLessonModal(true);
-                          }}
-                          className="text-xs px-2 py-1 text-gray-600 hover:text-gray-900"
-                        >
-                          Edit
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteLesson(module.id, lesson.id)}
-                          className="text-xs px-2 py-1 text-red-600 hover:text-red-900"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  <button 
-                    onClick={() => {
-                      setSelectedModule(module);
-                      setShowAddLessonModal(true);
-                    }}
-                    className="w-full px-3 py-2 bg-white border border-dashed border-gray-300 rounded-xl text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all"
-                  >
-                    + Add Lesson
-                  </button>
-                </div>
-              </div>
-            ))}
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Course" size="sm">
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Are you sure you want to delete <span className="font-semibold">{courseToDelete?.title}</span>? 
+            This action cannot be undone.
+          </p>
+          <div className="flex gap-3 pt-4">
+            <button 
+              onClick={handleDeleteCourse} 
+              className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
+              disabled={loading}
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Delete'}
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setShowDeleteModal(false)} 
+              className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all disabled:opacity-50"
+              disabled={loading}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       </Modal>
 
-      <Modal isOpen={showAddModuleModal} onClose={() => setShowAddModuleModal(false)} title="Add Module" size="md">
-        <form onSubmit={handleAddModule} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Module Title</label>
-            <input
-              type="text"
-              required
-              value={moduleForm.title}
-              onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
-              placeholder="e.g., Introduction to Programming"
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-            <textarea
-              rows={3}
-              value={moduleForm.description}
-              onChange={(e) => setModuleForm({ ...moduleForm, description: e.target.value })}
-              placeholder="Module description..."
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-          <div className="flex gap-3 pt-4">
-            <button type="submit" className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all">
-              Add Module
-            </button>
-            <button type="button" onClick={() => setShowAddModuleModal(false)} className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all">
-              Cancel
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      <Modal isOpen={showAddLessonModal} onClose={() => setShowAddLessonModal(false)} title="Add Lesson" size="md">
-        <form onSubmit={handleAddLesson} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Lesson Title</label>
-            <input
-              type="text"
-              required
-              value={lessonForm.title}
-              onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
-              placeholder="e.g., Getting Started"
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Content Type</label>
-            <select
-              value={lessonForm.type}
-              onChange={(e) => setLessonForm({ ...lessonForm, type: e.target.value as "video" | "pdf" | "text" })}
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="video">Video</option>
-              <option value="pdf">PDF</option>
-              <option value="text">Text/Markdown</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Duration</label>
-            <input
-              type="text"
-              required
-              value={lessonForm.duration}
-              onChange={(e) => setLessonForm({ ...lessonForm, duration: e.target.value })}
-              placeholder="e.g., 15 min"
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-          <div className="flex gap-3 pt-4">
-            <button type="submit" className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all">
-              Add Lesson
-            </button>
-            <button type="button" onClick={() => setShowAddLessonModal(false)} className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all">
-              Cancel
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      <Modal isOpen={showEditModuleModal} onClose={() => setShowEditModuleModal(false)} title="Edit Module" size="md">
-        <form onSubmit={handleEditModule} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Module Title</label>
-            <input
-              type="text"
-              required
-              value={moduleForm.title}
-              onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-            <textarea
-              rows={3}
-              value={moduleForm.description}
-              onChange={(e) => setModuleForm({ ...moduleForm, description: e.target.value })}
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-          <div className="flex gap-3 pt-4">
-            <button type="submit" className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all">
-              Update Module
-            </button>
-            <button type="button" onClick={() => setShowEditModuleModal(false)} className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all">
-              Cancel
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      <Modal isOpen={showEditLessonModal} onClose={() => setShowEditLessonModal(false)} title="Edit Lesson" size="md">
-        <form onSubmit={handleEditLesson} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Lesson Title</label>
-            <input
-              type="text"
-              required
-              value={lessonForm.title}
-              onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Content Type</label>
-            <select
-              value={lessonForm.type}
-              onChange={(e) => setLessonForm({ ...lessonForm, type: e.target.value as "video" | "pdf" | "text" })}
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="video">Video</option>
-              <option value="pdf">PDF</option>
-              <option value="text">Text/Markdown</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Duration</label>
-            <input
-              type="text"
-              required
-              value={lessonForm.duration}
-              onChange={(e) => setLessonForm({ ...lessonForm, duration: e.target.value })}
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-          <div className="flex gap-3 pt-4">
-            <button type="submit" className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all">
-              Update Lesson
-            </button>
-            <button type="button" onClick={() => setShowEditLessonModal(false)} className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all">
-              Cancel
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      <Toast message={toast.message} type={toast.type} isVisible={toast.show} onClose={() => setToast({ ...toast, show: false })} />
+      {/* Toast Notification */}
+      <Toast 
+        message={toast.message} 
+        type={toast.type} 
+        isVisible={toast.show} 
+        onClose={() => setToast({ ...toast, show: false })} 
+      />
     </div>
   );
 }

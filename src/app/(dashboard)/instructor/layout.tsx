@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Icon, I } from "@/components/instructor/ui/Icon";
 import { Badge, Btn } from "@/components/instructor/ui/SharedUI";
@@ -8,6 +8,7 @@ import { MESSAGES_DATA } from "@/lib/data/instructorData";
 import InstructorProfileSidebar from "@/components/profile/instructor-profile/InstructorProfileSidebar";
 import { ChevronRight, Menu } from "lucide-react";
 import Logo from "@/components/ui/navbar/Logo";
+import { tokenManager } from "@/lib/auth";
 
 function NavItem({ icon, label, active, badge, onClick, collapsed }: { 
   icon: string; 
@@ -35,6 +36,32 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+
+  // Role-based routing guard
+  useEffect(() => {
+    const userRole = tokenManager.getRoleFromToken();
+
+    if (userRole) {
+      switch (userRole) {
+        case 'LEARNER':
+          router.replace('/learner');
+          break;
+        case 'ADMIN':
+          router.replace('/admin');
+          break;
+        case 'INSTRUCTOR':
+          // Allow access to instructor section
+          break;
+        default:
+          // Default to learner for unknown roles
+          router.replace('/learner');
+          break;
+      }
+    } else {
+      // No token, redirect to login
+      router.replace('/login');
+    }
+  }, [router]);
 
   const view = pathname.split('/').pop() || 'overview';
   const totalUnread = MESSAGES_DATA.reduce((s,m)=>s+m.unread,0);

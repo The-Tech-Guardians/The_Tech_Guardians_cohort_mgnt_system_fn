@@ -79,6 +79,31 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
     }
   }, []);
 
+  // Role-based routing guard
+  useEffect(() => {
+    const userRole = tokenManager.getRoleFromToken();
+
+    if (userRole) {
+      switch (userRole) {
+        case 'ADMIN':
+          router.replace('/admin');
+          break;
+        case 'INSTRUCTOR':
+          router.replace('/instructor');
+          break;
+        case 'LEARNER':
+          // Allow access to learner section
+          break;
+        default:
+          // Default to learner for unknown roles
+          break;
+      }
+    } else {
+      // No token, redirect to login
+      router.replace('/login');
+    }
+  }, [router]);
+
   const view = pathname.split('/').pop() || 'learner';
 
   const nav = [
