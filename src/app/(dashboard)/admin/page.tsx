@@ -1,23 +1,9 @@
 'use client';
 
-import { Users, GraduationCap, BookOpen, TrendingUp, Activity, Clock, ArrowUp, ArrowDown } from "lucide-react";
-import {LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-
-const enrollmentData = [
-  { month: 'Jan', enrollments: 120 },
-  { month: 'Feb', enrollments: 180 },
-  { month: 'Mar', enrollments: 150 },
-  { month: 'Apr', enrollments: 220 },
-  { month: 'May', enrollments: 280 },
-  { month: 'Jun', enrollments: 320 },
-];
-
-const courseData = [
-  { name: 'Web Dev', value: 450 },
-  { name: 'Python', value: 320 },
-  { name: 'Data Science', value: 280 },
-  { name: 'Design', value: 180 },
-];
+import { useState, useEffect } from 'react';
+import { Users, GraduationCap, BookOpen, TrendingUp, Activity, Clock, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { adminApi, type DashboardStats } from '@/lib/adminApi';
 
 const COLORS = ['#2563EB', '#06B6D4', '#10B981', '#F59E0B'];
 
@@ -53,50 +39,106 @@ function StatCard({ title, value, icon: Icon, trend, color }: any) {
 }
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchDashboardStats = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await adminApi.getDashboardStats();
+      setStats(data);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch dashboard stats');
+      console.error('Dashboard stats error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  // Generate enrollment trend data (mock for now - could be replaced with real data)
+  const enrollmentData = [
+    { month: 'Jan', enrollments: stats?.totalEnrollments ? Math.floor(stats.totalEnrollments * 0.3) : 0 },
+    { month: 'Feb', enrollments: stats?.totalEnrollments ? Math.floor(stats.totalEnrollments * 0.4) : 0 },
+    { month: 'Mar', enrollments: stats?.totalEnrollments ? Math.floor(stats.totalEnrollments * 0.5) : 0 },
+    { month: 'Apr', enrollments: stats?.totalEnrollments ? Math.floor(stats.totalEnrollments * 0.6) : 0 },
+    { month: 'May', enrollments: stats?.totalEnrollments ? Math.floor(stats.totalEnrollments * 0.8) : 0 },
+    { month: 'Jun', enrollments: stats?.totalEnrollments ? stats.totalEnrollments : 0 },
+  ];
+
+  // Generate course distribution from role data
+  const courseData = [
+    { name: 'Learners', value: stats?.activeUsers || 0 },
+    { name: 'Instructors', value: stats?.instructors || 0 },
+    { name: 'Admins', value: stats?.admins || 0 },
+  ].filter(item => item.value > 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12 bg-red-50 rounded-2xl border border-red-200">
+        <p className="text-red-600 mb-4">{error}</p>
+        <button 
+          onClick={fetchDashboardStats}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         <StatCard 
           title="Total Enrollments" 
-          value="1,243" 
+          value={stats?.totalEnrollments.toLocaleString() || '0'}
           icon={Users}
-          trend={{ value: "12% from last month", positive: true }}
           color="blue"
         />
         <StatCard 
           title="Completion Rate" 
-          value="72%" 
+          value={`${stats?.completionRate || 0}%`}
           icon={GraduationCap}
-          trend={{ value: "5% from last month", positive: true }}
           color="green"
         />
         <StatCard 
           title="Active Users" 
-          value="389" 
+          value={stats?.activeUsers.toLocaleString() || '0'}
           icon={Activity}
-          trend={{ value: "8% from last week", positive: true }}
           color="amber"
         />
         <StatCard 
           title="Total Courses" 
-          value="24" 
+          value={stats?.totalCourses.toLocaleString() || '0'}
           icon={BookOpen}
           color="purple"
         />
         <StatCard 
-          title="Avg. Time Spent" 
-          value="4.2h" 
-          icon={Clock}
-          trend={{ value: "0.5h from last week", positive: true }}
-          color="green"
+          title="Total Cohorts" 
+          value={stats?.totalCohorts.toLocaleString() || '0'}
+          icon={TrendingUp}
+          color="blue"
         />
         <StatCard 
-          title="Engagement Rate" 
-          value="85%" 
-          icon={TrendingUp}
-          trend={{ value: "3% from last month", positive: true }}
-          color="blue"
+          title="Instructors" 
+          value={stats?.instructors.toLocaleString() || '0'}
+          icon={Users}
+          color="green"
         />
       </div>
 
@@ -123,28 +165,34 @@ export default function AdminDashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Course Distribution */}
+        {/* User Distribution */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Course Distribution</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={courseData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={90}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {courseData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">User Distribution</h3>
+          {courseData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie
+                  data={courseData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value }) => `${name} ${value}`}
+                  outerRadius={90}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {courseData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-72 flex items-center justify-center text-gray-400">
+              No data available
+            </div>
+          )}
         </div>
       </div>
 

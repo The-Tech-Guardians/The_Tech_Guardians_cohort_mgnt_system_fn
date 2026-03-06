@@ -3,7 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+<<<<<<< HEAD
 import Logo from "@/components/ui/navbar/Logo";
+import { authAPI, tokenManager } from "@/lib/auth";
+=======
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,18 +15,68 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    setError("");
+    setSuccess("");
+
+    try {
+      console.log('Attempting login with:', { email, password: '***' });
+      const response = await authAPI.login({ email, password });
+      console.log('Login response:', JSON.stringify(response, null, 2));
+      console.log('Response success:', response.success);
+      console.log('Response data:', response.data);
+      console.log('Response message:', response.message);
+      
+      if ((response.success && response.data?.token && response.data?.user) || (response.requires_2fa && response.token && response.user_id)) {
+        console.log('Login successful, storing data and showing message');
+        
+        // Handle different response formats
+        if (response.requires_2fa) {
+          // Backend format: { requires_2fa: true, token, user_id, message }
+          tokenManager.setToken(response.token);
+          tokenManager.setUser({ id: response.user_id, email });
+        } else {
+          // Standard format: { success: true, data: { token, user } }
+          tokenManager.setToken(response.data.token);
+          tokenManager.setUser(response.data.user);
+        }
+        
+        // Show success message
+        setSuccess("2FA code sent to your email");
+        
+        // Redirect to 2FA verification after showing message
+        setTimeout(() => {
+          console.log('Redirecting to 2FA page');
+          router.push("/login/verify-2fa");
+        }, 2000);
+      } else {
+        console.log('Login failed:', response);
+        setError(response.message || "Login failed. Please check your credentials.");
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError("Network error. Please try again.");
+    } finally {
       setLoading(false);
-      router.push("/login/verify-2fa");
-    }, 2000);
+    }
   };
 
   return (
     <div className="min-h-screen bg-white flex">
+<<<<<<< HEAD
+=======
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#0F0C29]">
+        <div className="absolute inset-0">
+          <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-[#4F46E5] opacity-20 blur-[100px] animate-pulse" />
+          <div className="absolute bottom-[-10%] right-[-5%] w-[60%] h-[60%] rounded-full bg-[#2563EB] opacity-20 blur-[100px] animate-pulse" style={{ animationDelay: "1s" }} />
+          <div className="absolute top-[40%] left-[30%] w-[40%] h-[40%] rounded-full bg-[#06B6D4] opacity-10 blur-[80px] animate-pulse" style={{ animationDelay: "2s" }} />
+        </div>
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
 
   
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-blue-600 to-cyan-500">
@@ -36,8 +90,24 @@ export default function LoginPage() {
         <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
+<<<<<<< HEAD
 
           <Logo />
+=======
+          <div className="flex items-center gap-3">
+            <div className="w-13 h-13 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
+              <svg viewBox="0 0 40 40" className="w-10 h-10" fill="none">
+                <circle cx="14" cy="10" r="5" fill="#4F46E5" />
+                <circle cx="26" cy="10" r="5" fill="#2563EB" />
+                <circle cx="20" cy="6" r="5" fill="#06B6D4" />
+                <path d="M4 28 Q20 18 36 28" stroke="#4F46E5" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <path d="M6 33 Q20 23 34 33" stroke="#2563EB" strokeWidth="2" fill="none" strokeLinecap="round" />
+                <path d="M9 38 Q20 30 31 38" stroke="#06B6D4" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+              </svg>
+            </div>
+            <span className="text-white font-bold text-xl tracking-tight">CohortLMS</span>
+          </div>
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
 
           <div className="space-y-8">
 
@@ -170,12 +240,19 @@ export default function LoginPage() {
               &quot;CohortLMS transformed how our team learns. The structured cohort model keeps everyone accountable.&quot;
             </p>
             <div className="flex items-center gap-3 mt-4">
+<<<<<<< HEAD
               <div className="w-8 h-8 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white text-xs font-bold">
                 FB
               </div>
               <div>
                 <div className="text-white text-sm font-medium">Freddy Bijanja</div>
                 <div className="text-white/50 text-xs">Lead Instructor</div>
+=======
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4F46E5] to-[#06B6D4] flex items-center justify-center text-white text-xs font-bold">AK</div>
+              <div>
+                <div className="text-white text-sm font-medium">Amara Kone</div>
+                <div className="text-white/40 text-xs">Lead Instructor</div>
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
               </div>
             </div>
           </div>
@@ -204,6 +281,21 @@ export default function LoginPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
+                  {error}
+                </div>
+              )}
+              
+              {success && (
+                <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  {success}
+                </div>
+              )}
+              
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-[#111827]">Email address</label>
                 <div className="relative">
@@ -216,7 +308,7 @@ export default function LoginPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
+                    placeholder="olivier@gmail.com"
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition"
                     required
                   />

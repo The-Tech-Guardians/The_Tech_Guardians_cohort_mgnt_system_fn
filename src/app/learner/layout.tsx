@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, createContext, useContext } from "react";
+import { useState, createContext, useContext, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { BookOpen, TrendingUp, Megaphone, Home, Menu, Bell, LogOut, ChevronRight } from "lucide-react";
 import ProfileSidebar from '@/components/profile/learner-profile/ProfileSidebar';
 import Logo from "@/components/ui/navbar/Logo";
-
+import { tokenManager } from "@/lib/auth";
 
 const SidebarContext = createContext({ collapsed: false });
 
@@ -68,6 +68,41 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [user, setUser] = useState({ name: 'Loading...', initials: 'L' });
+
+  useEffect(() => {
+    const userData = tokenManager.getUser();
+    if (userData) {
+      const name = userData.name || userData.email?.split('@')[0] || 'User';
+      const initials = name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+      setUser({ name, initials });
+    }
+  }, []);
+
+  // Role-based routing guard
+  useEffect(() => {
+    const userRole = tokenManager.getRoleFromToken();
+
+    if (userRole) {
+      switch (userRole) {
+        case 'ADMIN':
+          router.replace('/admin');
+          break;
+        case 'INSTRUCTOR':
+          router.replace('/instructor');
+          break;
+        case 'LEARNER':
+          // Allow access to learner section
+          break;
+        default:
+          // Default to learner for unknown roles
+          break;
+      }
+    } else {
+      // No token, redirect to login
+      router.replace('/login');
+    }
+  }, [router]);
 
   const view = pathname.split('/').pop() || 'learner';
 
@@ -86,7 +121,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
   };
 
   const subtitles: Record<string, string> = {
-    learner:       "Welcome back, Freddy",
+    learner:       `Welcome back, ${user.name.split(' ')[0]}`,
     "my-courses":  "Browse your enrolled courses",
     progress:      "Track your learning journey",
     announcements: "Stay up to date",
@@ -138,7 +173,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
         >
           <div className="relative flex-shrink-0">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-xs">
-              FB
+              {user.initials}
             </div>
             <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />
           </div>
@@ -146,8 +181,8 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
           {!collapsed && (
             <>
               <div className="flex-1 text-left min-w-0">
-                <div className="text-gray-900 text-xs font-semibold truncate leading-tight">Freddy Bijanja</div>
-                <div className="text-gray-400 text-[10px] mt-0.5 font-medium">Active · Cohort 2025-A</div>
+                <div className="text-gray-900 text-xs font-semibold truncate leading-tight">{user.name}</div>
+                <div className="text-gray-400 text-[10px] mt-0.5 font-medium">Active · Online</div>
               </div>
 
               <ChevronRight
@@ -206,7 +241,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
                 {titles[view]}
               </h1>
               <span className="hidden sm:inline-flex items-center text-[10px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                2025-A
+                Online
               </span>
             </div>
             <p className="text-xs text-gray-400 hidden sm:block mt-0.5 font-medium">
@@ -231,7 +266,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
             >
               <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 flex items-center justify-center text-white text-xs font-bold
                 group-hover:bg-indigo-700 transition-all duration-200 shadow-sm group-hover:shadow-md group-hover:scale-105">
-                FB
+                {user.initials}
               </div>
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />
             </button>

@@ -1,6 +1,8 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { X, Mail, Calendar, Award, BookOpen, Target, LogOut } from 'lucide-react';
+import { tokenManager } from '@/lib/auth';
 
 interface ProfileSidebarProps {
   isOpen: boolean;
@@ -8,6 +10,27 @@ interface ProfileSidebarProps {
 }
 
 export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps) {
+  const [user, setUser] = useState({
+    name: 'Loading...',
+    initials: 'L',
+    email: 'loading@example.com',
+    role: 'LEARNER',
+    joinDate: 'Loading...'
+  });
+
+  useEffect(() => {
+    const userData = tokenManager.getUser();
+    if (userData) {
+      const name = userData.name || userData.email?.split('@')[0] || 'User';
+      const initials = name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+      const email = userData.email || 'user@example.com';
+      const role = userData.role || 'LEARNER';
+      const joinDate = userData.createdAt ? new Date(userData.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Recently';
+      
+      setUser({ name, initials, email, role, joinDate });
+    }
+  }, []);
+
   if (!isOpen) return null;
 
   return (
@@ -24,22 +47,22 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
 
           <div className="flex flex-col items-center mb-6">
             <div className="w-20 h-20 rounded-full bg-[#63b3ed] grid place-items-center font-['Syne'] text-2xl font-bold border-4 border-white/[0.07] mb-3">
-              FB
+              {user.initials}
             </div>
-            <h3 className="text-lg font-semibold">Freddy Bijanja</h3>
+            <h3 className="text-lg font-semibold">{user.name}</h3>
             <span className="text-xs px-2.5 py-1 rounded-full bg-[#63b3ed]/10 border border-[#63b3ed]/20 text-[#63b3ed] mt-2">
-              Learner
+              {user.role}
             </span>
           </div>
 
           <div className="space-y-3 mb-6">
             <div className="flex items-center gap-3 text-sm">
               <Mail className="w-4 h-4" />
-              <span className="text-">freddy@example.com</span>
+              <span className="text-">{user.email}</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
               <Calendar className="w-4 h-4 " />
-              <span >Joined Jan 2025</span>
+              <span>Joined {user.joinDate}</span>
             </div>
           </div>
 

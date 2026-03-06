@@ -138,7 +138,7 @@ export default function UsersPage() {
           className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm"
         >
           <UserPlus className="w-4 h-4" />
-          Invite Instructor
+          Invite User
         </button>
 
         <div className="flex items-center gap-2">
@@ -179,6 +179,12 @@ export default function UsersPage() {
         </div>
       </div>
 
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
+
       {/* Role Constraints Info */}
       <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
         <div className="flex items-start gap-3">
@@ -190,7 +196,6 @@ export default function UsersPage() {
               <li>• Admins automatically have Instructor-level access</li>
               <li>• Only Admins can promote Instructors to Admin</li>
               <li>• Instructors cannot promote or demote Admins</li>
-              <li>• 2FA is mandatory for all Admins and Instructors</li>
             </ul>
           </div>
         </div>
@@ -284,8 +289,9 @@ export default function UsersPage() {
               required
               value={inviteForm.email}
               onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-              placeholder="instructor@example.com"
+              placeholder="user@example.com"
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              disabled={inviteLoading}
             />
           </div>
           <div>
@@ -300,10 +306,15 @@ export default function UsersPage() {
               <option value="LEARNER">Learner</option>
             </select>
           </div>
+          {inviteError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+              <p className="text-xs text-red-600">{inviteError}</p>
+            </div>
+          )}
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <p className="text-xs text-blue-700 flex items-center gap-2">
               <Mail className="w-4 h-4" />
-              An invitation email will be sent with setup instructions and 2FA requirements.
+              An invitation email will be sent with setup instructions.
             </p>
           </div>
           {inviteError && (

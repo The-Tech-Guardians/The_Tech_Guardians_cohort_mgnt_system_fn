@@ -2,42 +2,155 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+<<<<<<< HEAD
 import { useRouter } from "next/navigation";
-import Logo from "@/components/ui/Logo";
+import Logo from "@/components/ui/navbar/Logo";
 import { PasswordStrength } from "@/components/banner/auth/verify-resend-success/forgot-password";
+import { authAPI } from "@/lib/auth";
 
 type Step = 1 | 2 | 3;
 
+=======
+
+const LOGO = (
+  <svg viewBox="0 0 40 40" className="w-7 h-7" fill="none">
+    <circle cx="14" cy="10" r="5" fill="#4F46E5" />
+    <circle cx="26" cy="10" r="5" fill="#2563EB" />
+    <circle cx="20" cy="6" r="5" fill="#06B6D4" />
+    <path d="M4 28 Q20 18 36 28" stroke="#4F46E5" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+    <path d="M6 33 Q20 23 34 33" stroke="#2563EB" strokeWidth="2" fill="none" strokeLinecap="round" />
+    <path d="M9 38 Q20 30 31 38" stroke="#06B6D4" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+  </svg>
+);
+
+type Step = 1 | 2 | 3;
+
+function PasswordStrength({ password }: { password: string }) {
+  if (!password) return null;
+  const checks = {
+    len: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    num: /[0-9]/.test(password),
+    special: /[^A-Za-z0-9]/.test(password),
+  };
+  const score = Object.values(checks).filter(Boolean).length;
+  const colors = ["", "#EF4444", "#F59E0B", "#3B82F6", "#10B981"];
+  const labels = ["", "Weak", "Fair", "Good", "Strong"];
+
+  return (
+    <div className="mt-2 space-y-2">
+      <div className="flex gap-1">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="flex-1 h-1 rounded-full transition-all duration-300" style={{ background: i <= score ? colors[score] : "#E5E7EB" }} />
+        ))}
+      </div>
+      <p className="text-xs font-medium" style={{ color: colors[score] }}>{labels[score]} password</p>
+      <div className="space-y-1">
+        {[
+          { key: "len", label: "At least 8 characters", ok: checks.len },
+          { key: "upper", label: "One uppercase letter", ok: checks.upper },
+          { key: "num", label: "One number", ok: checks.num },
+          { key: "special", label: "One special character", ok: checks.special },
+        ].map((r) => (
+          <div key={r.key} className="flex items-center gap-1.5 text-xs transition-colors" style={{ color: r.ok ? "#10B981" : "#9CA3AF" }}>
+            <span>{r.ok ? "✓" : "○"}</span>
+            <span>{r.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [step, setStep] = useState<Step>(1);
   const [email, setEmail] = useState("");
-  const [sentEmail, setSentEmail] = useState("");
+  const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [resetDone, setResetDone] = useState(false);
-  const [resent, setResent] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [leftStep, setLeftStep] = useState(1);
 
   const updateLeftDots = (s: number) => setLeftStep(s);
 
-  const handleStep1 = (e: React.FormEvent) => {
+  const handleStep1 = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => { setLoading(false); setSentEmail(email); setStep(2); updateLeftDots(2); }, 1500);
+    setError("");
+    
+    try {
+      const response = await authAPI.forgotPassword(email);
+      if (response.success) {
+        setSuccess("OTP sent to your email");
+        setStep(2);
+        updateLeftDots(2);
+      } else {
+        setError(response.message || "Failed to send OTP");
+      }
+    } catch (error) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReset = (e: React.FormEvent) => {
+  const handleStep2 = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    
+    try {
+      const response = await authAPI.verifyOTP(email, otp);
+      if (response.success) {
+        setSuccess("");
+        setStep(3);
+        updateLeftDots(3);
+      } else {
+        setError(response.message || "Invalid OTP");
+      }
+    } catch (error) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) return;
     setLoading(true);
-    setTimeout(() => { setLoading(false); setResetDone(true); }, 1500);
+    setError("");
+    
+    try {
+      const response = await authAPI.resetPassword(email, otp, newPassword);
+      if (response.success) {
+        setSuccess("Password reset successfully!");
+        setTimeout(() => router.push('/login'), 2000);
+      } else {
+        setError(response.message || "Failed to reset password");
+      }
+    } catch (error) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleResend = () => {
-    setResent(true);
-    setTimeout(() => setResent(false), 3000);
+  const handleResend = async () => {
+    try {
+      const response = await authAPI.forgotPassword(email);
+      if (response.success) {
+        setSuccess("OTP resent to your email");
+        setTimeout(() => setSuccess(""), 3000);
+      }
+    } catch (error) {
+      setError("Failed to resend OTP");
+    }
   };
 
   const dotClass = (s: number) => {
@@ -49,6 +162,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen flex bg-white">
+<<<<<<< HEAD
 
       {/* ═══════════════════════════════════════
           LEFT PANEL
@@ -63,6 +177,17 @@ export default function ForgotPasswordPage() {
 
         <div className="relative z-10">
           <Logo />
+=======
+     
+      <div className="hidden lg:flex w-[46%] bg-[#0F0C29] relative overflow-hidden flex-col justify-between p-12">
+        <div className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] rounded-full bg-[#4F46E5] opacity-20 blur-[80px] animate-pulse" />
+        <div className="absolute bottom-[5%] left-[-8%] w-[50%] h-[50%] rounded-full bg-[#06B6D4] opacity-15 blur-[80px] animate-pulse" style={{ animationDelay: "2s" }} />
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(rgba(79,70,229,1) 1px,transparent 1px),linear-gradient(90deg,rgba(79,70,229,1) 1px,transparent 1px)", backgroundSize: "60px 60px" }} />
+
+        <div className="flex items-center gap-3 relative z-10">
+          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">{LOGO}</div>
+          <span className="text-white font-extrabold text-xl">CohortLMS</span>
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
         </div>
 
         <div className="relative z-10 space-y-8">
@@ -81,8 +206,8 @@ export default function ForgotPasswordPage() {
           {/* Step tracker */}
           <div className="space-y-0">
             {[
-              { n: 1, title: "Enter your email", sub: "We'll send a secure reset link" },
-              { n: 2, title: "Check your email", sub: "Click the link to continue" },
+              { n: 1, title: "Enter your email", sub: "We'll send an OTP code" },
+              { n: 2, title: "Enter OTP code", sub: "Check your email for the code" },
               { n: 3, title: "Set new password", sub: "Choose a strong new password" },
             ].map((item, idx) => (
               <div key={item.n} className="flex gap-3.5 items-start">
@@ -142,11 +267,16 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
 
+<<<<<<< HEAD
         {/* Bottom notice */}
         <div className="relative z-10 bg-white/10 border border-white/20 rounded-2xl p-4">
           <p className="text-white/60 text-xs leading-relaxed">
             Reset links expire after <strong className="text-white/80">15 minutes</strong>. For Admins & Instructors, 2FA will still be required after reset.
           </p>
+=======
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 relative z-10">
+          <p className="text-white/35 text-xs leading-relaxed">🔒 Reset links expire after <strong className="text-white/55">15 minutes</strong>. For Admins & Instructors, 2FA will still be required after reset.</p>
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
         </div>
       </div>
 
@@ -168,21 +298,33 @@ export default function ForgotPasswordPage() {
                 <div className="h-2 w-2 rounded-full bg-gray-200" />
                 <div className="h-2 w-2 rounded-full bg-gray-200" />
               </div>
+<<<<<<< HEAD
+=======
+
+              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-2xl mb-4">🔑</div>
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
               <h1 className="text-2xl font-extrabold text-[#111827] mb-2">Forgot your password?</h1>
-              <p className="text-sm text-gray-500 leading-relaxed mb-6">No worries. Enter your registered email address and we'll send you a secure reset link.</p>
+              <p className="text-sm text-gray-500 leading-relaxed mb-6">Enter your registered email address to receive an OTP code.</p>
+              
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm mb-4">
+                  {error}
+                </div>
+              )}
+              
               <form onSubmit={handleStep1} className="space-y-5">
                 <div>
                   <label className="block text-sm font-semibold text-[#111827] mb-1.5">Email address</label>
                   <div className="relative">
                     <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="olivier@gmail.com" required
                       className="w-full pl-10 pr-4 py-3 rounded-xl border-[1.5px] border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)] transition" />
                   </div>
-                  <p className="text-xs text-gray-400 mt-1.5">We'll send instructions to this address if it's linked to an account.</p>
+                  <p className="text-xs text-gray-400 mt-1.5">We'll send an OTP code to this address if it's linked to an account.</p>
                 </div>
                 <button type="submit" disabled={loading}
                   className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold text-sm py-3.5 rounded-xl shadow-lg shadow-blue-500/25 transition disabled:opacity-60">
-                  {loading ? (<><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Sending…</>) : (<>Send reset link <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg></>)}
+                  {loading ? (<><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Sending…</>) : (<>Send OTP code <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg></>)}
                 </button>
               </form>
               <div className="flex items-center gap-3 my-5"><div className="flex-1 h-px bg-gray-100"/><span className="text-xs text-gray-400">Remember it now?</span><div className="flex-1 h-px bg-gray-100"/></div>
@@ -190,7 +332,7 @@ export default function ForgotPasswordPage() {
             </div>
           )}
 
-          {/* STEP 2 */}
+          {/* STEP 2 - OTP Verification */}
           {step === 2 && (
             <div className="bg-white rounded-3xl shadow-xl shadow-black/5 border border-gray-100 p-8">
               <div className="flex gap-1.5 mb-6">
@@ -198,27 +340,81 @@ export default function ForgotPasswordPage() {
                 <div className="h-2 w-6 rounded-full bg-blue-600"/>
                 <div className="h-2 w-2 rounded-full bg-gray-200"/>
               </div>
-              <div className="text-center py-2 mb-5">
-                <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">📬</div>
-                <h1 className="text-xl font-extrabold text-[#111827] mb-2">Check your inbox</h1>
-                <p className="text-sm text-gray-500 leading-relaxed">We've sent a reset link to<br/><strong className="text-[#111827]">{sentEmail}</strong></p>
+              
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <span className="inline-block bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-full px-3 py-1 text-xs font-bold mb-2">
+                    📧 Email OTP
+                  </span>
+                  <h1 className="text-xl font-extrabold text-[#111827] mb-1">Enter OTP Code</h1>
+                  <p className="text-sm text-gray-500 max-w-[240px] leading-relaxed">
+                    We've sent a 6-digit code to <strong className="text-[#111827]">{email}</strong>
+                  </p>
+                </div>
               </div>
-              <div className="flex gap-2.5 bg-blue-50 border border-blue-100 rounded-xl p-3.5 mb-5">
-                <svg className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <p className="text-xs text-blue-700 leading-relaxed">This link expires in <strong>15 minutes</strong>. Check your spam folder if you don't see it.</p>
+              
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm mb-4">
+                  {error}
+                </div>
+              )}
+              
+              {success && (
+                <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-xl text-sm mb-4">
+                  {success}
+                </div>
+              )}
+              
+              <form onSubmit={handleStep2} className="space-y-5">
+                <div className="flex gap-2 justify-center">
+                  {[0, 1, 2, 3, 4, 5].map((index) => (
+                    <input
+                      key={index}
+                      type="text"
+                      maxLength={1}
+                      value={otp[index] || ''}
+                      onChange={(e) => {
+                        const newOtp = otp.split('');
+                        newOtp[index] = e.target.value;
+                        setOtp(newOtp.join(''));
+                        
+                        // Auto-focus next input
+                        if (e.target.value && index < 5) {
+                          const nextInput = e.target.parentElement?.children[index + 1] as HTMLInputElement;
+                          nextInput?.focus();
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        // Handle backspace
+                        if (e.key === 'Backspace' && !otp[index] && index > 0) {
+                          const prevInput = e.target.parentElement?.children[index - 1] as HTMLInputElement;
+                          prevInput?.focus();
+                        }
+                      }}
+                      className="w-12 h-12 text-center text-lg font-bold border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition"
+                    />
+                  ))}
+                </div>
+                
+                <p className="text-center text-xs text-red-500 min-h-[20px]" role="alert">
+                  {error && otp.length === 6 ? "Incorrect code. Please try again." : ""}
+                </p>
+                
+                <button type="submit" disabled={loading || otp.length !== 6}
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold text-sm py-3.5 rounded-xl shadow-lg shadow-blue-500/25 transition disabled:opacity-60">
+                  {loading ? (<><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Verifying…</>) : "Verify & Continue"}
+                </button>
+              </form>
+              
+              <div className="text-center mt-4">
+                <span className="text-xs text-gray-400">Didn't receive the code? </span>
+                <button onClick={handleResend} className="text-xs font-bold text-blue-600 hover:underline">
+                  Resend OTP
+                </button>
               </div>
-              <button onClick={() => { setStep(3); updateLeftDots(3); }}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold text-sm py-3.5 rounded-xl shadow-lg shadow-blue-500/25 transition mb-3">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                Simulate: open reset link
-              </button>
-              <div className="text-center mb-4">
-                <span className="text-xs text-gray-400">Didn't receive it? </span>
-                <button onClick={handleResend} className={`text-xs font-bold transition ${resent ? "text-green-600" : "text-blue-600 hover:underline"}`}>{resent ? "Sent! ✓" : "Resend email"}</button>
-              </div>
-              <div className="flex items-center gap-3 my-4"><div className="flex-1 h-px bg-gray-100"/><div className="flex-1 h-px bg-gray-100"/></div>
-              <button onClick={() => { setStep(1); updateLeftDots(1); }} className="w-full flex items-center justify-center gap-2 text-sm font-medium text-gray-500 hover:text-blue-600 transition">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+              
+              <button onClick={() => { setStep(1); updateLeftDots(1); setError(""); }} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-blue-600 transition mt-5 mx-auto">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
                 Use a different email
               </button>
             </div>
@@ -232,19 +428,29 @@ export default function ForgotPasswordPage() {
                 <div className="h-2 w-2 rounded-full bg-green-500"/>
                 <div className="h-2 w-6 rounded-full bg-blue-600"/>
               </div>
-              {resetDone ? (
+              {success ? (
                 <div className="text-center py-4">
                   <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
                     <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                   </div>
                   <h3 className="text-lg font-extrabold text-[#111827] mb-2">Password updated!</h3>
-                  <p className="text-sm text-gray-500 mb-5">Your password has been changed successfully.</p>
-                  <Link href="/login" className="inline-block w-full text-center bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold text-sm py-3.5 rounded-xl shadow-lg shadow-blue-500/25 transition">Continue to Login</Link>
+                  <p className="text-sm text-gray-500 mb-5">{success}</p>
                 </div>
               ) : (
                 <>
+<<<<<<< HEAD
+=======
+                  <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-2xl mb-4">🔐</div>
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
                   <h1 className="text-2xl font-extrabold text-[#111827] mb-2">Set new password</h1>
                   <p className="text-sm text-gray-500 mb-6">Choose a strong password you haven't used before.</p>
+                  
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm mb-4">
+                      {error}
+                    </div>
+                  )}
+                  
                   <form onSubmit={handleReset} className="space-y-4">
                     <div>
                       <label className="block text-sm font-semibold text-[#111827] mb-1.5">New password</label>

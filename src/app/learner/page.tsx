@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useSidebar } from "@/components/ui/SideBarContext";
 import { Monitor, BookOpen, BarChart3, Bot, Gamepad2, Camera, Leaf, Smartphone, FileText, Lightbulb, TrendingUp, BookMarked, Users, Clock } from "lucide-react";
@@ -31,15 +32,12 @@ const OVERALL = [
   { label:"Total Hours",      value:"11",  trend:"-9%",  up:false, icon: Clock      },
 ];
 
-const PRODUCTIVITY = [
-  { day:"Mon", Mentoring:60, SelfImprove:40, Student:50 },
-  { day:"Tue", Mentoring:45, SelfImprove:70, Student:80 },
-  { day:"Wed", Mentoring:55, SelfImprove:50, Student:65 },
-  { day:"Thu", Mentoring:30, SelfImprove:60, Student:45 },
-  { day:"Fri", Mentoring:70, SelfImprove:45, Student:75 },
-  { day:"Sat", Mentoring:40, SelfImprove:55, Student:60 },
-  { day:"Sun", Mentoring:50, SelfImprove:65, Student:85 },
-];
+        // Fetch available cohorts
+        const availableResponse = await authAPI.getAvailableCohorts();
+        console.log('Available Cohorts Response:', availableResponse);
+        if (availableResponse.success) {
+          setAvailableCohorts(availableResponse.data || []);
+        }
 
 const AVATAR_COLORS = [
   "from-blue-500 to-cyan-400",
@@ -104,6 +102,31 @@ export default function LearnerDashboardPage() {
   const dayName = today.toLocaleDateString("en-US", { weekday: "long" });
   const dateStr = today.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
+  if (loading) {
+    return (
+      <div className={`flex gap-5 min-h-full ${collapsed ? "p-4 sm:p-5" : ""}`}>
+        <div className="flex-1 min-w-0 space-y-5">
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+            <div className="grid grid-cols-2 gap-4">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="space-y-2">
+                  <div className="h-32 bg-gray-200 rounded-xl"></div>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="w-[280px] xl:w-[300px] flex-shrink-0 space-y-4">
+          <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-48 bg-gray-200 rounded-2xl animate-pulse"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     // Outer wrapper: stack on mobile, side-by-side on xl
     <div className={`flex flex-col xl:flex-row gap-5 min-h-full ${collapsed ? "p-3 sm:p-4 xl:p-5" : ""}`}>
@@ -136,9 +159,9 @@ export default function LearnerDashboardPage() {
                   </div>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* My Courses */}
         <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm">
@@ -178,7 +201,7 @@ export default function LearnerDashboardPage() {
               );
             })}
           </div>
-        </div>
+        )}
 
         {/* ── RIGHT COLUMN content shown inline on mobile/tablet, hidden on xl ── */}
         <div className="xl:hidden space-y-4">

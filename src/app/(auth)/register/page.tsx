@@ -1,8 +1,13 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+<<<<<<< HEAD
 import { BookCopy, ChartColumnStacked, GraduationCap, Trophy } from "lucide-react";
 import Logo from "@/components/ui/navbar/Logo";
+=======
+import Image from "next/image";
+import logo from "@/images/lms-logo.png";
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
 
 export default function SignupPage() {
   const [step, setStep] = useState(1);
@@ -85,6 +90,7 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-white flex">
+<<<<<<< HEAD
 
       {/* ═══════════════════════════════════════
           LEFT PANEL — blue-600 → cyan-500 + Undraw illustration
@@ -105,6 +111,33 @@ export default function SignupPage() {
         <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
+=======
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#0F0C29]">
+        <div className="absolute inset-0">
+          <div className="absolute top-[-10%] right-[-10%] w-[65%] h-[65%] rounded-full bg-[#4F46E5] opacity-20 blur-[100px] animate-pulse" />
+          <div className="absolute bottom-[10%] left-[-10%] w-[55%] h-[55%] rounded-full bg-[#06B6D4] opacity-15 blur-[90px] animate-pulse" style={{ animationDelay: "1.5s" }} />
+        </div>
+        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: `linear-gradient(rgba(79,70,229,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(79,70,229,0.5) 1px, transparent 1px)`, backgroundSize: "60px 60px" }} />
+
+        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
+          <div className="  flex items-center gap-3">
+            <div className="w-13 h-13 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
+              <svg viewBox="0 0 40 40" className="w-10 h-10" fill="none">
+                <circle cx="14" cy="10" r="5" fill="#4F46E5" />
+                <circle cx="26" cy="10" r="5" fill="#2563EB" />
+                <circle cx="20" cy="6" r="5" fill="#06B6D4" />
+                <path d="M4 28 Q20 18 36 28" stroke="#4F46E5" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <path d="M6 33 Q20 23 34 33" stroke="#2563EB" strokeWidth="2" fill="none" strokeLinecap="round" />
+                <path d="M9 38 Q20 30 31 38" stroke="#06B6D4" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div className="flex flex-col">
+               <span className="text-white font-bold text-xl tracking-tight">CohortLMS</span>
+                <span className="text-white font-bold text-sm tracking-tight">Platform</span>
+            </div>
+           
+          </div>
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
 
           {/* Logo */}
           <Logo />
@@ -126,6 +159,7 @@ export default function SignupPage() {
                 <ellipse cx="240" cy="274" rx="170" ry="6" fill="rgba(0,0,0,0.12)" />
                 <rect x="60" y="30" width="260" height="180" rx="12" fill="white" fillOpacity="0.15" stroke="white" strokeOpacity="0.3" strokeWidth="1.5" />
 
+<<<<<<< HEAD
                
                 <rect x="60" y="30" width="260" height="32" rx="12" fill="white" fillOpacity="0.2" />
                 <circle cx="82" cy="46" r="5" fill="white" fillOpacity="0.5" />
@@ -249,6 +283,14 @@ export default function SignupPage() {
                 { icon: <BookCopy size={18} />, title: "Expert-led Courses", desc: "Coding, Content Creation and more" },
                 { icon: <ChartColumnStacked size={18} />, title: "Track Your Progress", desc: "Visual progress through every module" },
                 { icon: <Trophy size={18} />, title: "Earn Credentials", desc: "Completion badges and certificates" },
+=======
+            <div className="space-y-3">
+              {[
+                { icon: "🎓", title: "Structured Cohort Learning", desc: "Learn alongside peers on a shared schedule" },
+                { icon: "📚", title: "Expert-led Courses", desc: "Coding, Content Creation and more" },
+                { icon: "📊", title: "Track Your Progress", desc: "Visual progress through every module" },
+                { icon: "🏆", title: "Earn Credentials", desc: "Completion badges and certificates" },
+>>>>>>> bf7b76eaae801394c1cff000b46592f1ae49e8ba
               ].map((item) => (
                 <div key={item.title} className="flex items-center gap-3 bg-white/10 backdrop-blur border border-white/20 rounded-xl px-4 py-3">
                   <span className="text-white/80">{item.icon}</span>
@@ -296,12 +338,12 @@ export default function SignupPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-[#111827]">First name</label>
-                  <input type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder="Ada"
+                  <input type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder="Olivier"
                     className="w-full px-3.5 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition" required />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-[#111827]">Last name</label>
-                  <input type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Lovelace"
+                  <input type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Nduwayesu"
                     className="w-full px-3.5 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition" required />
                 </div>
               </div>
@@ -314,7 +356,7 @@ export default function SignupPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="you@example.com"
+                  <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="olivier@gmail.com"
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition" required />
                 </div>
               </div>
