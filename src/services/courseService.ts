@@ -1,196 +1,306 @@
-// services/courseService.ts
-const API_BASE_URL = 'http://localhost:3000/api';
+// Course Service - Fetch course, modules, lessons, and assessments
 
-export interface BackendCourse {
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+
+export interface Course {
   id: string;
   title: string;
   description: string;
   instructorId: string;
   cohortId: string;
+  courseType: string;
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;
-  courseType: 'SOCIAL_MEDIA_BRANDING' | 'COMPUTER_PROGRAMMING' | 'ENTREPRENEURSHIP' | 'TEAM_MANAGEMENT' | 'SRHR';
 }
 
 export interface Module {
-  id: number;
+  id: string;
+  courseId: string;
   title: string;
-  description: string;
-  lessons: Lesson[];
-  courseId?: string;
+  description?: string;
+  orderIndex: number;
+  createdAt: string;
 }
 
 export interface Lesson {
-  id: number;
+  id: string;
+  moduleId: string;
   title: string;
-  type: "video" | "pdf" | "text";
-  duration: string;
-  moduleId?: number;
-  content?: string;
+  contentType: 'video' | 'pdf' | 'text';
+  contentBody: string;
+  videoUrl?: string;
+  fileUrl?: string;
+  orderIndex: number;
+  createdAt: string;
 }
 
-// Extended Course interface for frontend use
-export interface Course extends Omit<BackendCourse, 'title' | 'courseType'> {
-  name: string; // alias for title
-  type: string; // formatted courseType
-  modules: Module[];
-  assessments: number;
-  status: "draft" | "published"; // derived from isPublished
+export interface Assessment {
+  id: string;
+  moduleId: string;
+  title: string;
+  description: string;
+  type: 'QUIZ' | 'ASSIGNMENT';
+  passMark?: number;
+  retakeLimit?: number;
+  timeLimitMinutes?: number;
+  instantFeedback?: boolean;
+  createdAt: string;
 }
 
-export interface ApiResponse<T> {
-  message?: string;
-  course?: T;
-  courses?: T[];
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
+export interface Question {
+  id: string;
+  assessmentId: string;
+  questionText: string;
+  type: string;
+  points?: number;
+  options?: QuestionOption[];
+}
+
+export interface QuestionOption {
+  id: string;
+  questionId: string;
+  optionText: string;
+  isCorrect: boolean;
+  orderIndex: number;
 }
 
 const getAuthToken = () => {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('auth_token');
+  return localStorage.getItem('token') || localStorage.getItem('auth_token');
 };
 
 const handleResponse = async (response: Response) => {
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'An error occurred' }));
-    throw new Error(error.error || 'Request failed');
+    const contentType = response.headers.get('content-type');
+    if (contentType?.includes('application/json')) {
+      const error = await response.json().catch(() => ({ error: 'An error occurred' }));
+      throw new Error(error.error || error.message || 'Request failed');
+    } else {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
   }
-  return response.json();
+  const contentType = response.headers.get('content-type');
+  if (contentType?.includes('application/json')) {
+    return response.json();
+  }
+  return response;
 };
 
 export const courseService = {
-  // Get all courses with pagination
-  async getAllCourses(page = 1, limit = 20): Promise<{ courses: BackendCourse[]; pagination: any }> {
-    const token = getAuthToken();
-    if (!token) {
-      throw new Error('No authentication token found');
+  // Get all courses
+  async getAllCourses(): Promise<Course[]> {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/courses`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      });
+      const data = await handleResponse(response);
+      return data.courses || data || [];
+    } catch (error) {
+      console.error('Failed to fetch courses:', error);
+      return [];
     }
-    const response = await fetch(`${API_BASE_URL}/courses?page=${page}&limit=${limit}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    const data = await handleResponse(response);
-    return {
-      courses: data.courses || [],
-      pagination: data.pagination || { page, limit, total: 0, pages: 0 }
-    };
   },
 
   // Get course by ID
-  async getCourseById(id: string): Promise<{ course: BackendCourse }> {
-    const token = getAuthToken();
-    if (!token) {
-      throw new Error('No authentication token found');
+  async getCourseById(id: string): Promise<Course | null> {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/courses/${id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      });
+      const data = await handleResponse(response);
+      return data.course || data || null;
+    } catch (error) {
+      console.error(`Failed to fetch course ${id}:`, error);
+      return null;
     }
-    const response = await fetch(`${API_BASE_URL}/courses/${id}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    const data = await handleResponse(response);
-    return { course: data.course || data };
+  },
+
+  // Get modules for a course
+  async getModulesByCourse(courseId: string): Promise<Module[]> {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/modules?courseId=${courseId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      });
+      const data = await handleResponse(response);
+      return data.modules || data || [];
+    } catch (error) {
+      console.error(`Failed to fetch modules for course ${courseId}:`, error);
+      return [];
+    }
+  },
+
+  // Get lessons for a module
+  async getLessonsByModule(moduleId: string): Promise<Lesson[]> {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/lessons?moduleId=${moduleId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      });
+      const data = await handleResponse(response);
+      return data.lessons || data || [];
+    } catch (error) {
+      console.error(`Failed to fetch lessons for module ${moduleId}:`, error);
+      return [];
+    }
+  },
+
+  // Get assessments for a module
+  async getAssessmentsByModule(moduleId: string): Promise<Assessment[]> {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/assessments?moduleId=${moduleId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      });
+      const data = await handleResponse(response);
+      return data.assessments || data || [];
+    } catch (error) {
+      console.error(`Failed to fetch assessments for module ${moduleId}:`, error);
+      return [];
+    }
+  },
+
+  // Get all assessments for a course
+  async getAssessmentsByCourse(courseId: string): Promise<Assessment[]> {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/assessments?courseId=${courseId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      });
+      const data = await handleResponse(response);
+      return data.assessments || data || [];
+    } catch (error) {
+      console.error(`Failed to fetch assessments for course ${courseId}:`, error);
+      return [];
+    }
+  },
+
+  // Get questions for an assessment
+  async getQuestionsByAssessment(assessmentId: string): Promise<Question[]> {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/questions?assessmentId=${assessmentId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      });
+      const data = await handleResponse(response);
+      return data.questions || data || [];
+    } catch (error) {
+      console.error(`Failed to fetch questions for assessment ${assessmentId}:`, error);
+      return [];
+    }
   },
 
   // Create a new course
-  async createCourse(courseData: {
-    title: string;
-    description: string;
-    instructorId: string;
-    cohortId: string;
-    courseType: string;
-  }): Promise<{ course: BackendCourse }> {
-    const token = getAuthToken();
-    if (!token) {
-      throw new Error('No authentication token found');
+  async createCourse(courseData: Partial<Course>): Promise<Course | null> {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('No authentication token found');
+      const response = await fetch(`${API_BASE_URL}/courses`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(courseData),
+      });
+      const data = await handleResponse(response);
+      return data.course || data || null;
+    } catch (error) {
+      console.error('Failed to create course:', error);
+      throw error;
     }
-    const response = await fetch(`${API_BASE_URL}/courses`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(courseData),
-    });
-    const data = await handleResponse(response);
-    return { course: data.course || data };
   },
 
   // Update a course
-  async updateCourse(id: string, courseData: {
-    title?: string;
-    description?: string;
-    courseType?: string;
-  }): Promise<{ course: BackendCourse }> {
-    const token = getAuthToken();
-    if (!token) {
-      throw new Error('No authentication token found');
+  async updateCourse(id: string, courseData: Partial<Course>): Promise<Course | null> {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('No authentication token found');
+      const response = await fetch(`${API_BASE_URL}/courses/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(courseData),
+      });
+      const data = await handleResponse(response);
+      return data.course || data || null;
+    } catch (error) {
+      console.error(`Failed to update course ${id}:`, error);
+      throw error;
     }
-    const response = await fetch(`${API_BASE_URL}/courses/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(courseData),
-    });
-    const data = await handleResponse(response);
-    return { course: data.course || data };
   },
 
   // Delete a course
-  async deleteCourse(id: string): Promise<void> {
-    const token = getAuthToken();
-    if (!token) {
-      throw new Error('No authentication token found');
+  async deleteCourse(id: string): Promise<boolean> {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('No authentication token found');
+      const response = await fetch(`${API_BASE_URL}/courses/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      await handleResponse(response);
+      return true;
+    } catch (error) {
+      console.error(`Failed to delete course ${id}:`, error);
+      throw error;
     }
-    const response = await fetch(`${API_BASE_URL}/courses/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    await handleResponse(response);
   },
 
-  // Publish/unpublish a course
-  async togglePublish(id: string): Promise<{ course: BackendCourse }> {
-    const token = getAuthToken();
-    if (!token) {
-      throw new Error('No authentication token found');
+  // Publish a course
+  async publishCourse(id: string): Promise<boolean> {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('No authentication token found');
+      const response = await fetch(`${API_BASE_URL}/courses/${id}/publish`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      await handleResponse(response);
+      return true;
+    } catch (error) {
+      console.error(`Failed to publish course ${id}:`, error);
+      throw error;
     }
-    const response = await fetch(`${API_BASE_URL}/courses/${id}/publish`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    const data = await handleResponse(response);
-    return { course: data.course || data };
-  },
-
-  // Get enrolled learners
-  async getEnrolledLearners(id: string, page = 1, limit = 20): Promise<any> {
-    const token = getAuthToken();
-    const response = await fetch(`${API_BASE_URL}/courses/${id}/learners?page=${page}&limit=${limit}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    return handleResponse(response);
   },
 };
 
