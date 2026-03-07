@@ -73,7 +73,10 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
   useEffect(() => {
     const userData = tokenManager.getUser();
     if (userData) {
-      const name = userData.name || userData.email?.split('@')[0] || 'User';
+      const name =
+        (userData.firstName || userData.lastName)
+          ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim()
+          : userData.name || userData.email?.split('@')[0] || 'User';
       const initials = name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
       setUser({ name, initials });
     }

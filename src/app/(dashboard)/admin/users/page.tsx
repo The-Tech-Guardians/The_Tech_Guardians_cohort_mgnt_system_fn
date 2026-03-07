@@ -3,16 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import RoleBadge from "@/components/admin/RoleBadge";
 import Modal from "@/components/admin/Modal";
-import { UserPlus, Mail, Shield, Search, Ban, Loader2, AlertCircle, RefreshCw } from "lucide-react";
-import { User } from "@/types/user";
-import {
-  getAllUsers,
-  searchUsers,
-  promoteToAdmin,
-  deleteUser,
-  createInvitation,
-  type InviteRole,
-} from "@/app/(dashboard)/admin/services/userAdminService";
+import { UserPlus, Mail, Shield, Search, Ban, Loader2 } from "lucide-react";
+import { adminApi, type User } from "@/lib/adminApi";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -24,24 +16,17 @@ export default function UsersPage() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
-  const [inviteForm, setInviteForm] = useState({ email: "", role: "INSTRUCTOR" as InviteRole });
 
-  const [showPromoteModal, setShowPromoteModal] = useState(false);
-  const [promoteLoading, setPromoteLoading] = useState(false);
-  const [promoteError, setPromoteError] = useState<string | null>(null);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
-  const [deletingUuid, setDeletingUuid] = useState<string | null>(null);
-
-  // ── Fetch all users ──────────────────────────────────────────────────────────
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const fetchUsers = async () => {
     try {
-      const data = await getAllUsers();
-      setUsers(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load users");
+      setLoading(true);
+      setError(null);
+      const response = await adminApi.listUsers(1, 100);
+      setUsers(response.data || []);
+      setFilteredUsers(response.data || []);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch users');
+      console.error('Fetch users error:', err);
     } finally {
       setLoading(false);
     }
@@ -82,6 +67,61 @@ export default function UsersPage() {
       alert(err instanceof Error ? err.message : "Failed to delete user");
     } finally {
       setDeletingUuid(null);
+    }
+  };
+
+  const openEditUser = (user: User) => {
+    setUserToEdit(user);
+    setEditForm({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+    });
+    setShowEditModal(true);
+  };
+
+  const submitEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userToEdit) return;
+
+    try {
+      setLoading(true);
+      await adminApi.updateUser(userToEdit.uuid, {
+        first_name: editForm.firstName,
+        last_name: editForm.lastName,
+        email: editForm.email,
+        role: editForm.role,
+        status: editForm.status,
+      });
+      setShowEditModal(false);
+      setUserToEdit(null);
+      fetchUsers();
+    } catch (err: any) {
+      setError(err.message || "Failed to update user");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openDeleteUser = (user: User) => {
+    setUserToDelete(user);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    try {
+      setLoading(true);
+      await adminApi.deleteUser(userToDelete.uuid);
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+      fetchUsers();
+    } catch (err: any) {
+      setError(err.message || "Failed to delete user");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -201,83 +241,70 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* Error banner */}
-      {error && (
-        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-700">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          {error}
-          <button onClick={fetchUsers} className="ml-auto text-xs underline">Retry</button>
+      {/* Users List */}
+      {filteredUsers.length === 0 ? (
+        <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-200">
+          <p className="text-gray-500 mb-4">No users found</p>
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700"
+            >
+              Clear search
+            </button>
+          )}
         </div>
-      )}
-
-      {/* Loading skeleton */}
-      {loading && !error && (
+      ) : (
         <div className="grid grid-cols-1 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-2xl p-5 animate-pulse">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gray-200" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-1/4" />
-                  <div className="h-3 bg-gray-100 rounded w-1/3" />
+          {filteredUsers.map((user) => (
+            <div key={user.uuid} className="bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                    {(user.firstName?.[0] || '') + (user.lastName?.[0] || '')}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">{user.firstName} {user.lastName}</p>
+                    <p className="text-sm text-gray-500">{user.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <RoleBadge role={user.role.toLowerCase() as 'admin' | 'instructor' | 'learner'} />
+                  <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                    user.status === "active" 
+                      ? "bg-green-50 text-green-600 border border-green-200" 
+                      : "bg-red-50 text-red-600 border border-red-200"
+                  }`}>
+                    {user.status}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    Joined {new Date(user.createdAt).toLocaleDateString()}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {user.role === "INSTRUCTOR" && (
+                      <button
+                        onClick={() => handlePromoteToAdmin(user)}
+                        className="px-3 py-1.5 text-xs font-medium rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all disabled:opacity-50"
+                        disabled={loading}
+                      >
+                        Promote
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => handleBanUser(user)}
+                      className="p-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all disabled:opacity-50"
+                      title={user.status === 'active' ? 'Ban user' : 'Unban user'}
+                      disabled={loading}
+                    >
+                      <Ban className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
-      )}
-
-      {/* Users Grid */}
-      {!loading && (
-        <div className="grid grid-cols-1 gap-4">
-          {users.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-sm">No users found.</div>
-          ) : (
-            users.map((user) => (
-              <div key={user.uuid} className="bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-md transition-all">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
-                      {user.firstName[0]}{user.lastName[0]}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">{user.firstName} {user.lastName}</p>
-                      <p className="text-sm text-gray-500">{user.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <RoleBadge role={user.role.toLowerCase() as "admin" | "instructor" | "learner"} has2FA={user.twoFaEnabled} />
-                    <span className="text-xs text-gray-500">
-                      Joined {new Date(user.createdAt!).toLocaleDateString()}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {user.role === "INSTRUCTOR" && (
-                        <button
-                          onClick={() => handlePromoteToAdmin(user)}
-                          className="px-3 py-1.5 text-xs font-medium rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all"
-                        >
-                          Promote to Admin
-                        </button>
-                      )}
-                      {user.role !== "ADMIN" && (
-                        <button
-                          onClick={() => handleDeleteUser(user.uuid)}
-                          disabled={deletingUuid === user.uuid}
-                          className="p-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all disabled:opacity-50"
-                        >
-                          {deletingUuid === user.uuid
-                            ? <Loader2 className="w-4 h-4 animate-spin" />
-                            : <Ban className="w-4 h-4" />}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
+      </div>
 
       {/* Invite Modal */}
       <Modal isOpen={showInviteModal} onClose={() => setShowInviteModal(false)} title="Invite Instructor" size="md">
@@ -368,6 +395,145 @@ export default function UsersPage() {
             <button
               onClick={() => setShowPromoteModal(false)}
               className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Edit User Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setUserToEdit(null);
+        }}
+        title="Edit User"
+        size="md"
+      >
+        <form onSubmit={submitEditUser} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+              <input
+                type="text"
+                value={editForm.firstName}
+                onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+              <input
+                type="text"
+                value={editForm.lastName}
+                onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <input
+              type="email"
+              value={editForm.email}
+              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+              <select
+                value={editForm.role}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, role: e.target.value as User["role"] })
+                }
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="LEARNER">Learner</option>
+                <option value="INSTRUCTOR">Instructor</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={editForm.status}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, status: e.target.value as User["status"] })
+                }
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="active">Active</option>
+                <option value="banned">Banned</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
+              disabled={loading}
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Save changes"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowEditModal(false);
+                setUserToEdit(null);
+              }}
+              className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all disabled:opacity-50"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete User Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setUserToDelete(null);
+        }}
+        title="Delete User"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Are you sure you want to delete{" "}
+            <span className="font-semibold">
+              {userToDelete?.firstName} {userToDelete?.lastName}
+            </span>
+            ? This action cannot be undone.
+          </p>
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={confirmDeleteUser}
+              className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
+              disabled={loading}
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Delete"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setUserToDelete(null);
+              }}
+              className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all disabled:opacity-50"
+              disabled={loading}
             >
               Cancel
             </button>

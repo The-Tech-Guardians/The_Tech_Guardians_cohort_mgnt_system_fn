@@ -36,10 +36,40 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [userName, setUserName] = useState('Instructor');
+  const [userInitials, setUserInitials] = useState('IN');
+  const [userRoleLabel, setUserRoleLabel] = useState('Instructor');
 
   // Role-based routing guard
   useEffect(() => {
     const userRole = tokenManager.getRoleFromToken();
+
+    const userData = tokenManager.getUser();
+    const email = userData?.email as string | undefined;
+    const name =
+      (userData?.firstName || userData?.lastName)
+        ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim()
+        : email?.split('@')[0] || email || 'Instructor';
+    const initials =
+      name
+        .split(' ')
+        .filter(Boolean)
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase() || 'IN';
+
+    const roleLabel =
+      userRole === 'ADMIN'
+        ? 'Admin'
+        : userRole === 'INSTRUCTOR'
+        ? 'Instructor'
+        : userRole === 'LEARNER'
+        ? 'Learner'
+        : 'Instructor';
+
+    setUserName(name);
+    setUserInitials(initials);
+    setUserRoleLabel(roleLabel);
 
     if (userRole) {
       switch (userRole) {
@@ -107,12 +137,14 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
       <div className="p-4 border-t border-gray-100">
         <button onClick={()=>setProfileOpen(!profileOpen)}
           className={`w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 transition-colors ${collapsed ? "justify-center" : ""}`}>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">JK</div>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+            {userInitials}
+          </div>
           {!collapsed && (
             <>
               <div className="flex-1 text-left min-w-0">
-                <div className="text-gray-900 text-sm font-semibold truncate">Dr. James Kowalski</div>
-                <div className="text-gray-400 text-xs">Instructor</div>
+                <div className="text-gray-900 text-sm font-semibold truncate">{userName}</div>
+                <div className="text-gray-400 text-xs">{userRoleLabel}</div>
               </div>
               <Icon d={I.chevronR} size={14} className="text-gray-400"/>
             </>
@@ -171,7 +203,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
             </button>
 
             <button onClick={()=>setProfileOpen(!profileOpen)} className="w-9 h-9 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 flex items-center justify-center text-white text-sm font-bold cursor-pointer hover:bg-gray-700 transition-colors flex-shrink-0">
-              JK
+              {userInitials}
             </button>
           </header>
 
