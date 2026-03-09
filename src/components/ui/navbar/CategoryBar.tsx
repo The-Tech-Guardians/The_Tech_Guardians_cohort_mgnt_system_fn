@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface Category {
   label: string;
@@ -9,8 +10,6 @@ interface Category {
 
 interface CategoryBarProps {
   categories: Category[];
-  activeCategory: number;
-  setActiveCategory: (index: number) => void;
   bg: string;
   border: string;
   textMuted: string;
@@ -20,30 +19,29 @@ interface CategoryBarProps {
 
 export default function CategoryBar({
   categories,
-  activeCategory,
-  setActiveCategory,
   bg,
   border,
   textMuted,
   hoverBg,
 }: CategoryBarProps) {
+  const pathname = usePathname();
+
   return (
     <div className={`hidden lg:block ${bg} border-b ${border} transition-colors duration-300`}>
       <div className="max-w-7xl mx-auto px-8">
         <div className="no-scrollbar flex items-center gap-0.5 h-11 overflow-x-auto">
-          {categories.map((item, i) => {
-            const isActive = activeCategory === i;
+          {categories.map((item) => {
+            const isActive = pathname === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setActiveCategory(i)}
                 className={`
                   flex items-center gap-1.5 text-[12.5px] font-medium px-3.5 py-1.5 rounded-md
                   transition-all duration-150 whitespace-nowrap
                   ${isActive
-                    ? "border border-blue-600 bg-blue-50 text-blue-600"
-                    : `${textMuted} ${hoverBg} border border-transparent`
+                    ? "bg-blue-50 text-blue-600"
+                    : `${textMuted} ${hoverBg}`
                   }
                 `}
               >

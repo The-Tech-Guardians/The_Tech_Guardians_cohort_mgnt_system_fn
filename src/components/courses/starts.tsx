@@ -1,9 +1,11 @@
-export function Stars({ rating }: { rating: number | null }) {
-  if (!rating) return <span className="text-[11px] text-slate-400">No ratings yet</span>;
+import { Star } from "lucide-react";
+
+export function Stars({ rating }: { rating: number }) {
   return (
-    <div className="flex items-center gap-1">
-      <span className="text-amber-400 text-xs">{"★".repeat(Math.floor(rating))}</span>
-      <span className="text-[12px] font-bold text-slate-700">{rating}</span>
-    </div>
+    <span className="flex gap-0.5">
+      {[1,2,3,4,5].map(s => (
+        <Star key={s} size={11} fill={s <= Math.round(rating) ? "#f59e0b" : "none"} stroke="#f59e0b" strokeWidth={2} />
+      ))}
+    </span>
   );
 }
