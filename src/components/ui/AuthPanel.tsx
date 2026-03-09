@@ -15,17 +15,10 @@ export default function AuthPanel({
   footerNote = "© 2025 CohortLMS. Secured Platform.",
 }: AuthPanelProps) {
   return (
-    <aside className="hidden lg:flex w-[46%] bg-[#0F0C29] relative overflow-hidden flex-col justify-between p-12">
+    <aside className="hidden lg:flex w-[46%] bg-gradient-to-br from-blue-600 to-cyan-500  relative overflow-hidden flex-col justify-between p-12">
       {/* Gradient blobs */}
-      <div
-        className="absolute top-[-15%] left-[-10%] w-[65%] h-[65%] rounded-full bg-[#4F46E5] opacity-20 blur-[80px] animate-pulse pointer-events-none"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute bottom-[-10%] right-[-8%] w-[55%] h-[55%] rounded-full bg-[#06B6D4] opacity-[0.15] blur-[90px] animate-pulse pointer-events-none"
-        style={{ animationDelay: "1.5s" }}
-        aria-hidden="true"
-      />
+   
+      
 
       {/* Dot-grid overlay */}
       <div
