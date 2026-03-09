@@ -34,11 +34,11 @@ export default function LoginPage() {
         console.log('Login successful, storing data and showing message');
         
         // Handle different response formats
-        if (response.requires_2fa) {
+        if (response.requires_2fa && response.token && response.user_id) {
           // Backend format: { requires_2fa: true, token, user_id, message }
           tokenManager.setToken(response.token);
           tokenManager.setUser({ id: response.user_id, email });
-        } else {
+        } else if (response.data?.token && response.data?.user) {
           // Standard format: { success: true, data: { token, user } }
           tokenManager.setToken(response.data.token);
           tokenManager.setUser(response.data.user);
@@ -81,8 +81,7 @@ export default function LoginPage() {
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
 
-
-          <Logo />
+          <Logo textMain="text-white" />
 
 
           <div className="space-y-8">

@@ -25,6 +25,9 @@ export interface AuthResponse {
       role: string;
     };
   };
+  requires_2fa?: boolean;
+  token?: string;
+  user_id?: string;
 }
 
 // Safe localStorage helpers — no-ops during SSR
