@@ -12,6 +12,7 @@ export interface BackendCohort {
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
+  instructorIds?: string[];
 }
 
 export interface Cohort {
@@ -26,6 +27,7 @@ export interface Cohort {
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
+  instructorIds?: string[];
 }
 
 export interface PaginationInfo {
@@ -82,6 +84,7 @@ export const cohortService = {
         isActive: cohort.isActive,
         createdAt: cohort.createdAt,
         updatedAt: cohort.updatedAt,
+        instructorIds: cohort.instructorIds,
       }));
 
       return {
@@ -135,6 +138,7 @@ export const cohortService = {
         isActive: data.cohort.isActive,
         createdAt: data.cohort.createdAt,
         updatedAt: data.cohort.updatedAt,
+        instructorIds: data.cohort.instructorIds,
       };
 
       return { cohort: transformedCohort };

@@ -6,7 +6,7 @@ interface UserPillProps {
   initials: string;
   name: string;
   email: string;
-  role: "Admin" | "Instructor";
+  role: "Admin" | "Instructor" | "Learner";
 }
 
 export default function UserPill({ initials, name, email, role }: UserPillProps) {

@@ -1,132 +1,224 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { authAPI } from "@/lib/auth";
-import {
-BarChart,
-Bar,
-CartesianGrid,
-XAxis,
-YAxis,
-Tooltip,
-ResponsiveContainer,
-} from "recharts";
+import { useState, useEffect } from "react";
+import { useSidebar } from "@/components/ui/SideBarContext";
+import { Users, BookMarked } from "lucide-react";
+import { authAPI, tokenManager } from "@/lib/auth";
+
+type User = {
+  name: string;
+  initials: string;
+};
+
+type Course = {
+  id: string;
+  title: string;
+  progress: number;
+};
 
 type Cohort = {
-id: string;
-title: string;
-description?: string;
+  cohortId: string;
+  name: string;
+  description?: string;
+  status: string;
+  startDate: string;
+  currentStudents: number;
+  maxStudents: number;
 };
-
-const PRODUCTIVITY = [
-{ day: "Mon", Mentoring: 40, SelfImprove: 60, Student: 30 },
-{ day: "Tue", Mentoring: 30, SelfImprove: 50, Student: 40 },
-{ day: "Wed", Mentoring: 50, SelfImprove: 70, Student: 45 },
-{ day: "Thu", Mentoring: 35, SelfImprove: 55, Student: 60 },
-{ day: "Fri", Mentoring: 60, SelfImprove: 80, Student: 50 },
-];
 
 export default function LearnerDashboardPage() {
-const [availableCohorts, setAvailableCohorts] = useState<Cohort[]>([]);
-const [loading, setLoading] = useState(true);
-const [error, setError] = useState("");
+  const { collapsed } = useSidebar();
 
-useEffect(() => {
-const fetchCohorts = async () => {
-try {
-const response = await authAPI.getAvailableCohorts();
+  const [user, setUser] = useState<User>({ name: "Loading...", initials: "L" });
+  const [myCourses, setMyCourses] = useState<Course[]>([]);
+  const [currentCohort, setCurrentCohort] = useState<Cohort | null>(null);
+  const [availableCohorts, setAvailableCohorts] = useState<Cohort[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [enrolling, setEnrolling] = useState<string | null>(null);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const userData = tokenManager.getUser();
 
-    if (response.success) {
-      setAvailableCohorts(response.data || []);
-    } else {
-      setError("Failed to load cohorts");
+        if (userData) {
+          const name =
+            userData.firstName || userData.lastName
+              ? `${userData.firstName || ""} ${userData.lastName || ""}`.trim()
+              : userData.name ||
+                userData.email?.split("@")[0] ||
+                "User";
+
+          const initials =
+            name
+              .split(" ")
+              .map((n: string) => n[0])
+              .join("")
+              .toUpperCase() || "U";
+
+          setUser({ name, initials });
+        }
+
+        const coursesRes = await authAPI.getLearnerCourses();
+        if (coursesRes?.success) {
+          setMyCourses(coursesRes.data || []);
+        }
+
+        const cohortRes = await authAPI.getLearnerCohort();
+        if (cohortRes?.success) {
+          setCurrentCohort(cohortRes.data);
+        }
+
+        const availableRes = await authAPI.getAvailableCohorts();
+        if (availableRes?.success) {
+          setAvailableCohorts(availableRes.data || []);
+        }
+      } catch (error) {
+        console.error("Dashboard error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleEnrollCohort = async (cohortId: string) => {
+    try {
+      setEnrolling(cohortId);
+
+      const response = await authAPI.joinCohort(cohortId);
+
+      if (response?.success) {
+        const cohortRes = await authAPI.getLearnerCohort();
+        if (cohortRes?.success) {
+          setCurrentCohort(cohortRes.data);
+        }
+
+        const availableRes = await authAPI.getAvailableCohorts();
+        if (availableRes?.success) {
+          setAvailableCohorts(availableRes.data || []);
+        }
+      } else {
+        alert(response?.message || "Failed to join cohort");
+      }
+    } catch (error) {
+      console.error("Enroll error:", error);
+      alert("Failed to join cohort");
+    } finally {
+      setEnrolling(null);
     }
-  } catch (err) {
-    console.error(err);
-    setError("Network error");
-  } finally {
-    setLoading(false);
+  };
+
+  const today = new Date();
+  const dayName = today.toLocaleDateString("en-US", { weekday: "long" });
+  const dateStr = today.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  if (loading) {
+    return (
+      <div className="p-6 text-center">
+        <p>Loading dashboard...</p>
+      </div>
+    );
   }
-};
 
-fetchCohorts();
+  return (
+    <div className={`flex gap-5 min-h-full ${collapsed ? "p-4" : ""}`}>
+      
+      {/* LEFT SECTION */}
+      <div className="flex-1 space-y-5">
 
+        {currentCohort ? (
+          <div className="bg-blue-50 rounded-xl p-5 border">
+            <h2 className="font-bold flex items-center gap-2">
+              <Users size={16} />
+              My Cohort
+            </h2>
 
-}, []);
+            <p className="font-semibold mt-2">{currentCohort.name}</p>
 
-return ( <div className="p-6 space-y-8">
-{/* PAGE HEADER */} <div> <h1 className="text-2xl font-bold text-gray-900">
-Learner Dashboard </h1> <p className="text-sm text-gray-500">
-Track your learning progress and available cohorts. </p> </div>
+            <p className="text-sm text-gray-600">
+              {currentCohort.currentStudents}/{currentCohort.maxStudents} students
+            </p>
+          </div>
+        ) : (
+          <div className="bg-yellow-50 p-5 rounded-xl border">
+            <p className="text-sm">
+              You are not enrolled in a cohort yet.
+            </p>
+          </div>
+        )}
 
+        {myCourses.length > 0 ? (
+          <div className="bg-white rounded-xl p-5 border">
+            <h2 className="font-bold mb-4">My Courses</h2>
 
-  {/* ERROR MESSAGE */}
-  {error && (
-    <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg">
-      {error}
-    </div>
-  )}
+            {myCourses.slice(0, 4).map((course) => (
+              <div key={course.id} className="mb-3">
+                <p className="text-sm font-semibold">{course.title}</p>
 
-  {/* AVAILABLE COHORTS */}
-  <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-    <h2 className="text-lg font-semibold mb-4">
-      Available Cohorts
-    </h2>
+                <div className="w-full bg-gray-200 h-2 rounded">
+                  <div
+                    className="bg-blue-500 h-2 rounded"
+                    style={{ width: `${course.progress}%` }}
+                  />
+                </div>
 
-    {loading ? (
-      <p className="text-sm text-gray-500">Loading cohorts...</p>
-    ) : availableCohorts.length === 0 ? (
-      <p className="text-sm text-gray-500">
-        No cohorts available right now.
-      </p>
-    ) : (
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {availableCohorts.map((cohort) => (
-          <div
-            key={cohort.id}
-            className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition"
-          >
-            <h3 className="font-semibold text-gray-800">
-              {cohort.title}
+                <p className="text-xs text-gray-500">
+                  {course.progress}% complete
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white p-6 rounded-xl border text-center">
+            No courses yet
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT SECTION */}
+      <div className="w-[300px] space-y-4">
+
+        <div>
+          <h2 className="font-bold text-lg">Hi, {user.name}</h2>
+          <p className="text-xs text-gray-500">
+            {dayName} · {dateStr}
+          </p>
+        </div>
+
+        {availableCohorts.length > 0 && (
+          <div className="bg-white rounded-xl p-4 border">
+            <h3 className="font-bold flex items-center gap-2 mb-3">
+              <BookMarked size={14} />
+              Available Cohorts
             </h3>
 
-            <p className="text-sm text-gray-500 mt-2">
-              {cohort.description || "No description"}
-            </p>
+            {availableCohorts.slice(0, 3).map((cohort) => (
+              <div
+                key={cohort.cohortId}
+                className="flex justify-between items-center mb-2"
+              >
+                <span className="text-sm">{cohort.name}</span>
 
-            <button className="mt-4 bg-blue-600 text-white text-sm px-4 py-2 rounded-lg">
-              Join Cohort
-            </button>
+                <button
+                  onClick={() => handleEnrollCohort(cohort.cohortId)}
+                  disabled={enrolling === cohort.cohortId}
+                  className="text-blue-600 text-sm font-semibold"
+                >
+                  {enrolling === cohort.cohortId
+                    ? "Enrolling..."
+                    : "Enroll"}
+                </button>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
-    )}
-  </section>
-
-  {/* PRODUCTIVITY CHART */}
-  <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-    <h2 className="text-lg font-semibold mb-4">
-      Weekly Productivity
-    </h2>
-
-    <div className="w-full h-[300px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={PRODUCTIVITY}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="day" />
-          <YAxis />
-          <Tooltip />
-
-          <Bar dataKey="Mentoring" />
-          <Bar dataKey="SelfImprove" />
-          <Bar dataKey="Student" />
-        </BarChart>
-      </ResponsiveContainer>
     </div>
-  </section>
-</div>
-
-
-);
+  );
 }

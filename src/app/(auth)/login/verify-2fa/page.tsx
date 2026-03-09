@@ -37,18 +37,39 @@ export default function TwoFAPage() {
   useEffect(() => {
     const userData = tokenManager.getUser();
     const userEmail = userData?.email;
-    
-    if (userEmail) {
-      // Use actual user data from token manager
-      setUser({
-        initials: userData?.name ? userData.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U',
-        name: userData?.name || 'User',
-        email: userEmail,
-        role: userData?.role || 'LEARNER' // Use actual role from backend
-      });
-    } else {
+    const roleFromToken = tokenManager.getRoleFromToken();
+
+    if (!userEmail || !roleFromToken) {
       router.push('/login');
+      return;
     }
+
+    const displayName =
+      (userData?.firstName || userData?.lastName)
+        ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim()
+        : (userEmail.split('@')[0] || userEmail);
+
+    const initials =
+      displayName
+        .split(' ')
+        .filter(Boolean)
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase() || 'U';
+
+    const roleLabel =
+      roleFromToken === 'ADMIN'
+        ? 'Admin'
+        : roleFromToken === 'INSTRUCTOR'
+        ? 'Instructor'
+        : 'Learner';
+
+    setUser({
+      initials,
+      name: displayName,
+      email: userEmail,
+      role: roleLabel,
+    });
   }, [router]);
 
   const startTimer = useCallback(() => {
@@ -82,7 +103,20 @@ export default function TwoFAPage() {
       if (response.success) {
         setOtpStatus("success");
         clearInterval(timerRef.current!);
-        
+
+        // Persist latest token & user details for dashboards
+        const anyResponse: any = response as any;
+        const token = anyResponse.token || anyResponse.data?.token;
+        const userObj = anyResponse.user || anyResponse.data?.user;
+
+        if (token) {
+          tokenManager.setToken(token);
+        }
+
+        if (userObj) {
+          tokenManager.setUser(userObj);
+        }
+
         // Get user role from JWT token (most reliable source)
         const userRole = tokenManager.getRoleFromToken();
         console.log('User role from token:', userRole);

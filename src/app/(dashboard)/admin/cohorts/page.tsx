@@ -264,6 +264,7 @@ export default function CohortsPage() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Cohort Name</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Course Type</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Instructor</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Start Date</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">End Date</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Enrollment</th>
@@ -287,6 +288,17 @@ export default function CohortsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-gray-600">{formatCourseType(cohort.courseType)}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600">
+                        {cohort.instructorIds && cohort.instructorIds.length > 0
+                          ? `Instructor: ${
+                              cohort.instructorIds[0].length > 8
+                                ? `${cohort.instructorIds[0].slice(0, 8)}...`
+                                : cohort.instructorIds[0]
+                            }`
+                          : "Instructor: Not assigned"}
+                      </p>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-gray-600">

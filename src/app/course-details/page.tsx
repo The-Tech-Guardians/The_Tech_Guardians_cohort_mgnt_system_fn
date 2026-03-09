@@ -4,13 +4,63 @@ import { FAQItem } from "@/components/course-details/faq-item";
 import { SectionTitle, Stars } from "@/components/course-details/helper";
 import { Sidebar } from "@/components/course-details/side-bar";
 import { COHORTS, COURSE, CURRICULUM, FAQS, HIGHLIGHTS, INSTRUCTOR, OUTCOMES } from "@/lib/course-data";
+import { courseService, Module, Lesson, Assessment } from "@/services/courseService";
 import { Clock, Computer, Trophy, Rocket, BookOpen, Globe, Flame } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 
 export default function CourseDetailPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const TABS = ["overview", "curriculum", "instructor", "faqs"];
+  
+  // State for API data
+  const [modules, setModules] = useState<Module[]>([]);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch course data on mount
+  useEffect(() => {
+    const fetchCourseData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch modules, lessons, and assessments for the course
+        // Using mock courseId for now - in production, get this from URL params or state
+        const courseId = COURSE.id;
+        
+        const [modulesData, assessmentsData] = await Promise.all([
+          courseService.getModulesByCourse(courseId),
+          courseService.getAssessmentsByCourse(courseId),
+        ]).catch(err => {
+          console.warn('Failed to fetch from API:', err);
+          return [[], []];
+        });
+        
+        setModules(modulesData);
+        setAssessments(assessmentsData);
+        
+        // Fetch lessons if we have modules
+        if (modulesData.length > 0) {
+          const lessonsData = await courseService.getLessonsByModule(modulesData[0].id)
+            .catch(err => {
+              console.warn('Failed to fetch lessons:', err);
+              return [];
+            });
+          setLessons(lessonsData);
+        }
+      } catch (err) {
+        console.error('Error fetching course data:', err);
+        setError('Failed to load course content');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourseData();
+  }, []);
 
   return (
     <>
@@ -68,7 +118,7 @@ export default function CourseDetailPage() {
                 {/* Quick stats chips */}
                 <div className="flex flex-wrap gap-2 mb-6">
                   {[
-                    { i: <BookOpen className="w-3 h-3"/>, v: "65 lessons" },
+                    { i: <BookOpen className="w-3 h-3"/>, v: `${lessons.length} lessons` },
                     { i: <Clock className="w-3 h-3"/>, v: "25h+ content" },
                     { i: <Computer className="w-3 h-3"/>, v: "3x live / week" },
                     { i: <Trophy className="w-3 h-3"/>, v: "Certificate" },
@@ -92,6 +142,12 @@ export default function CourseDetailPage() {
                     <span><strong className="text-slate-800">25 people</strong> enrolled this week</span>
                   </div>
                 </div>
+
+                {error && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-[13px]">
+                    {error}
+                  </div>
+                )}
               </div>
 
               {/* Right — instructor card */}
@@ -209,25 +265,65 @@ export default function CourseDetailPage() {
               {(activeTab === "curriculum") && (
                 <div>
                   <SectionTitle>Course Curriculum</SectionTitle>
-                  <p className="text-[13.5px] text-slate-500 mb-6">12 weeks · 65 lessons · 4 projects</p>
-                  <div className="space-y-3">
-                    {CURRICULUM.map((w, i) => (
-                      <div key={w.week} className="border border-slate-100 rounded-2xl overflow-hidden">
-                        <div className="flex items-center gap-4 px-5 py-4 bg-slate-50">
-                          <div className={`w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white text-[11px] font-black flex-shrink-0`}>
-                            {i + 1}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="font-bold text-slate-800 text-[14px]">{w.title}</p>
-                              <span className="text-[11px] font-semibold text-slate-400 flex-shrink-0">{w.lessons} lessons</span>
+                  <p className="text-[13.5px] text-slate-500 mb-6">
+                    {modules.length} modules · {lessons.length} lessons · {assessments.length} assessments
+                  </p>
+                  
+                  {loading ? (
+                    <div className="space-y-3">
+                      {Array.from({length: 3}).map((_, i) => (
+                        <div key={i} className="border border-slate-100 rounded-2xl overflow-hidden animate-pulse">
+                          <div className="flex items-center gap-4 px-5 py-4 bg-slate-100">
+                            <div className="w-8 h-8 rounded-full bg-slate-200"></div>
+                            <div className="flex-1 space-y-2">
+                              <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+                              <div className="h-3 bg-slate-200 rounded w-1/2"></div>
                             </div>
-                            <p className="text-[12px] text-slate-500 mt-0.5 truncate">{w.week} · {w.topics}</p>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : modules.length > 0 ? (
+                    <div className="space-y-3">
+                      {modules.map((module, i) => (
+                        <div key={module.id} className="border border-slate-100 rounded-2xl overflow-hidden">
+                          <div className="flex items-center gap-4 px-5 py-4 bg-slate-50">
+                            <div className={`w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white text-[11px] font-black flex-shrink-0`}>
+                              {i + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="font-bold text-slate-800 text-[14px]">{module.title}</p>
+                                <span className="text-[11px] font-semibold text-slate-400 flex-shrink-0">
+                                  {lessons.filter(l => l.moduleId === module.id).length} lessons
+                                </span>
+                              </div>
+                              <p className="text-[12px] text-slate-500 mt-0.5 truncate">{module.description || 'Module'}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {CURRICULUM.map((w, i) => (
+                        <div key={w.week} className="border border-slate-100 rounded-2xl overflow-hidden">
+                          <div className="flex items-center gap-4 px-5 py-4 bg-slate-50">
+                            <div className={`w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white text-[11px] font-black flex-shrink-0`}>
+                              {i + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="font-bold text-slate-800 text-[14px]">{w.title}</p>
+                                <span className="text-[11px] font-semibold text-slate-400 flex-shrink-0">{w.lessons} lessons</span>
+                              </div>
+                              <p className="text-[12px] text-slate-500 mt-0.5 truncate">{w.week} · {w.topics}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 

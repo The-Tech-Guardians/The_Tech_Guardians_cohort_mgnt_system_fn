@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
 import { Plus, Search, Edit, Trash2, Loader2, Eye, EyeOff } from "lucide-react";
-import { 
-  courseService, 
-  type BackendCourse,
-  formatCourseType
+import {
+  courseService,
+  type Course,
+  formatCourseType,
 } from "@/services/courseService";
 
 // Get current user from localStorage
@@ -33,7 +33,7 @@ const COURSE_TYPE_OPTIONS = [
 ];
 
 export default function AdminCoursesPage() {
-  const [courses, setCourses] = useState<BackendCourse[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,40 +43,28 @@ export default function AdminCoursesPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Selected items
-  const [selectedCourse, setSelectedCourse] = useState<BackendCourse | null>(null);
-  const [courseToDelete, setCourseToDelete] = useState<BackendCourse | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
 
   // Search and UI states
   const [searchTerm, setSearchTerm] = useState("");
   const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
   const [courseForm, setCourseForm] = useState(initialCourseForm);
 
-  // Pagination
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    pages: 0
-  });
-
   // Fetch courses
   const fetchCourses = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await courseService.getAllCourses(pagination.page, pagination.limit);
-      
-      setCourses(response.courses || []);
-      if (response.pagination) {
-        setPagination(response.pagination);
-      }
+      const response = await courseService.getAllCourses();
+      setCourses(response || []);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch courses');
       showToast(err.message || 'Failed to fetch courses', 'error');
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit]);
+  }, []);
 
   useEffect(() => {
     fetchCourses();
@@ -99,15 +87,15 @@ export default function AdminCoursesPage() {
     try {
       setLoading(true);
       
-      const response = await courseService.createCourse({
+      const created = await courseService.createCourse({
         title: courseForm.title,
         description: courseForm.description,
-        instructorId: user.uuid || user.id || "",
-        cohortId: user.cohortId || "",
+        instructorId: (user.uuid || user.id || "") as string,
+        cohortId: (user.cohortId || "") as string,
         courseType: courseForm.courseType,
       });
 
-      if (response.course) {
+      if (created) {
         showToast("Course created successfully!");
         setCourseForm(initialCourseForm);
         setShowCreateModal(false);
@@ -126,13 +114,13 @@ export default function AdminCoursesPage() {
 
     try {
       setLoading(true);
-      const response = await courseService.updateCourse(selectedCourse.id, {
+      const updated = await courseService.updateCourse(selectedCourse.id, {
         title: courseForm.title,
         description: courseForm.description,
         courseType: courseForm.courseType,
       });
 
-      if (response.course) {
+      if (updated) {
         showToast("Course updated successfully!");
         setCourseForm(initialCourseForm);
         setShowEditModal(false);
@@ -167,7 +155,7 @@ export default function AdminCoursesPage() {
   const handlePublishCourse = async (courseId: string) => {
     try {
       setLoading(true);
-      await courseService.togglePublish(courseId);
+      await courseService.publishCourse(courseId);
       showToast("Course status updated successfully!");
       fetchCourses();
     } catch (err: any) {
@@ -177,7 +165,7 @@ export default function AdminCoursesPage() {
     }
   };
 
-  const openEditModal = (course: BackendCourse) => {
+  const openEditModal = (course: Course) => {
     setSelectedCourse(course);
     setCourseForm({
       title: course.title,
@@ -187,12 +175,12 @@ export default function AdminCoursesPage() {
     setShowEditModal(true);
   };
 
-  const openDeleteModal = (course: BackendCourse) => {
+  const openDeleteModal = (course: Course) => {
     setCourseToDelete(course);
     setShowDeleteModal(true);
   };
 
-  const filteredCourses = courses.filter(course =>
+  const filteredCourses = courses.filter((course) =>
     course.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     course.courseType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     course.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -248,126 +236,115 @@ export default function AdminCoursesPage() {
         </div>
       </div>
 
-      {/* Courses Table */}
-      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Title</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Course Type</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Description</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Instructor</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Created</th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredCourses.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center">
-                    <p className="text-gray-500">No courses found</p>
-                  </td>
-                </tr>
-              ) : (
-                filteredCourses.map((course) => (
-                  <tr key={course.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-medium text-gray-900">{course.title}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-600">{formatCourseType(course.courseType)}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-600 max-w-xs truncate" title={course.description}>
-                        {course.description || "N/A"}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-600">
-                        {getCurrentUser()?.uuid === course.instructorId 
-                          ? (getCurrentUser()?.name || getCurrentUser()?.email || "You")
-                          : (course.instructorId?.substring(0, 8) + "...")
-                        }
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 text-xs font-semibold rounded-full border inline-block ${
-                        course.isPublished
-                          ? "bg-green-50 text-green-600 border-green-200"
-                          : "bg-amber-50 text-amber-600 border-amber-200"
-                      }`}>
-                        {course.isPublished ? "Published" : "Draft"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-600">
-                        {course.createdAt ? new Date(course.createdAt).toLocaleDateString() : "N/A"}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => openEditModal(course)}
-                          className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                          title="Edit"
-                          disabled={loading}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => handlePublishCourse(course.id)}
-                          className={`p-2 rounded-lg transition-colors ${
-                            course.isPublished
-                              ? "bg-amber-50 text-amber-600 hover:bg-amber-100"
-                              : "bg-green-50 text-green-600 hover:bg-green-100"
-                          }`}
-                          title={course.isPublished ? "Unpublish" : "Publish"}
-                          disabled={loading}
-                        >
-                          {course.isPublished ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                        <button
-                          onClick={() => openDeleteModal(course)}
-                          className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                          title="Delete"
-                          disabled={loading}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {/* Courses as cards */}
+      {filteredCourses.length === 0 ? (
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center">
+          <p className="text-gray-500 mb-2">No courses found</p>
+          <p className="text-xs text-gray-400">
+            Try adjusting your search or create a new course.
+          </p>
         </div>
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filteredCourses.map((course) => (
+            <div
+              key={course.id}
+              className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col justify-between hover:shadow-md transition-all"
+            >
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-gray-900 truncate" title={course.title}>
+                      {course.title}
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formatCourseType(course.courseType)}
+                    </p>
+                  </div>
+                  <span
+                    className={`px-3 py-1 text-[11px] font-semibold rounded-full border ${
+                      course.isPublished
+                        ? "bg-green-50 text-green-600 border-green-200"
+                        : "bg-amber-50 text-amber-600 border-amber-200"
+                    }`}
+                  >
+                    {course.isPublished ? "Published" : "Draft"}
+                  </span>
+                </div>
 
-      {/* Pagination */}
-      {pagination.pages > 1 && (
-        <div className="flex justify-center gap-2">
-          <button
-            onClick={() => setPagination(prev => ({ ...prev, page: Math.max(prev.page - 1, 1) }))}
-            disabled={pagination.page === 1 || loading}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm disabled:opacity-50 hover:bg-gray-50 transition-colors"
-          >
-            Previous
-          </button>
-          <span className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-sm">
-            Page {pagination.page} of {pagination.pages}
-          </span>
-          <button
-            onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.page + 1, prev.pages) }))}
-            disabled={pagination.page === pagination.pages || loading}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm disabled:opacity-50 hover:bg-gray-50 transition-colors"
-          >
-            Next
-          </button>
+                <p
+                  className="text-xs text-gray-600 line-clamp-3"
+                  title={course.description || undefined}
+                >
+                  {course.description || "No description provided for this course yet."}
+                </p>
+
+                <div className="flex items-center justify-between text-[11px] text-gray-500">
+                  <span className="truncate">
+                    Instructor:&nbsp;
+                    <span className="font-medium text-gray-700">
+                      {getCurrentUser()?.uuid === course.instructorId
+                        ? getCurrentUser()?.name ||
+                          getCurrentUser()?.email ||
+                          "You"
+                        : (course.instructorId?.substring(0, 8) || "Unknown") + "..."}
+                    </span>
+                  </span>
+                  <span>
+                    Created:&nbsp;
+                    <span className="font-medium text-gray-700">
+                      {course.createdAt
+                        ? new Date(course.createdAt).toLocaleDateString()
+                        : "N/A"}
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                  <span className="inline-flex items-center gap-1">
+                    <Eye className="w-3 h-3" />
+                    {course.isPublished ? "Visible to learners" : "Hidden from learners"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => openEditModal(course)}
+                    className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                    title="Edit"
+                    disabled={loading}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handlePublishCourse(course.id)}
+                    className={`p-2 rounded-lg transition-colors ${
+                      course.isPublished
+                        ? "bg-amber-50 text-amber-600 hover:bg-amber-100"
+                        : "bg-green-50 text-green-600 hover:bg-green-100"
+                    }`}
+                    title={course.isPublished ? "Unpublish" : "Publish"}
+                    disabled={loading}
+                  >
+                    {course.isPublished ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={() => openDeleteModal(course)}
+                    className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                    title="Delete"
+                    disabled={loading}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
+
+      {/* Pagination (disabled while using simple list API) */}
 
       {/* Create Course Modal */}
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Create New Course" size="md">

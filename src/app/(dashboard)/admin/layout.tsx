@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight, X } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight, X, Layers } from "lucide-react";
 import Logo from "@/components/ui/navbar/Logo";
 import { tokenManager } from "@/lib/auth";
 
@@ -62,10 +62,41 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [userName, setUserName] = useState('Admin User');
+  const [userInitials, setUserInitials] = useState('AD');
+  const [userRoleLabel, setUserRoleLabel] = useState('Admin');
 
   // Role-based routing guard
   useEffect(() => {
     const userRole = tokenManager.getRoleFromToken();
+
+    // Derive user display information from stored user + token
+    const userData = tokenManager.getUser();
+    const email = userData?.email as string | undefined;
+    const name =
+      (userData?.firstName || userData?.lastName)
+        ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim()
+        : email?.split('@')[0] || email || 'User';
+    const initials =
+      name
+        .split(' ')
+        .filter(Boolean)
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase() || 'AD';
+
+    const roleLabel =
+      userRole === 'ADMIN'
+        ? 'Admin'
+        : userRole === 'INSTRUCTOR'
+        ? 'Instructor'
+        : userRole === 'LEARNER'
+        ? 'Learner'
+        : 'Admin';
+
+    setUserName(name);
+    setUserInitials(initials);
+    setUserRoleLabel(roleLabel);
 
     if (userRole) {
       switch (userRole) {
@@ -105,6 +136,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { id: "users", label: "Users", icon: Users, href: "/admin/users" },
     { id: "cohorts", label: "Cohorts", icon: Calendar, href: "/admin/cohorts" },
     { id: "courses", label: "Courses", icon: BookOpen, href: "/admin/courses" },
+    { id: "modules", label: "Modules", icon: Layers, href: "/admin/modules" },
     { id: "moderation", label: "Moderation", icon: Shield, href: "/admin/moderation" },
     { id: "logs", label: "Audit Logs", icon: FileText, href: "/admin/logs" },
   ];
@@ -114,6 +146,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     users: "User Management",
     cohorts: "Cohort Management",
     courses: "Course Management",
+    modules: "Modules Management",
     moderation: "Content Moderation",
     logs: "Audit Logs",
   };
@@ -123,6 +156,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     users: "Manage platform users",
     cohorts: "Create and manage cohorts",
     courses: "Manage course content",
+    modules: "View modules grouped by course",
     moderation: "Review flagged content",
     logs: "System activity logs",
   };
@@ -175,7 +209,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         >
           <div className="relative flex-shrink-0">
             <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">
-              AD
+              {userInitials}
             </div>
             <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />
           </div>
@@ -183,8 +217,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {!collapsed && (
             <>
               <div className="flex-1 text-left min-w-0">
-                <div className="text-gray-900 text-xs font-semibold truncate leading-tight">Admin User</div>
-                <div className="text-gray-400 text-[10px] mt-0.5 font-medium">Administrator</div>
+                <div className="text-gray-900 text-xs font-semibold truncate leading-tight">{userName}</div>
+                <div className="text-gray-400 text-[10px] mt-0.5 font-medium">{userRoleLabel}</div>
               </div>
 
               <ChevronRight
@@ -241,7 +275,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {titles[view]}
               </h1>
               <span className="hidden sm:inline-flex items-center text-[10px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                ADMIN
+                {userRoleLabel.toUpperCase()}
               </span>
             </div>
             <p className="text-xs text-gray-400 hidden sm:block mt-0.5 font-medium">
@@ -319,7 +353,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-xs font-bold
                 group-hover:bg-indigo-700 transition-all duration-200 shadow-sm group-hover:shadow-md group-hover:scale-105">
-                AD
+                {userInitials}
               </div>
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />
             </button>
