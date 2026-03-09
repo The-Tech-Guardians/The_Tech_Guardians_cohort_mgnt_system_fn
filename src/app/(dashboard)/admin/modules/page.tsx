@@ -1,143 +1,525 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import { adminApi, type Course, type Module } from "@/lib/adminApi";
-import { Loader2, Layers, BookOpen } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { RefreshCw, Search, Plus, Layers, Edit, Trash2, BookOpen, X } from "lucide-react";
+import Modal from "@/components/admin/Modal";
+import Toast from "@/components/admin/Toast";
+import { moduleService, type Module } from "@/services/moduleService";
+import { courseService, type Course } from "@/services/courseService";
+
+const API_BASE_URL = "http://localhost:3000/api";
 
 export default function ModulesManagementPage() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [modules, setModules] = useState<Module[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Modal states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [moduleToDelete, setModuleToDelete] = useState<Module | null>(null);
+  const [moduleToEdit, setModuleToEdit] = useState<Module | null>(null);
+  
+  // Form states
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    orderIndex: 0,
+    releaseWeek: 1,
+  });
+  const [formLoading, setFormLoading] = useState(false);
+  
+  // Toast
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
+
+  const getToken = () => localStorage.getItem("auth_token") || localStorage.getItem("token");
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
+  };
+
+  // Fetch courses
+  const fetchCourses = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await courseService.getAllCourses();
+      setCourses(response || []);
+      if (response && response.length > 0) {
+        setSelectedCourse(response[0].id);
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to load courses");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await adminApi.listCourses(1, 50);
-        setCourses(response.data || []);
-      } catch (err: any) {
-        setError(err.message || "Failed to load modules");
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchCourses();
+  }, [fetchCourses]);
 
-    fetchData();
-  }, []);
+  // Fetch modules when course is selected
+  const fetchModules = useCallback(async () => {
+    if (!selectedCourse) {
+      setModules([]);
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await moduleService.getModulesByCourse(selectedCourse);
+      setModules(response || []);
+    } catch (err: any) {
+      setError(err.message || "Failed to load modules");
+      setModules([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedCourse]);
+
+  useEffect(() => {
+    fetchModules();
+  }, [fetchModules]);
+
+  // Handle create module
+  const handleCreateModule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCourse) return;
+    setFormLoading(true);
+
+    try {
+      await moduleService.createModule({
+        courseId: selectedCourse,
+        title: formData.title,
+        description: formData.description,
+        orderIndex: formData.orderIndex,
+        releaseWeek: formData.releaseWeek,
+      });
+      
+      showToast("Module created successfully!");
+      setFormData({ title: "", description: "", orderIndex: 0, releaseWeek: 1 });
+      setShowCreateModal(false);
+      fetchModules();
+    } catch (err: any) {
+      showToast(err.message || "Failed to create module", "error");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  // Handle update module
+  const handleUpdateModule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!moduleToEdit) return;
+    setFormLoading(true);
+
+    try {
+      await moduleService.updateModule(moduleToEdit.id, {
+        title: formData.title,
+        description: formData.description,
+        orderIndex: formData.orderIndex,
+        releaseWeek: formData.releaseWeek,
+      });
+      
+      showToast("Module updated successfully!");
+      setShowEditModal(false);
+      setModuleToEdit(null);
+      fetchModules();
+    } catch (err: any) {
+      showToast(err.message || "Failed to update module", "error");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  // Handle delete module
+  const handleDeleteModule = async () => {
+    if (!moduleToDelete) return;
+    setFormLoading(true);
+
+    try {
+      await moduleService.deleteModule(moduleToDelete.id);
+      showToast("Module deleted successfully!");
+      setShowDeleteModal(false);
+      setModuleToDelete(null);
+      fetchModules();
+    } catch (err: any) {
+      showToast(err.message || "Failed to delete module", "error");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const openEditModal = (module: Module) => {
+    setModuleToEdit(module);
+    setFormData({
+      title: module.title,
+      description: module.description || "",
+      orderIndex: module.orderIndex,
+      releaseWeek: module.releaseWeek,
+    });
+    setShowEditModal(true);
+  };
+
+  const openDeleteModal = (module: Module) => {
+    setModuleToDelete(module);
+    setShowDeleteModal(true);
+  };
+
+  const filteredModules = modules.filter(m =>
+    m.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const selectedCourseData = courses.find(c => c.id === selectedCourse);
 
   if (loading && courses.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-96">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        <RefreshCw className="w-8 h-8 animate-spin text-indigo-600" />
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
-        <p className="text-sm text-red-600 mb-2">{error}</p>
-        <p className="text-xs text-red-500">
-          Ensure the admin API for courses/modules is reachable.
-        </p>
-      </div>
-    );
-  }
-
-  const coursesWithModules = courses.filter((c) => (c.modules || []).length > 0);
-  const totalModules = courses.reduce(
-    (sum, c) => sum + ((c.modules as Module[] | undefined)?.length || 0),
-    0
-  );
 
   return (
     <div className="space-y-6">
-      {/* Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-            <Layers className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-              Total modules
-            </p>
-            <p className="text-lg font-semibold text-gray-900">{totalModules}</p>
-          </div>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Module Management</h1>
+          <p className="text-sm text-gray-500 mt-1">Create and manage course modules</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-            <BookOpen className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-              Courses with modules
-            </p>
-            <p className="text-lg font-semibold text-gray-900">{coursesWithModules.length}</p>
-          </div>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 text-sm text-gray-600 hidden sm:flex items-center">
-          Manage modules grouped by course. Use this view to quickly see how content is structured
-          across the platform.
-        </div>
+        <button
+          onClick={() => {
+            setFormData({ title: "", description: "", orderIndex: modules.length + 1, releaseWeek: 1 });
+            setShowCreateModal(true);
+          }}
+          disabled={!selectedCourse}
+          className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Plus className="w-4 h-4" />
+          Add Module
+        </button>
       </div>
 
-      {/* Modules per course */}
-      {coursesWithModules.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center">
-          <p className="text-gray-500 mb-2">No modules found.</p>
-          <p className="text-xs text-gray-400">
-            Create courses and add modules via your course authoring tools.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {coursesWithModules.map((course) => (
-            <div
-              key={course.id}
-              className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-3 hover:shadow-md transition-all"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 className="text-sm font-semibold text-gray-900 truncate" title={course.title}>
-                    {course.title}
-                  </h3>
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    {course.courseType.replace(/_/g, " ").toLowerCase()}
-                  </p>
-                </div>
-                <span className="px-3 py-1 text-[11px] font-semibold rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">
-                  {(course.modules || []).length} modules
-                </span>
-              </div>
-
-              <div className="border-t border-gray-100 pt-3 space-y-2 max-h-40 overflow-y-auto">
-                {(course.modules || []).map((mod) => (
-                  <div
-                    key={mod.id}
-                    className="flex items-start gap-2 rounded-lg bg-gray-50 px-3 py-2"
-                  >
-                    <div className="mt-0.5">
-                      <Layers className="w-3.5 h-3.5 text-indigo-500" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-gray-900 truncate" title={mod.title}>
-                        {mod.title}
-                      </p>
-                      {mod.description && (
-                        <p className="text-[11px] text-gray-500 line-clamp-2">
-                          {mod.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+      {/* Course Selection */}
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Select Course</label>
+        <select
+          value={selectedCourse}
+          onChange={(e) => setSelectedCourse(e.target.value)}
+          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          <option value="">Select a course...</option>
+          {courses.map((course) => (
+            <option key={course.id} value={course.id}>
+              {course.title}
+            </option>
           ))}
+        </select>
+      </div>
+
+      {/* Stats */}
+      {selectedCourse && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <Layers className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total Modules</p>
+              <p className="text-xl font-bold text-gray-900">{modules.length}</p>
+            </div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Course</p>
+              <p className="text-sm font-bold text-gray-900 truncate">{selectedCourseData?.title || "N/A"}</p>
+            </div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">
+              <RefreshCw className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Status</p>
+              <p className="text-sm font-bold text-gray-900">{selectedCourseData?.isPublished ? "Published" : "Draft"}</p>
+            </div>
+          </div>
         </div>
       )}
+
+      {/* Search */}
+      {selectedCourse && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search modules..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full max-w-md"
+          />
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
+
+      {/* Modules List */}
+      {selectedCourse ? (
+        filteredModules.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredModules.map((module) => (
+              <div
+                key={module.id}
+                className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all"
+              >
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                      <Layers className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-semibold text-gray-500">Week {module.releaseWeek}</span>
+                  </div>
+                  <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded">
+                    #{module.orderIndex}
+                  </span>
+                </div>
+                
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">{module.title}</h3>
+                {module.description && (
+                  <p className="text-xs text-gray-500 line-clamp-2 mb-4">{module.description}</p>
+                )}
+                
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                  <button
+                    onClick={() => openEditModal(module)}
+                    className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                    title="Edit"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => openDeleteModal(module)}
+                    className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
+            <Layers className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 mb-2">No modules found</p>
+            <p className="text-xs text-gray-400">
+              {searchTerm ? "Try adjusting your search" : "Click 'Add Module' to create the first module"}
+            </p>
+          </div>
+        )
+      ) : (
+        <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
+          <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500">Select a course to view its modules</p>
+        </div>
+      )}
+
+      {/* Create Module Modal */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Create New Module"
+        size="md"
+      >
+        <form onSubmit={handleCreateModule} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Module Title</label>
+            <input
+              type="text"
+              required
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="e.g., Introduction to the Course"
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <textarea
+              rows={3}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Module description..."
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Order Index</label>
+              <input
+                type="number"
+                required
+                min={0}
+                value={formData.orderIndex}
+                onChange={(e) => setFormData({ ...formData, orderIndex: parseInt(e.target.value) || 0 })}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Release Week</label>
+              <input
+                type="number"
+                required
+                min={1}
+                value={formData.releaseWeek}
+                onChange={(e) => setFormData({ ...formData, releaseWeek: parseInt(e.target.value) || 1 })}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              disabled={formLoading}
+              className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
+            >
+              {formLoading ? <RefreshCw className="w-5 h-5 animate-spin mx-auto" /> : "Create Module"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(false)}
+              className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Module Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Edit Module"
+        size="md"
+      >
+        <form onSubmit={handleUpdateModule} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Module Title</label>
+            <input
+              type="text"
+              required
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <textarea
+              rows={3}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Order Index</label>
+              <input
+                type="number"
+                required
+                min={0}
+                value={formData.orderIndex}
+                onChange={(e) => setFormData({ ...formData, orderIndex: parseInt(e.target.value) || 0 })}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Release Week</label>
+              <input
+                type="number"
+                required
+                min={1}
+                value={formData.releaseWeek}
+                onChange={(e) => setFormData({ ...formData, releaseWeek: parseInt(e.target.value) || 1 })}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              disabled={formLoading}
+              className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
+            >
+              {formLoading ? <RefreshCw className="w-5 h-5 animate-spin mx-auto" /> : "Save Changes"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowEditModal(false)}
+              className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete Module"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Are you sure you want to delete <span className="font-semibold">{moduleToDelete?.title}</span>? 
+            This action cannot be undone.
+          </p>
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={handleDeleteModule}
+              disabled={formLoading}
+              className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
+            >
+              {formLoading ? <RefreshCw className="w-5 h-5 animate-spin mx-auto" /> : "Delete"}
+            </button>
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Toast */}
+      <Toast 
+        message={toast.message} 
+        type={toast.type} 
+        isVisible={toast.show} 
+        onClose={() => setToast({ ...toast, show: false })} 
+      />
     </div>
   );
 }

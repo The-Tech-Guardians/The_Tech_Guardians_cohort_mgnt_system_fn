@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 export interface DashboardStats {
   totalUsers: number;
@@ -42,6 +42,8 @@ export interface Module {
   title: string;
   description: string;
   courseId: string;
+  orderIndex?: number;
+  releaseWeek?: number;
 }
 
 interface ApiResponse<T> {
@@ -66,7 +68,8 @@ interface PaginatedResponse<T> {
 
 const getAuthToken = () => {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem('auth_token');
+    // Check both 'auth_token' (preferred) and 'token' for backward compatibility
+    return localStorage.getItem('auth_token') || localStorage.getItem('token');
   }
   return null;
 };
@@ -329,6 +332,119 @@ export const adminApi = {
       return data.data || ({} as Course);
     } catch (error) {
       console.error('Publish course error:', error);
+      throw error;
+    }
+  },
+
+  // Modules - Get modules for a specific course
+  async getModulesByCourse(courseId: string): Promise<Module[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/modules/course/${courseId}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch modules');
+      }
+
+      const data = await response.json();
+      return data.modules || [];
+    } catch (error) {
+      console.error('Get modules error:', error);
+      throw error;
+    }
+  },
+
+  // Modules - Get single module
+  async getModuleById(id: string): Promise<Module | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/modules/${id}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch module');
+      }
+
+      const data = await response.json();
+      return data.module || null;
+    } catch (error) {
+      console.error('Get module error:', error);
+      throw error;
+    }
+  },
+
+  // Modules - Create module
+  async createModule(moduleData: {
+    courseId: string;
+    title: string;
+    description?: string;
+    orderIndex: number;
+    releaseWeek: number;
+  }): Promise<Module> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/modules`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(moduleData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create module');
+      }
+
+      const data = await response.json();
+      return data.module || ({} as Module);
+    } catch (error) {
+      console.error('Create module error:', error);
+      throw error;
+    }
+  },
+
+  // Modules - Update module
+  async updateModule(
+    id: string,
+    updates: Partial<{
+      title: string;
+      description: string;
+      orderIndex: number;
+      releaseWeek: number;
+    }>
+  ): Promise<Module> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/modules/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(updates),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update module');
+      }
+
+      const data = await response.json();
+      return data.module || ({} as Module);
+    } catch (error) {
+      console.error('Update module error:', error);
+      throw error;
+    }
+  },
+
+  // Modules - Delete module
+  async deleteModule(id: string): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/modules/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete module');
+      }
+    } catch (error) {
+      console.error('Delete module error:', error);
       throw error;
     }
   },
