@@ -1,14 +1,22 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { BookCopy, ChartColumnStacked, GraduationCap, Trophy } from "lucide-react";
 import Logo from "@/components/ui/navbar/Logo";
 
+const API_BASE_URL = "http://localhost:3000/api";
 
-export default function SignupPage() {
+function RegisterForm() {
+  const searchParams = useSearchParams();
+  const invitationToken = searchParams.get("token");
+  
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [invitationData, setInvitationData] = useState<{email?: string; role?: string} | null>(null);
+  
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -18,18 +26,51 @@ export default function SignupPage() {
     agreeTerms: false,
   });
 
+  // Check invitation token on mount
+  useEffect(() => {
+    if (invitationToken) {
+      // Pre-fill email would require backend verification - just store the token
+      console.log("Invitation token found:", invitationToken);
+    }
+  }, [invitationToken]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    setError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/Register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          first_name: form.firstName,
+          last_name: form.lastName,
+          email: form.email,
+          password: form.password,
+          invitation_token: invitationToken || undefined,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Registration failed");
+      }
+
       setStep(2);
-    }, 1800);
+    } catch (err: any) {
+      setError(err.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const passwordStrength = () => {
@@ -109,7 +150,7 @@ export default function SignupPage() {
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
 
           {/* Logo */}
-          <Logo />
+          <Logo  textMain="LearnHub"  />
 
           <div className="space-y-8">
             <div>
@@ -286,6 +327,11 @@ export default function SignupPage() {
           </div>
 
           <div className="bg-white rounded-3xl shadow-xl shadow-black/5 border border-gray-100 p-8">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+                {error}
+              </div>
+            )}
             <div className="mb-6">
               <div className="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 rounded-full px-3 py-1 text-xs font-medium mb-3">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse inline-block" />
@@ -439,3 +485,5 @@ export default function SignupPage() {
     </div>
   );
 }
+
+export default RegisterForm;
