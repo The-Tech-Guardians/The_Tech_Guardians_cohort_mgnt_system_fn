@@ -10,8 +10,22 @@ export interface User {
   updatedAt: string;
 }
 
+
+
+
+
+
 export interface InvitationRequest {
   email: string;
   role: 'ADMIN' | 'INSTRUCTOR' | 'LEARNER';
   cohort_id?: string;
 }
+
+
+
+
+
+
+
+
+
