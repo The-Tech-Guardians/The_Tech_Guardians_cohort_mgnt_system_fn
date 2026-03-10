@@ -24,24 +24,24 @@ export default function LoginPage() {
 
     try {
       console.log('Attempting login with:', { email, password: '***' });
-      const response = await authAPI.login({ email, password });
-      console.log('Login response:', JSON.stringify(response, null, 2));
-      console.log('Response success:', response.success);
-      console.log('Response data:', response.data);
-      console.log('Response message:', response.message);
+      const result = await authAPI.login({ email, password });
+      console.log('Login response:', JSON.stringify(result, null, 2));
+      console.log('Response success:', result.success);
+      console.log('Response data:', result.data);
+      console.log('Response message:', result.message);
       
-      if ((response.success && response.data?.token && response.data?.user) || (response.requires_2fa && response.token && response.user_id)) {
+      if ((result.success && result.data?.token && result.data?.user) || (result.requires_2fa && result.token && result.user_id)) {
         console.log('Login successful, storing data and showing message');
         
         // Handle different response formats
-        if (response.requires_2fa && response.token && response.user_id) {
+        if (result.requires_2fa && result.token && result.user_id) {
           // Backend format: { requires_2fa: true, token, user_id, message }
-          tokenManager.setToken(response.token);
-          tokenManager.setUser({ id: response.user_id, email });
-        } else if (response.data?.token && response.data?.user) {
+          tokenManager.setToken(result.token);
+          tokenManager.setUser({ id: result.user_id, email });
+        } else if (result.data?.token && result.data?.user) {
           // Standard format: { success: true, data: { token, user } }
-          tokenManager.setToken(response.data.token);
-          tokenManager.setUser(response.data.user);
+          tokenManager.setToken(result.data.token);
+          tokenManager.setUser(result.data.user);
         }
         
         // Show success message
@@ -53,8 +53,8 @@ export default function LoginPage() {
           router.push("/login/verify-2fa");
         }, 2000);
       } else {
-        console.log('Login failed:', response);
-        setError(response.message || "Login failed. Please check your credentials.");
+        console.log('Login failed:', result);
+        setError(result.message || "Login failed. Please check your credentials.");
       }
     } catch (error) {
       console.error('Login error:', error);
