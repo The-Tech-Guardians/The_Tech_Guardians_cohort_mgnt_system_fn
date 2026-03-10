@@ -46,7 +46,7 @@ function RegisterForm() {
     setError("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/users/Register`, {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

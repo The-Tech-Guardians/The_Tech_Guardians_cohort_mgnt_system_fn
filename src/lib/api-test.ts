@@ -1,6 +1,6 @@
-// API Test Utility - Add this to verify your backend is working
+// API Test Utility - FIXED
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = 'http://localhost:5000/api';
 
 export async function testBackendConnection() {
   console.log('🔍 Testing backend connection...\n');

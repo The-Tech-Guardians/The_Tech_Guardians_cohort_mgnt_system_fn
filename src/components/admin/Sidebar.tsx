@@ -1,8 +1,11 @@
 'use client';
 
+import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, LogOut } from "lucide-react";
+import { tokenManager } from "@/lib/auth";
+import ConfirmDialog from "./ConfirmDialog";
 
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -15,6 +18,13 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+
+  const handleLogout = () => {
+    tokenManager.logout();
+    router.push('/login');
+  };
 
   return (
     <aside className="w-64 bg-gray-900/90 backdrop-blur-sm min-h-screen flex flex-col border-r border-white/10">
@@ -62,11 +72,28 @@ export default function Sidebar() {
         </ul>
       </nav>
       <div className="p-4 border-t border-white/10">
-        <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all w-full">
+        <button 
+          onClick={() => {
+            console.log('Logout button clicked!');
+            alert('Logout button clicked! If you see this, the button works.');
+            setShowLogoutDialog(true);
+          }}
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all w-full"
+        >
           <LogOut className="w-5 h-5" />
           Logout
         </button>
       </div>
+      <ConfirmDialog
+        isOpen={showLogoutDialog}
+        onClose={() => setShowLogoutDialog(false)}
+        onConfirm={handleLogout}
+        title="Logout Confirmation"
+        message="Are you sure you want to logout? You will need to login again to access the admin dashboard."
+        confirmText="Logout"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </aside>
   );
 }

@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { Bell, Shield } from "lucide-react";
+import { Bell, Shield, LogOut } from "lucide-react";
 import { tokenManager } from "@/lib/auth";
+import ConfirmDialog from "./ConfirmDialog";
+import { useRouter } from "next/navigation";
 
 interface AdminHeaderProps {
   title: string;
@@ -11,6 +13,8 @@ interface AdminHeaderProps {
 
 export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
   const [user, setUser] = useState({ name: 'Admin User', initials: 'AB' });
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const userData = tokenManager.getUser();
@@ -22,6 +26,11 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
       setUser({ name: 'Admin User', initials: 'AB' });
     }
   }, []);
+
+  const handleLogout = () => {
+    tokenManager.logout();
+    router.push('/auth/login');
+  };
 
   return (
     <div className="bg-white/5 backdrop-blur-sm border-b border-white/10 px-6 py-4 mb-6 rounded-lg">
@@ -47,8 +56,25 @@ export default function AdminHeader({ title, subtitle }: AdminHeaderProps) {
               </div>
             </div>
           </div>
+          <button 
+            onClick={() => setShowLogoutDialog(true)}
+            className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-all group"
+            title="Logout"
+          >
+            <LogOut className="w-5 h-5 text-red-400 group-hover:text-red-300" />
+          </button>
         </div>
       </div>
+      <ConfirmDialog
+        isOpen={showLogoutDialog}
+        onClose={() => setShowLogoutDialog(false)}
+        onConfirm={handleLogout}
+        title="Logout Confirmation"
+        message="Are you sure you want to logout? You will need to login again to access the admin dashboard."
+        confirmText="Logout"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }
