@@ -5,11 +5,11 @@ import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
 import { Plus, Calendar, Users, BookOpen, Eye, Edit, Search, Trash2, Loader2 } from "lucide-react";
 import { 
-  cohortService, 
+  newCohortService as cohortService, 
   type Cohort as CohortType,
   type BackendCohort,
   type Cohort,
-} from "@/services/cohortService";
+} from "@/services/newCohortService";
 
 // Initial form state
 const initialFormData = {

@@ -1,5 +1,5 @@
+import Logo from "./Logo";
 
-import Logo from "./navbar/Logo";
 
 
 
@@ -40,7 +40,7 @@ export default function AuthPanel({
 
       {/* Logo */}
       <div className="relative z-10">
-        <Logo />
+        <Logo/>
       </div>
 
       {/* Centre content slot */}

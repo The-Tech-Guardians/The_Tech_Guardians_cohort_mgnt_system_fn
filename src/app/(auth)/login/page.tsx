@@ -30,11 +30,13 @@ export default function LoginPage() {
       console.log('Response data:', result.data);
       console.log('Response message:', result.message);
       
-      if ((result.success && result.data?.token && result.data?.user) || (result.requires_2fa && result.token && result.user_id)) {
+      if ((result.success && result.data?.token && result.data?.user) || 
+          (result.requires_2fa && result.token && result.user_id) ||
+          (result.requires_2fa_setup && result.token && result.user_id)) {
         console.log('Login successful, storing data and showing message');
         
         // Handle different response formats
-        if (result.requires_2fa && result.token && result.user_id) {
+        if ((result.requires_2fa || result.requires_2fa_setup) && result.token && result.user_id) {
           // Backend format: { requires_2fa: true, token, user_id, message }
           tokenManager.setToken(result.token);
           tokenManager.setUser({ id: result.user_id, email });
@@ -45,7 +47,7 @@ export default function LoginPage() {
         }
         
         // Show success message
-        setSuccess("2FA code sent to your email");
+        setSuccess(result.message || "2FA code sent to your email");
         
         // Redirect to 2FA verification after showing message
         setTimeout(() => {

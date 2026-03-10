@@ -9,7 +9,7 @@ import {
   type Course,
   formatCourseType,
 } from "@/services/courseService";
-import { cohortService, type Cohort } from "@/services/cohortService";
+import { newCohortService as cohortService, type Cohort } from "@/services/newCohortService";
 
 const API_BASE_URL = "http://localhost:3000/api";
 

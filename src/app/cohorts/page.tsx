@@ -1,148 +1,692 @@
-"use client";
+'use client';
 
-import { FileText } from "lucide-react";
-import { useState } from "react";
-import { COHORTS, TYPE_CONFIG } from "@/lib/api";
-import getStatus from "@/components/cohorts/get-status";
-import FeaturedCohort from "@/components/cohorts/feature-cohort";
-import CohortCard from "@/components/cohorts/cohort-cart";
-import Link from "next/link";
+import { useState, useEffect, useCallback } from 'react';
+import Modal from '@/components/admin/Modal';
+import Toast from '@/components/admin/Toast';
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Loader2,
+} from 'lucide-react';
+import {
+  newCohortService as cohortService,
+  type Cohort,
+  type PaginationInfo,
+} from '@/services/newCohortService';
 
-const COURSE_TYPES = ["All", "development", "design", "data", "business", "personal"];
+// ─────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────
 
+const initialFormData = {
+  name: '',
+  startDate: '',
+  endDate: '',
+  enrollmentOpenDate: '',
+  enrollmentCloseDate: '',
+  extensionDate: '',
+  courseType: 'COMPUTER_PROGRAMMING',
+  // FIX #5: isActive added so the edit form can toggle status
+  isActive: false,
+};
+
+const courseTypeOptions = [
+  { value: 'COMPUTER_PROGRAMMING', label: 'Computer Programming' },
+  { value: 'SOCIAL_MEDIA_BRANDING', label: 'Social Media Branding' },
+  { value: 'ENTREPRENEURSHIP', label: 'Entrepreneurship' },
+  { value: 'TEAM_MANAGEMENT', label: 'Team Management' },
+  { value: 'SRHR', label: 'SRHR' },
+];
+
+// ─────────────────────────────────────────────
+// Page component
+// ─────────────────────────────────────────────
 
 export default function CohortsPage() {
-  const [activeCat, setActiveCat] = useState("All");
-  const [search, setSearch]       = useState("");
-  const [enrolled, setEnrolled]   = useState(new Set());
+  // ── Data ──────────────────────────────────
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleEnroll = (id: string) => setEnrolled((prev) => new Set([...prev, id]));
+  // ── Modal visibility ──────────────────────
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const featured = COHORTS.find((c) => c.featured);
+  // ── Selected items ────────────────────────
+  const [selectedCohort, setSelectedCohort] = useState<Cohort | null>(null);
+  const [cohortToDelete, setCohortToDelete] = useState<Cohort | null>(null);
 
-  const filtered = COHORTS
-    .filter((c) => !c.featured)
-    .filter((c) => activeCat === "All" || c.course_type === activeCat)
-    .filter((c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.subtitle.toLowerCase().includes(search.toLowerCase())
+  // ── UI ────────────────────────────────────
+  const [searchTerm, setSearchTerm] = useState('');
+  const [toast, setToast] = useState({
+    show: false,
+    message: '',
+    type: 'success' as 'success' | 'error',
+  });
+  const [formData, setFormData] = useState(initialFormData);
+
+  // FIX #4: Use stable primitive state for pagination to avoid infinite loop
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageLimit = 10;
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: pageLimit,
+    total: 0,
+    pages: 0,
+  });
+
+  // ─────────────────────────────────────────────
+  // Data fetching
+  // ─────────────────────────────────────────────
+
+  // FIX #4: depend on primitive values, not the pagination object
+  const fetchCohorts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await cohortService.getAllCohorts(currentPage, pageLimit);
+      setCohorts(response.cohorts);
+      if (response.pagination) {
+        setPagination(response.pagination);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch cohorts');
+      showToast(err.message || 'Failed to fetch cohorts', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, pageLimit]);
+
+  useEffect(() => {
+    fetchCohorts();
+  }, [fetchCohorts]);
+
+  // ─────────────────────────────────────────────
+  // Helpers
+  // ─────────────────────────────────────────────
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
+
+  const formatCourseType = (type: string) => {
+    const map: Record<string, string> = {
+      COMPUTER_PROGRAMMING: 'Computer Programming',
+      SOCIAL_MEDIA_BRANDING: 'Social Media Branding',
+      ENTREPRENEURSHIP: 'Entrepreneurship',
+      TEAM_MANAGEMENT: 'Team Management',
+      SRHR: 'SRHR',
+    };
+    return map[type] || type;
+  };
+
+  const getStatusColor = (isActive: boolean) =>
+    isActive
+      ? 'bg-green-50 text-green-600 border-green-200'
+      : 'bg-gray-50 text-gray-600 border-gray-200';
+
+  const filteredCohorts = cohorts.filter(
+    (c) =>
+      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.courseType?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // ─────────────────────────────────────────────
+  // CRUD handlers
+  // ─────────────────────────────────────────────
+
+  const handleCreateCohort = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const response = await cohortService.createCohort({
+        name: formData.name,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        enrollmentOpenDate: formData.enrollmentOpenDate || undefined,
+        enrollmentCloseDate: formData.enrollmentCloseDate || undefined,
+        extensionDate: formData.extensionDate || undefined,
+        courseType: formData.courseType,
+      });
+
+      if (response.cohort) {
+        showToast('Cohort created successfully!');
+        setFormData(initialFormData);
+        setShowCreateModal(false);
+        fetchCohorts();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to create cohort', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateCohort = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCohort) return;
+
+    try {
+      setLoading(true);
+      const response = await cohortService.updateCohort(selectedCohort.id, {
+        name: formData.name,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        enrollmentOpenDate: formData.enrollmentOpenDate || undefined,
+        enrollmentCloseDate: formData.enrollmentCloseDate || undefined,
+        extensionDate: formData.extensionDate || undefined,
+        courseType: formData.courseType,
+        // FIX #5: pass isActive to the service
+        isActive: formData.isActive,
+      });
+
+      if (response.cohort) {
+        showToast('Cohort updated successfully!');
+        setFormData(initialFormData);
+        setShowEditModal(false);
+        setSelectedCohort(null);
+        fetchCohorts();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update cohort', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteCohort = async () => {
+    if (!cohortToDelete) return;
+
+    try {
+      setLoading(true);
+      await cohortService.deleteCohort(cohortToDelete.id);
+      showToast('Cohort deleted successfully!');
+      setShowDeleteModal(false);
+      setCohortToDelete(null);
+      fetchCohorts();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete cohort', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // Modal openers
+  // ─────────────────────────────────────────────
+
+  const openEditModal = (cohort: Cohort) => {
+    setSelectedCohort(cohort);
+    setFormData({
+      name: cohort.name,
+      startDate: cohort.startDate.split('T')[0],
+      endDate: cohort.endDate.split('T')[0],
+      enrollmentOpenDate: cohort.enrollmentOpenDate?.split('T')[0] || '',
+      enrollmentCloseDate: cohort.enrollmentCloseDate?.split('T')[0] || '',
+      extensionDate: cohort.extensionDate?.split('T')[0] || '',
+      courseType: cohort.courseType,
+      // FIX #5: pre-fill isActive from the cohort
+      isActive: cohort.isActive,
+    });
+    setShowEditModal(true);
+  };
+
+  const openDeleteModal = (cohort: Cohort) => {
+    setCohortToDelete(cohort);
+    setShowDeleteModal(true);
+  };
+
+  // ─────────────────────────────────────────────
+  // Early returns
+  // ─────────────────────────────────────────────
+
+  if (loading && cohorts.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      </div>
     );
+  }
 
-  const activeCount   = COHORTS.filter((c) => getStatus(c) === "active").length;
-  const enrollingCount= COHORTS.filter((c) => getStatus(c) === "enrolling").length;
+  if (error && cohorts.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={fetchCohorts}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
-  return (
-    <>
-     
+  // ─────────────────────────────────────────────
+  // Shared form fields (used in both Create & Edit)
+  // ─────────────────────────────────────────────
 
-      <div className="cpf cpbg min-h-screen pt-28">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
+  const renderFormFields = (isEdit = false) => (
+    <div className="space-y-4">
+      {/* Cohort Name */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Cohort Name
+        </label>
+        <input
+          type="text"
+          required
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          placeholder="e.g., Cohort 2026 Summer"
+          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+      </div>
 
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-full px-4 py-1.5 mb-4">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                <span className="text-[12px] font-semibold text-blue-600 uppercase tracking-widest">Cohorts</span>
-              </div>
-              <h1 className="text-[36px] md:text-[44px] font-black text-slate-900 leading-tight tracking-tight">
-                Find your{" "}
-                <span className="cps italic font-normal" style={{ background: "linear-gradient(135deg,#2563EB,#06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                  next cohort
-                </span>
-              </h1>
-              <p className="text-slate-500 text-[15.5px] mt-2 max-w-xl leading-relaxed">
-                Structured programs with real instructors, live sessions, and peers — all working toward the same goal.
-              </p>
-            </div>
-            <div className="flex gap-3 flex-shrink-0">
-              {[
-                { v: COHORTS.length,  l: "Total Cohorts" },
-                { v: enrollingCount,  l: "Enrolling Now" },
-                { v: activeCount,     l: "In Progress" },
-              ].map((s) => (
-                <div key={s.l} className="text-center bg-white border border-slate-100 rounded-2xl px-5 py-3 shadow-sm min-w-[80px]">
-                  <p className="text-2xl font-black text-slate-800">{s.v}</p>
-                  <p className="text-[11px] text-slate-500 font-medium mt-0.5 leading-tight">{s.l}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          {featured && <FeaturedCohort cohort={featured} onEnroll={handleEnroll} />}
+      {/* Course Type */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Course Type
+        </label>
+        <select
+          required
+          value={formData.courseType}
+          onChange={(e) => setFormData({ ...formData, courseType: e.target.value })}
+          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          {courseTypeOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 mb-5">
-            <div className="relative flex-1">
-              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input
-                type="text"
-                placeholder="Search by name or description..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
-              />
-            </div>
-          </div>
-
-          <div className="nosb flex gap-1.5 overflow-x-auto pb-1 mb-8">
-            {COURSE_TYPES.map((t: string) => {
-              const label = t === "All" ? "All Types" : (TYPE_CONFIG[t as keyof typeof TYPE_CONFIG]?.label || t);
-              return (
-                <button key={t} onClick={() => setActiveCat(t)}
-                  className={`text-[12.5px] font-semibold px-4 py-2 rounded-full border whitespace-nowrap transition-all flex-shrink-0 ${
-                    activeCat === t
-                      ? "bg-slate-900 text-white border-slate-900"
-                      : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center justify-between mb-5">
-            <p className="text-[13.5px] text-slate-500">
-              <span className="font-bold text-slate-800">{filtered.length}</span> cohort{filtered.length !== 1 ? "s" : ""} found
-            </p>
-            {(activeCat !== "All" || search) && (
-              <button onClick={() => { setActiveCat("All"); setSearch(""); }}
-                className="text-[12.5px] font-semibold text-blue-600 hover:underline">
-                Clear filters
-              </button>
-            )}
-          </div>
-
-          {filtered.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xl border border-slate-100">
-              <div className="flex justify-center mb-4"><FileText className="w-16 h-16 text-slate-300"/></div>
-              <h3 className="text-lg font-bold text-slate-700 mb-1">No cohorts found</h3>
-              <p className="text-slate-500 text-sm">Try adjusting your filters or search term.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {filtered.map((c) => (
-                <CohortCard key={c.id} cohort={c} onEnroll={handleEnroll} />
-              ))}
-            </div>
-          )}
-
-          <div className="mt-16 rounded-3xl bg-gradient-to-r from-blue-600 to-cyan-500 px-8 py-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_8px_32px_rgba(37,99,235,0.25)] relative overflow-hidden">
-            <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle,#ffffff 1px,transparent 1px)", backgroundSize: "24px 24px" }} />
-            <div className="relative text-center md:text-left">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-100 mb-1">Ready to start?</p>
-              <h3 className="cps italic text-white text-[26px] font-normal leading-tight">Join the next cohort today</h3>
-              <p className="text-white/70 text-sm mt-1.5 max-w-sm">Enrollment is open. Cohorts fill up fast — secure your spot before the window closes.</p>
-            </div>
-            <div className="relative flex flex-col sm:flex-row gap-3 flex-shrink-0">
-              <Link href="courses"><button className="bg-white text-blue-600 font-bold text-sm px-7 py-3.5 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all">Browse Courses</button></Link>
-              
-              <button className="bg-white/15 border border-white/30 text-white font-semibold text-sm px-7 py-3.5 rounded-xl hover:bg-white/20 transition-all">View Schedule</button>
-            </div>
-          </div>
-
+      {/* Start / End Date */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Start Date
+          </label>
+          <input
+            type="date"
+            required
+            value={formData.startDate}
+            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            End Date
+          </label>
+          <input
+            type="date"
+            required
+            value={formData.endDate}
+            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
         </div>
       </div>
-    </>
+
+      {/* Enrollment Open / Close */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Enrollment Opens
+          </label>
+          <input
+            type="date"
+            value={formData.enrollmentOpenDate}
+            onChange={(e) =>
+              setFormData({ ...formData, enrollmentOpenDate: e.target.value })
+            }
+            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Enrollment Closes
+          </label>
+          <input
+            type="date"
+            value={formData.enrollmentCloseDate}
+            onChange={(e) =>
+              setFormData({ ...formData, enrollmentCloseDate: e.target.value })
+            }
+            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+      </div>
+
+      {/* Extension Date */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Extension Date
+        </label>
+        <input
+          type="date"
+          value={formData.extensionDate}
+          onChange={(e) => setFormData({ ...formData, extensionDate: e.target.value })}
+          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+      </div>
+
+      {/* FIX #5: Status toggle — only shown in Edit modal */}
+      {isEdit && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Status
+          </label>
+          <select
+            value={formData.isActive ? 'active' : 'upcoming'}
+            onChange={(e) =>
+              setFormData({ ...formData, isActive: e.target.value === 'active' })
+            }
+            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="upcoming">Upcoming (Inactive)</option>
+            <option value="active">Active</option>
+          </select>
+        </div>
+      )}
+    </div>
+  );
+
+  // ─────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────
+
+  return (
+    <div className="space-y-6">
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => {
+            setFormData(initialFormData);
+            setShowCreateModal(true);
+          }}
+          className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm"
+        >
+          <Plus className="w-4 h-4" />
+          Create Cohort
+        </button>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search cohorts..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-64"
+          />
+        </div>
+      </div>
+
+      {/* ── Table ── */}
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">
+                  Cohort Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">
+                  Course Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">
+                  Instructor
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">
+                  Start Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">
+                  End Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">
+                  Enrollment
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">
+                  Created
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-gray-200">
+              {filteredCohorts.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-6 py-8 text-center">
+                    <p className="text-gray-500">No cohorts found</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredCohorts.map((cohort) => (
+                  <tr key={cohort.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-medium text-gray-900">{cohort.name}</p>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600">
+                        {formatCourseType(cohort.courseType)}
+                      </p>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600">
+                        {cohort.instructorIds && cohort.instructorIds.length > 0
+                          ? `Instructor: ${
+                              cohort.instructorIds[0].length > 8
+                                ? `${cohort.instructorIds[0].slice(0, 8)}...`
+                                : cohort.instructorIds[0]
+                            }`
+                          : 'Not assigned'}
+                      </p>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600">
+                        {new Date(cohort.startDate).toLocaleDateString()}
+                      </p>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600">
+                        {new Date(cohort.endDate).toLocaleDateString()}
+                      </p>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <div className="text-sm">
+                        <p className="text-gray-900 font-medium">
+                          {cohort.enrollmentOpenDate
+                            ? new Date(cohort.enrollmentOpenDate).toLocaleDateString()
+                            : 'N/A'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {cohort.enrollmentCloseDate
+                            ? `– ${new Date(cohort.enrollmentCloseDate).toLocaleDateString()}`
+                            : ''}
+                        </p>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-3 py-1 text-xs font-semibold rounded-full border inline-block ${getStatusColor(
+                          cohort.isActive
+                        )}`}
+                      >
+                        {cohort.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600">
+                        {cohort.createdAt
+                          ? new Date(cohort.createdAt).toLocaleDateString()
+                          : 'N/A'}
+                      </p>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => openEditModal(cohort)}
+                          className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                          title="Edit"
+                          disabled={loading}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(cohort)}
+                          className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                          title="Delete"
+                          disabled={loading}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {pagination.pages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <p className="text-sm text-gray-500">
+              Page {pagination.page} of {pagination.pages} &mdash; {pagination.total} total
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1 || loading}
+                className="px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(pagination.pages, p + 1))}
+                disabled={currentPage === pagination.pages || loading}
+                className="px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Create Modal ── */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Create New Cohort"
+        size="lg"
+      >
+        <form onSubmit={handleCreateCohort} className="space-y-4">
+          {renderFormFields(false)}
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl font-medium transition-all"
+            >
+              {loading ? 'Creating…' : 'Create Cohort'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(false)}
+              className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── Edit Modal (FIX #1: only ONE edit modal) ── */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Edit Cohort"
+        size="lg"
+      >
+        <form onSubmit={handleUpdateCohort} className="space-y-4">
+          {renderFormFields(true)}
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl font-medium transition-all"
+            >
+              {loading ? 'Saving…' : 'Update Cohort'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowEditModal(false)}
+              className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── Delete Modal ── */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete Cohort"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Are you sure you want to delete{' '}
+            <strong>{cohortToDelete?.name}</strong>? This action cannot be undone.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={handleDeleteCohort}
+              disabled={loading}
+              className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-xl font-medium transition-all"
+            >
+              {loading ? 'Deleting…' : 'Delete'}
+            </button>
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={() => setToast({ ...toast, show: false })}
+      />
+    </div>
   );
 }

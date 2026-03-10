@@ -62,6 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [logoutPopupOpen, setLogoutPopupOpen] = useState(false);
   const [userName, setUserName] = useState('Admin User');
   const [userInitials, setUserInitials] = useState('AD');
   const [userRoleLabel, setUserRoleLabel] = useState('Admin');
@@ -230,7 +231,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </button>
 
         {!collapsed && (
-          <button className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-200">
+          <button 
+            onClick={() => setLogoutPopupOpen(true)}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-200"
+          >
             <LogOut size={13} strokeWidth={1.8} />
             <span>Sign Out</span>
           </button>
@@ -239,8 +243,52 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </div>
   );
 
+  const handleLogout = () => {
+    setLogoutPopupOpen(false);
+    tokenManager.logout();
+    router.push('/login');
+  };
+
   return (
     <div className="flex h-screen bg-[#f8f8f8] overflow-hidden">
+      {logoutPopupOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+            onClick={() => setLogoutPopupOpen(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4" style={{ zIndex: 10000 }}>
+
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Confirm Logout</h3>
+              <button 
+                onClick={() => setLogoutPopupOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X size={16} className="text-gray-400" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to logout? Your session will be ended and you'll need to login again.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setLogoutPopupOpen(false)}
+                className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                <LogOut size={16} />
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 lg:hidden"

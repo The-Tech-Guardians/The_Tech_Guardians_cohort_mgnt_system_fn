@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Cohorts API</title>
+</head>
+<body>
+    <h1>Cohort API Test</h1>
+    <button onclick="testLogin()">1. Test Login</button>
+    <button onclick="testCohorts()">2. Test Get Cohorts</button>
+    <button onclick="testCreateCohort()">3. Test Create Cohort</button>
+    <div id="results"></div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let authToken = '';
+
+        function log(message) {
+            document.getElementById('results').innerHTML += '<p>' + message + '</p>';
+            console.log(message);
+        }
+
+        async function testLogin() {
+            log('🔐 Testing login...');
+            try {
+                const response = await fetch(`${API_URL}/auth/Login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'oriviernduwayesu@gmail.com',
+                        password: '12345678'
+                    })
+                });
+
+                const data = await response.json();
+                log(`Login response: ${JSON.stringify(data, null, 2)}`);
+                
+                if (data.token) {
+                    authToken = data.token;
+                    log('✅ Login successful! Token saved.');
+                } else if (data.requires_2fa) {
+                    log('⚠️ 2FA required. Use dev token: ' + data.dev_2fa_token);
+                    if (data.dev_2fa_token) {
+                        await verify2FA(data.user_id, data.dev_2fa_token);
+                    }
+                }
+            } catch (error) {
+                log('❌ Login failed: ' + error.message);
+            }
+        }
+
+        async function verify2FA(userId, token) {
+            log('🔐 Verifying 2FA...');
+            try {
+                const response = await fetch(`${API_URL}/auth/Verify2fa`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        token: token
+                    })
+                });
+
+                const data = await response.json();
+                if (data.token) {
+                    authToken = data.token;
+                    log('✅ 2FA verified! Token saved.');
+                } else {
+                    log('❌ 2FA failed: ' + JSON.stringify(data));
+                }
+            } catch (error) {
+                log('❌ 2FA error: ' + error.message);
+            }
+        }
+
+        async function testCohorts() {
+            if (!authToken) {
+                log('❌ No auth token. Login first!');
+                return;
+            }
+
+            log('📚 Testing get cohorts...');
+            try {
+                const response = await fetch(`${API_URL}/cohorts`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                log(`Cohorts response: ${JSON.stringify(data, null, 2)}`);
+                
+                if (response.ok) {
+                    log(`✅ Found ${data.cohorts?.length || 0} cohorts`);
+                } else {
+                    log('❌ Failed to get cohorts: ' + data.error);
+                }
+            } catch (error) {
+                log('❌ Cohorts error: ' + error.message);
+            }
+        }
+
+        async function testCreateCohort() {
+            if (!authToken) {
+                log('❌ No auth token. Login first!');
+                return;
+            }
+
+            log('➕ Testing create cohort...');
+            try {
+                const response = await fetch(`${API_URL}/cohorts`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: 'Test Cohort ' + new Date().getTime(),
+                        start_date: '2024-02-01',
+                        end_date: '2024-05-01',
+                        course_type: 'COMPUTER_PROGRAMMING',
+                        enrollment_open_date: '2024-01-15',
+                        enrollment_close_date: '2024-01-30'
+                    })
+                });
+
+                const data = await response.json();
+                log(`Create cohort response: ${JSON.stringify(data, null, 2)}`);
+                
+                if (response.ok) {
+                    log('✅ Cohort created successfully!');
+                } else {
+                    log('❌ Failed to create cohort: ' + data.error);
+                }
+            } catch (error) {
+                log('❌ Create cohort error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
