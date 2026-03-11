@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight, X, Layers } from "lucide-react";
 import Logo from "@/components/ui/navbar/Logo";
 import { tokenManager } from "@/lib/auth";
+import { notificationService, Notification } from "@/services/notificationService";
 
 function NavItem({ icon: Icon, label, active, onClick, collapsed }: { 
   icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>; 
@@ -65,6 +66,51 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [userName, setUserName] = useState('Admin User');
   const [userInitials, setUserInitials] = useState('AD');
   const [userRoleLabel, setUserRoleLabel] = useState('Admin');
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+
+  // Fetch notifications from backend
+  const fetchNotifications = async () => {
+    setNotificationsLoading(true);
+    try {
+      const response = await notificationService.getNotifications(1, 10);
+      setNotifications(response.notifications);
+      setUnreadCount(response.unreadCount);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+      // Fall back to sample notifications on error
+      setNotifications([
+        { id: '1', userId: '', title: "New user registered", message: "John Doe just signed up", type: 'system', isRead: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: '2', userId: '', title: "Course completed", message: "Sarah completed React Basics", type: 'course', isRead: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: '3', userId: '', title: "Ban request pending", message: "Review flagged content", type: 'system', isRead: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: '4', userId: '', title: "System update", message: "Platform updated to v2.1", type: 'system', isRead: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      ]);
+      setUnreadCount(3);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  // Fetch notifications when the notification dropdown is opened
+  useEffect(() => {
+    if (notificationsOpen) {
+      fetchNotifications();
+    }
+  }, [notificationsOpen]);
+
+  // Fetch unread count on mount
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      try {
+        const response = await notificationService.getUnreadCount();
+        setUnreadCount(response.unreadCount);
+      } catch (error) {
+        console.error('Failed to fetch unread count:', error);
+      }
+    };
+    loadUnreadCount();
+  }, []);
 
   // Role-based routing guard
   useEffect(() => {
@@ -121,15 +167,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const view = pathname === '/admin' ? 'dashboard' : pathname.split('/').pop() || 'dashboard';
 
-  // Sample notifications
-  const notifications = [
-    { id: 1, title: "New user registered", message: "John Doe just signed up", time: "2 min ago", unread: true },
-    { id: 2, title: "Course completed", message: "Sarah completed React Basics", time: "1 hour ago", unread: true },
-    { id: 3, title: "Ban request pending", message: "Review flagged content", time: "3 hours ago", unread: true },
-    { id: 4, title: "System update", message: "Platform updated to v2.1", time: "1 day ago", unread: false },
-  ];
+  // Helper.split('/').pop function to format notification time
+  const formatNotificationTime = (createdAt: string) => {
+    const date = new Date(createdAt);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString();
+  };
 
   const nav = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
@@ -315,25 +367,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       </button>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
-                      {notifications.map((notif) => (
-                        <div 
-                          key={notif.id}
-                          className={`p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${
-                            notif.unread ? 'bg-indigo-50/30' : ''
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
-                              notif.unread ? 'bg-indigo-600' : 'bg-gray-300'
-                            }`} />
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-semibold text-gray-900 truncate">{notif.title}</h4>
-                              <p className="text-xs text-gray-600 mt-1">{notif.message}</p>
-                              <p className="text-xs text-gray-400 mt-1.5">{notif.time}</p>
+                      {notificationsLoading ? (
+                        <div className="p-4 text-center text-gray-500">Loading...</div>
+                      ) : notifications.length > 0 ? (
+                        notifications.map((notif) => (
+                          <div 
+                            key={notif.id}
+                            className={`p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${
+                              !notif.isRead ? 'bg-indigo-50/30' : ''
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                                !notif.isRead ? 'bg-indigo-600' : 'bg-gray-300'
+                              }`} />
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-semibold text-gray-900 truncate">{notif.title}</h4>
+                                <p className="text-xs text-gray-600 mt-1">{notif.message}</p>
+                                <p className="text-xs text-gray-400 mt-1.5">{formatNotificationTime(notif.createdAt)}</p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      ) : (
+                        <div className="p-4 text-center text-gray-500">No notifications</div>
+                      )}
                     </div>
                     <div className="p-3 border-t border-gray-100">
                       <button className="w-full text-center text-xs font-semibold text-indigo-600 hover:text-indigo-700 py-2 rounded-lg hover:bg-indigo-50 transition-colors">

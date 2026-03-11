@@ -2,10 +2,11 @@
 
 import { useState, createContext, useContext, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { BookOpen, TrendingUp, Megaphone, Home, Menu, Bell, LogOut, ChevronRight } from "lucide-react";
+import { BookOpen, TrendingUp, Megaphone, Home, Menu, Bell, LogOut, ChevronRight, Users } from "lucide-react";
 import ProfileSidebar from '@/components/profile/learner-profile/ProfileSidebar';
 import Logo from "@/components/ui/navbar/Logo";
 import { tokenManager } from "@/lib/auth";
+import { notificationService, Notification } from "@/services/notificationService";
 
 const SidebarContext = createContext({ collapsed: false });
 
@@ -69,6 +70,11 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState({ name: 'Loading...', initials: 'L' });
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   useEffect(() => {
     const userData = tokenManager.getUser();
@@ -107,10 +113,72 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
     }
   }, [router]);
 
+  // Fetch notifications from backend
+  const fetchNotifications = async () => {
+    setNotificationsLoading(true);
+    try {
+      const response = await notificationService.getNotifications(1, 10);
+      setNotifications(response.notifications);
+      setUnreadCount(response.unreadCount);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  // Fetch notifications when the notification dropdown is opened
+  useEffect(() => {
+    if (notificationsOpen) {
+      fetchNotifications();
+    }
+  }, [notificationsOpen]);
+
+  // Fetch unread count on mount
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      try {
+        const response = await notificationService.getUnreadCount();
+        setUnreadCount(response.unreadCount);
+      } catch (error) {
+        console.error('Failed to fetch unread count:', error);
+      }
+    };
+    loadUnreadCount();
+  }, []);
+
+  // Helper function to format notification time
+  const formatNotificationTime = (createdAt: string) => {
+    const date = new Date(createdAt);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString();
+  };
+
+  const handleLogout = () => {
+    // Clear token and user data
+    tokenManager.logout();
+    
+    // Close modal
+    setShowLogoutModal(false);
+    
+    // Redirect to login
+    router.push('/login');
+  };
+
   const view = pathname.split('/').pop() || 'learner';
 
   const nav = [
     { id: "learner",       label: "Home",          icon: Home      },
+    { id: "cohorts",       label: "Cohorts",       icon: Users     },
     { id: "my-courses",    label: "My Courses",    icon: BookOpen  },
     { id: "progress",      label: "Progress",      icon: TrendingUp},
     { id: "announcements", label: "Announcements", icon: Megaphone },
@@ -118,6 +186,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
 
   const titles: Record<string, string> = {
     learner:       "Dashboard",
+    cohorts:       "Available Cohorts",
     "my-courses":  "My Courses",
     progress:      "My Progress",
     announcements: "Announcements",
@@ -125,6 +194,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
 
   const subtitles: Record<string, string> = {
     learner:       `Welcome back, ${user.name.split(' ')[0]}`,
+    cohorts:       "Browse and join available cohorts",
     "my-courses":  "Browse your enrolled courses",
     progress:      "Track your learning journey",
     announcements: "Stay up to date",
@@ -197,7 +267,10 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
         </button>
 
         {!collapsed && (
-          <button className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-200">
+          <button 
+            onClick={() => setShowLogoutModal(true)}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200"
+          >
             <LogOut size={13} strokeWidth={1.8} />
             <span>Sign Out</span>
           </button>
@@ -252,11 +325,72 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button className="relative w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-all duration-200">
-              <Bell size={17} strokeWidth={1.8} />
-           
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-white" />
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className="relative w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-all duration-200"
+              >
+                <Bell size={17} strokeWidth={1.8} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-white" />
+                )}
+              </button>
+
+              {notificationsOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setNotificationsOpen(false)}
+                  />
+                  <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+                    <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-sm">Notifications</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">{unreadCount} unread</p>
+                      </div>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {notificationsLoading ? (
+                        <div className="p-4 text-center text-gray-500">Loading...</div>
+                      ) : notifications.length > 0 ? (
+                        notifications.map((notif) => (
+                          <div 
+                            key={notif.id}
+                            className={`p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${
+                              !notif.isRead ? 'bg-indigo-50/30' : ''
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                                !notif.isRead ? 'bg-indigo-600' : 'bg-gray-300'
+                              }`} />
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-semibold text-gray-900 truncate">{notif.title}</h4>
+                                <p className="text-xs text-gray-600 mt-1">{notif.message}</p>
+                                <p className="text-xs text-gray-400 mt-1.5">{formatNotificationTime(notif.createdAt)}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center text-gray-500">No notifications</div>
+                      )}
+                    </div>
+                    <div className="p-3 border-t border-gray-100">
+                      <button 
+                        onClick={() => {
+                          router.push('/learner/announcements');
+                          setNotificationsOpen(false);
+                        }}
+                        className="w-full text-center text-xs font-semibold text-indigo-600 hover:text-indigo-700 py-2 rounded-lg hover:bg-indigo-50 transition-colors"
+                      >
+                        View all announcements
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
 
             
             <div className="w-px h-6 bg-gray-200 mx-0.5" />
@@ -282,6 +416,32 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
       </div>
 
       <ProfileSidebar isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowLogoutModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm mx-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Sign Out</h2>
+            <p className="text-sm text-gray-600 mb-6">Are you sure you want to sign out? You will need to log in again to access your account.</p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold text-sm transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold text-sm transition-all"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </SidebarContext.Provider>
   );

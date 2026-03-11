@@ -1,4 +1,7 @@
 // Cohort service for API interactions
+const API_BASE_URL = 'http://localhost:3000/api';
+console.log('🚀 COHORT SERVICE LOADED - API_BASE_URL:', API_BASE_URL);
+
 export interface BackendCohort {
   _id?: string;
   id: string;
@@ -46,20 +49,25 @@ interface ApiResponse<T> {
 }
 
 export const cohortService = {
-  async getAllCohorts(page: number = 1, limit: number = 10): Promise<{ cohorts: Cohort[]; pagination: PaginationInfo }> {
+  async getAllCohorts(
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ cohorts: Cohort[]; pagination: PaginationInfo }> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    
+
     if (!token) {
       throw new Error('Authentication required');
     }
 
+    console.log('🔥 Making request to:', `${API_BASE_URL}/cohorts?page=${page}&limit=${limit}`);
+
     try {
       const response = await fetch(
-        `http://localhost:3000/api/cohorts?page=${page}&limit=${limit}`,
+        `${API_BASE_URL}/cohorts?page=${page}&limit=${limit}`,
         {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }
@@ -89,61 +97,16 @@ export const cohortService = {
 
       return {
         cohorts: transformedCohorts,
-        pagination: data.pagination || { page, limit, total: transformedCohorts.length, pages: 1 },
+        pagination: data.pagination || {
+          page,
+          limit,
+          total: transformedCohorts.length,
+          pages: 1,
+        },
       };
     } catch (error: any) {
+      console.error('🚨 Cohort fetch error:', error);
       throw new Error(error.message || 'Failed to fetch cohorts');
-    }
-  },
-
-  async getCohortById(id: string): Promise<{ cohort: Cohort }> {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-
-    try {
-      const response = await fetch(
-        `http://localhost:3000/api/cohorts/${id}`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch cohort');
-      }
-
-      const data: ApiResponse<BackendCohort> = await response.json();
-
-      if (!data.cohort) {
-        throw new Error('Cohort not found');
-      }
-
-      const transformedCohort: Cohort = {
-        id: data.cohort.id,
-        name: data.cohort.name,
-        startDate: data.cohort.startDate,
-        endDate: data.cohort.endDate,
-        enrollmentOpenDate: data.cohort.enrollmentOpenDate,
-        enrollmentCloseDate: data.cohort.enrollmentCloseDate,
-        extensionDate: data.cohort.extensionDate,
-        courseType: data.cohort.courseType,
-        isActive: data.cohort.isActive,
-        createdAt: data.cohort.createdAt,
-        updatedAt: data.cohort.updatedAt,
-        instructorIds: data.cohort.instructorIds,
-      };
-
-      return { cohort: transformedCohort };
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to fetch cohort');
     }
   },
 
@@ -157,27 +120,36 @@ export const cohortService = {
     courseType: string;
   }): Promise<{ cohort: Cohort }> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    
+
     if (!token) {
       throw new Error('Authentication required');
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/cohorts', {
+      const body: Record<string, string> = {
+        name: cohortData.name,
+        start_date: cohortData.startDate,
+        end_date: cohortData.endDate,
+        course_type: cohortData.courseType,
+      };
+
+      if (cohortData.enrollmentOpenDate) {
+        body.enrollment_open_date = cohortData.enrollmentOpenDate;
+      }
+      if (cohortData.enrollmentCloseDate) {
+        body.enrollment_close_date = cohortData.enrollmentCloseDate;
+      }
+      if (cohortData.extensionDate) {
+        body.extension_date = cohortData.extensionDate;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/cohorts`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: cohortData.name,
-          start_date: cohortData.startDate,
-          end_date: cohortData.endDate,
-          enrollment_open_date: cohortData.enrollmentOpenDate,
-          enrollment_close_date: cohortData.enrollmentCloseDate,
-          extension_date: cohortData.extensionDate,
-          course_type: cohortData.courseType,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
@@ -221,28 +193,36 @@ export const cohortService = {
       enrollmentCloseDate?: string;
       extensionDate?: string;
       courseType?: string;
+      isActive?: boolean;
     }
   ): Promise<{ cohort: Cohort }> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    
+
     if (!token) {
       throw new Error('Authentication required');
     }
 
     try {
-      const payload: any = {};
-      if (updates.name) payload.name = updates.name;
-      if (updates.startDate) payload.start_date = updates.startDate;
-      if (updates.endDate) payload.end_date = updates.endDate;
-      if (updates.enrollmentOpenDate) payload.enrollment_open_date = updates.enrollmentOpenDate;
-      if (updates.enrollmentCloseDate) payload.enrollment_close_date = updates.enrollmentCloseDate;
-      if (updates.extensionDate) payload.extension_date = updates.extensionDate;
-      if (updates.courseType) payload.course_type = updates.courseType;
+      const payload: Record<string, any> = {};
+      if (updates.name !== undefined) payload.name = updates.name;
+      if (updates.startDate !== undefined) payload.start_date = updates.startDate;
+      if (updates.endDate !== undefined) payload.end_date = updates.endDate;
+      if (updates.enrollmentOpenDate !== undefined)
+        payload.enrollment_open_date = updates.enrollmentOpenDate;
+      if (updates.enrollmentCloseDate !== undefined)
+        payload.enrollment_close_date = updates.enrollmentCloseDate;
+      if (updates.extensionDate !== undefined)
+        payload.extension_date = updates.extensionDate;
+      if (updates.courseType !== undefined) payload.course_type = updates.courseType;
+      if (updates.isActive !== undefined) {
+        payload.is_active = updates.isActive;
+        payload.status = updates.isActive ? 'active' : 'upcoming';
+      }
 
-      const response = await fetch(`http://localhost:3000/api/cohorts/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/cohorts/${id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
@@ -281,16 +261,16 @@ export const cohortService = {
 
   async deleteCohort(id: string): Promise<void> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    
+
     if (!token) {
       throw new Error('Authentication required');
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/api/cohorts/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/cohorts/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -306,16 +286,16 @@ export const cohortService = {
 
   async assignLearnerToCohort(learnerId: string, cohortId: string): Promise<void> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    
+
     if (!token) {
       throw new Error('Authentication required');
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/cohorts/learner/assign', {
+      const response = await fetch(`${API_BASE_URL}/cohorts/learner/assign`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
