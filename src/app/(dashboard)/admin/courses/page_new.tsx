@@ -139,11 +139,14 @@ export default function AdminCoursesPage() {
         title: courseForm.title,
         description: courseForm.description,
         courseType: courseForm.courseType,
+        instructorId: courseForm.instructorId,
       });
 
       if (response && response.course) {
         showToast("Course updated successfully!");
         setCourseForm(initialCourseForm);
+        setSelectedInstructor(null);
+        setInstructorSearch("");
         setShowEditModal(false);
         setSelectedCourse(null);
         fetchCourses();
@@ -186,7 +189,7 @@ export default function AdminCoursesPage() {
     }
   };
 
-  const openEditModal = (course: BackendCourse) => {
+  const openEditModal = async (course: BackendCourse) => {
     setSelectedCourse(course);
     setCourseForm({
       title: course.title,
@@ -194,6 +197,20 @@ export default function AdminCoursesPage() {
       description: course.description,
       instructorId: course.instructorId || "",
     });
+    
+    // Fetch instructor details if instructorId exists
+    if (course.instructorId) {
+      try {
+        const result = await courseService.getInstructors(1, 100);
+        const instructor = result.instructors.find(inst => inst.uuid === course.instructorId);
+        if (instructor) {
+          setSelectedInstructor(instructor);
+        }
+      } catch (err) {
+        console.error('Failed to fetch instructor:', err);
+      }
+    }
+    
     setShowEditModal(true);
   };
 
@@ -566,6 +583,96 @@ export default function AdminCoursesPage() {
               ))}
             </select>
           </div>
+          
+          {/* Instructor Selection - Same as Create Form */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Instructor</label>
+            <div className="relative">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={selectedInstructor ? `${selectedInstructor.firstName} ${selectedInstructor.lastName}` : instructorSearch}
+                    onChange={(e) => {
+                      setInstructorSearch(e.target.value);
+                      setSelectedInstructor(null);
+                    }}
+                    onFocus={async () => {
+                      if (instructors.length === 0) {
+                        setInstructorLoading(true);
+                        const result = await courseService.getInstructors(1, 20);
+                        setInstructors(result.instructors);
+                        setInstructorLoading(false);
+                      }
+                    }}
+                    placeholder="Search for an instructor..."
+                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    disabled={loading}
+                  />
+                  {instructorLoading && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-gray-400" />
+                  )}
+                </div>
+              </div>
+              
+              {/* Dropdown Results */}
+              {!selectedInstructor && instructorSearch && instructors.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                  {instructors
+                    .filter(inst => 
+                      `${inst.firstName} ${inst.lastName}`.toLowerCase().includes(instructorSearch.toLowerCase()) ||
+                      inst.email.toLowerCase().includes(instructorSearch.toLowerCase())
+                    )
+                    .map(inst => (
+                      <button
+                        key={inst.uuid}
+                        type="button"
+                        onClick={() => {
+                          setSelectedInstructor(inst);
+                          setInstructorSearch("");
+                          setCourseForm({ ...courseForm, instructorId: inst.uuid });
+                        }}
+                        className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                          <User className="w-4 h-4 text-indigo-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{inst.firstName} {inst.lastName}</p>
+                          <p className="text-xs text-gray-500">{inst.email}</p>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              )}
+              
+              {/* Selected Instructor Display */}
+              {selectedInstructor && (
+                <div className="mt-2 flex items-center justify-between p-3 bg-indigo-50 rounded-xl border border-indigo-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                      <User className="w-4 h-4 text-indigo-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{selectedInstructor.firstName} {selectedInstructor.lastName}</p>
+                      <p className="text-xs text-gray-500">{selectedInstructor.email}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedInstructor(null);
+                      setCourseForm({ ...courseForm, instructorId: "" });
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
             <textarea
