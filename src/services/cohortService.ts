@@ -16,6 +16,8 @@ export interface BackendCohort {
   createdAt?: string;
   updatedAt?: string;
   instructorIds?: string[];
+  currentStudents?: number;
+  maxStudents?: number;
 }
 
 export interface Cohort {
@@ -31,6 +33,8 @@ export interface Cohort {
   createdAt?: string;
   updatedAt?: string;
   instructorIds?: string[];
+  currentStudents?: number;
+  maxStudents?: number;
 }
 
 export interface PaginationInfo {
@@ -93,6 +97,8 @@ export const cohortService = {
         createdAt: cohort.createdAt,
         updatedAt: cohort.updatedAt,
         instructorIds: cohort.instructorIds,
+        currentStudents: cohort.currentStudents,
+        maxStudents: cohort.maxStudents,
       }));
 
       return {
@@ -104,9 +110,60 @@ export const cohortService = {
           pages: 1,
         },
       };
-    } catch (error: any) {
-      console.error('🚨 Cohort fetch error:', error);
-      throw new Error(error.message || 'Failed to fetch cohorts');
+    } catch (error) {
+      const err = error as Error;
+      console.error('🚨 Cohort fetch error:', err);
+      throw new Error(err.message || 'Failed to fetch cohorts');
+    }
+  },
+
+  // Get a single cohort by ID
+  async getCohortById(cohortId: string): Promise<Cohort | null> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/cohorts/${cohortId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      
+      if (!data.cohort) {
+        return null;
+      }
+
+      const cohort = data.cohort;
+      return {
+        id: cohort.id,
+        name: cohort.name,
+        startDate: cohort.startDate,
+        endDate: cohort.endDate,
+        enrollmentOpenDate: cohort.enrollmentOpenDate,
+        enrollmentCloseDate: cohort.enrollmentCloseDate,
+        extensionDate: cohort.extensionDate,
+        courseType: cohort.courseType,
+        isActive: cohort.isActive,
+        createdAt: cohort.createdAt,
+        updatedAt: cohort.updatedAt,
+        instructorIds: cohort.instructorIds,
+        currentStudents: cohort.currentStudents,
+        maxStudents: cohort.maxStudents,
+      };
+    } catch (error) {
+      console.error('🚨 Get cohort error:', error);
+      return null;
     }
   },
 
@@ -178,8 +235,9 @@ export const cohortService = {
       };
 
       return { cohort: transformedCohort };
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to create cohort');
+    } catch (error) {
+      const err = error as Error;
+      throw new Error(err.message || 'Failed to create cohort');
     }
   },
 
@@ -203,7 +261,7 @@ export const cohortService = {
     }
 
     try {
-      const payload: Record<string, any> = {};
+      const payload: Record<string, string | boolean | undefined> = {};
       if (updates.name !== undefined) payload.name = updates.name;
       if (updates.startDate !== undefined) payload.start_date = updates.startDate;
       if (updates.endDate !== undefined) payload.end_date = updates.endDate;
@@ -254,8 +312,9 @@ export const cohortService = {
       };
 
       return { cohort: transformedCohort };
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to update cohort');
+    } catch (error) {
+      const err = error as Error;
+      throw new Error(err.message || 'Failed to update cohort');
     }
   },
 
@@ -279,8 +338,9 @@ export const cohortService = {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to delete cohort');
       }
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to delete cohort');
+    } catch (error) {
+      const err = error as Error;
+      throw new Error(err.message || 'Failed to delete cohort');
     }
   },
 
@@ -292,7 +352,7 @@ export const cohortService = {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/cohorts/learner/assign`, {
+      const response = await fetch(`${API_BASE_URL}/cohorts/AssignLearner`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -308,8 +368,44 @@ export const cohortService = {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to assign learner to cohort');
       }
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to assign learner to cohort');
+    } catch (error) {
+      const err = error as Error;
+      throw new Error(err.message || 'Failed to assign learner to cohort');
+    }
+  },
+
+  // Unenroll from cohort
+  async unenrollFromCohort(): Promise<{ message: string; previousCohortId: string; previousCohortName: string }> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/cohorts/unenroll`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to unenroll from cohort');
+      }
+
+      const data = await response.json();
+      return {
+        message: data.message,
+        previousCohortId: data.data?.previousCohortId,
+        previousCohortName: data.data?.previousCohortName,
+      };
+    } catch (error) {
+      const err = error as Error;
+      throw new Error(err.message || 'Failed to unenroll from cohort');
     }
   },
 };
+

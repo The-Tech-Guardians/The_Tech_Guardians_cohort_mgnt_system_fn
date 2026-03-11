@@ -1,10 +1,10 @@
-
 "use client";
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSidebar } from "../layout";
 import { courseService, type Course } from "@/services/courseService";
+import { GraduationCap, BookOpen } from "lucide-react";
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
@@ -12,10 +12,6 @@ interface Cohort {
   id: string;
   cohortId: string;
   name: string;
-  startDate: string;
-  endDate: string;
-  courseType: string;
-  status: string;
 }
 
 interface CourseDisplay extends Course {
@@ -42,13 +38,12 @@ export default function LearnerMyCoursesPage() {
         setLoading(true);
         setError(null);
         
-        // First, get the learner's cohort
         const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
         if (!token) {
           throw new Error('Authentication required');
         }
 
-        // Fetch cohort info
+        // First, get the learner's cohort
         const cohortResponse = await fetch(`${API_BASE_URL}/learner/cohort`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -56,45 +51,65 @@ export default function LearnerMyCoursesPage() {
           },
         });
 
+        let cohortId = null;
         if (cohortResponse.ok) {
           const cohortData = await cohortResponse.json();
           if (cohortData.success && cohortData.data) {
             setCohort(cohortData.data);
+            // Get cohortId - handle both formats from API
+            cohortId = cohortData.data.cohortId || cohortData.data.id;
           }
         }
 
-        // Then fetch courses for the learner's cohort
-        const response = await courseService.getLearnerEnrolledCourses(1, 20);
-        
-        if (response.courses && response.courses.length > 0) {
-          const transformedCourses = response.courses.map((course: Course) => {
-            const colors = [
-              'bg-gradient-to-br from-blue-500 to-blue-600',
-              'bg-gradient-to-br from-purple-500 to-purple-600',
-              'bg-gradient-to-br from-pink-500 to-pink-600',
-              'bg-gradient-to-br from-green-500 to-green-600',
-              'bg-gradient-to-br from-orange-500 to-orange-600',
-            ];
-            const colorIndex = Math.abs(course.title.charCodeAt(0)) % colors.length;
-            
-            return {
-              ...course,
-              color: colors[colorIndex],
-              progress: 0,
-              modules: 0,
-              lessons: 0,
-              nextLesson: 'Getting Started',
-              status: 'not-started',
-              thumbnail: course.title?.charAt(0).toUpperCase() || 'C'
-            };
+        // Only fetch courses if learner is enrolled in a cohort
+        if (cohortId) {
+          const coursesResponse = await fetch(`${API_BASE_URL}/courses?cohortId=${cohortId}&page=1&limit=50`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
           });
-          setCourses(transformedCourses);
+          
+          if (coursesResponse.ok) {
+            const data = await coursesResponse.json();
+            const coursesData = data.courses || [];
+            
+            if (coursesData && coursesData.length > 0) {
+              const transformedCourses = coursesData.map((course: Course) => {
+                const colors = [
+                  'bg-gradient-to-br from-blue-500 to-blue-600',
+                  'bg-gradient-to-br from-purple-500 to-purple-600',
+                  'bg-gradient-to-br from-pink-500 to-pink-600',
+                  'bg-gradient-to-br from-green-500 to-green-600',
+                  'bg-gradient-to-br from-orange-500 to-orange-600',
+                ];
+                const colorIndex = Math.abs(course.title.charCodeAt(0)) % colors.length;
+                
+                return {
+                  ...course,
+                  color: colors[colorIndex],
+                  progress: 0,
+                  modules: 0,
+                  lessons: 0,
+                  nextLesson: 'Getting Started',
+                  status: 'not-started',
+                  thumbnail: course.title?.charAt(0).toUpperCase() || 'C'
+                };
+              });
+              setCourses(transformedCourses);
+            } else {
+              setCourses([]);
+            }
+          } else {
+            setCourses([]);
+          }
         } else {
+          // Not enrolled in any cohort
           setCourses([]);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching data:', err);
-        setError(err.message || 'Failed to fetch data');
+        setError(err instanceof Error ? err.message : 'Failed to fetch data');
         setCourses([]);
       } finally {
         setLoading(false);
@@ -148,18 +163,42 @@ export default function LearnerMyCoursesPage() {
     );
   }
 
+  // If not enrolled in any cohort, show a message to enroll
+  if (!cohort) {
+    return (
+      <div className={`transition-all duration-300 space-y-6 ${collapsed ? 'mx-4' : 'max-w-6xl mx-auto'}`}>
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-black text-gray-900" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>My Courses</h1>
+            <p className="text-sm text-gray-500 mt-1">Join a cohort to access courses</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="bg-gradient-to-br from-indigo-500 to-blue-600 p-6 rounded-full mb-6">
+            <GraduationCap className="w-16 h-16 text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">No Cohort Joined</h2>
+          <p className="text-gray-500 text-center max-w-md mb-6">
+            You need to join a cohort to access your courses. Browse available cohorts and enroll to start learning.
+          </p>
+          <Link 
+            href="/learner/cohorts"
+            className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
+          >
+            Browse Cohorts
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`transition-all duration-300 space-y-6 ${collapsed ? 'mx-4' : 'max-w-6xl mx-auto'}`}>
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-black text-gray-900" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>My Courses</h1>
-          {cohort ? (
-            <p className="text-sm text-gray-500 mt-1">
-              Cohort: <span className="font-semibold text-indigo-600">{cohort.name}</span>
-            </p>
-          ) : (
-            <p className="text-sm text-gray-500 mt-1">Continue your learning journey</p>
-          )}
+          <p className="text-sm text-gray-500 mt-1">Courses available in your cohort</p>
         </div>
         <div className="flex gap-2">
           {["all", "in-progress", "not-started"].map(f => (
@@ -241,11 +280,47 @@ export default function LearnerMyCoursesPage() {
 
       {filtered.length === 0 && (
         <div className="text-center py-16">
+          <div className="bg-gray-100 p-4 rounded-full inline-block mb-4">
+            <BookOpen className="w-8 h-8 text-gray-400" />
+          </div>
           <div className="text-gray-400 text-lg font-semibold">
-            {courses.length === 0 ? "No courses assigned to your cohort yet" : "No courses match your filter"}
+            {courses.length === 0 ? "No courses available in your cohort yet" : "No courses match your filter"}
           </div>
         </div>
       )}
     </div>
   );
 }
+              )}
+
+              <div className="flex gap-2">
+               
+               
+                <button className={`flex-1  text-white ${course.color} text-sm font-semibold py-2.5 rounded-xl hover:opacity-90 transition-opacity`}>
+                  <Link href={`my-courses/my-learning?courseId=${course.id}`}> {course.progress && course.progress > 0 ? "Continue" : "Start Course"}</Link>
+                </button>
+                <button className="w-10 h-10 flex items-center justify-center border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filtered.length === 0 && (
+        <div className="text-center py-16">
+          <div className="bg-gray-100 p-4 rounded-full inline-block mb-4">
+            <BookOpen className="w-8 h-8 text-gray-400" />
+          </div>
+          <div className="text-gray-400 text-lg font-semibold">
+            {courses.length === 0 ? "No courses available in your cohort yet" : "No courses match your filter"}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+

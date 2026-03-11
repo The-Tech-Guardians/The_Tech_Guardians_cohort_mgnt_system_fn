@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSidebar } from "../layout";
 import { cohortService, type Cohort } from "@/services/cohortService";
-import { Users, Calendar, BookOpen, Loader2 } from "lucide-react";
+import { Users, Calendar, BookOpen, Loader2, ChevronDown, LogOut, GraduationCap } from "lucide-react";
 
 export default function LearnerCohortsPage() {
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
@@ -11,6 +11,8 @@ export default function LearnerCohortsPage() {
   const [error, setError] = useState<string | null>(null);
   const [enrolledCohortId, setEnrolledCohortId] = useState<string | null>(null);
   const [joiningCohortId, setJoiningCohortId] = useState<string | null>(null);
+  const [unenrolling, setUnenrolling] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const { collapsed } = useSidebar();
 
   useEffect(() => {
@@ -24,9 +26,9 @@ export default function LearnerCohortsPage() {
       setError(null);
       const response = await cohortService.getAllCohorts(1, 50);
       setCohorts(response.cohorts);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching cohorts:', err);
-      setError(err.message || 'Failed to fetch cohorts');
+      setError(err instanceof Error ? err.message : 'Failed to fetch cohorts');
     } finally {
       setLoading(false);
     }
@@ -97,13 +99,46 @@ export default function LearnerCohortsPage() {
       }
 
       setEnrolledCohortId(cohortId);
-    } catch (err: any) {
+      setShowDropdown(false);
+      
+      // Refresh cohorts to get updated student count
+      await fetchCohorts();
+    } catch (err: unknown) {
       console.error('Error joining cohort:', err);
-      setError(err.message || 'Failed to join cohort');
+      setError(err instanceof Error ? err.message : 'Failed to join cohort');
     } finally {
       setJoiningCohortId(null);
     }
   };
+
+  const handleUnenroll = async () => {
+    try {
+      setUnenrolling(true);
+      setError(null);
+
+      await cohortService.unenrollFromCohort();
+      
+      // Clear enrolled cohort and refresh the list
+      setEnrolledCohortId(null);
+      setShowDropdown(false);
+      
+      // Refresh cohorts to show all available options and updated student counts
+      await fetchCohorts();
+    } catch (err: unknown) {
+      console.error('Error unenrolling from cohort:', err);
+      setError(err instanceof Error ? err.message : 'Failed to unenroll from cohort');
+    } finally {
+      setUnenrolling(false);
+    }
+  };
+
+  // Get the enrolled cohort details
+  const enrolledCohort = enrolledCohortId ? cohorts.find(c => c.id === enrolledCohortId) : null;
+
+  // Filter cohorts: show only enrolled cohort if enrolled, otherwise show all
+  const displayedCohorts = enrolledCohortId 
+    ? cohorts.filter(c => c.id === enrolledCohortId)
+    : cohorts;
 
   if (loading) {
     return (
@@ -115,11 +150,78 @@ export default function LearnerCohortsPage() {
 
   return (
     <div className={`transition-all duration-300 space-y-6 ${collapsed ? 'mx-4' : 'max-w-6xl mx-auto'}`}>
+      {/* Enrolled Cohort Banner - Show when enrolled */}
+      {enrolledCohort && (
+        <div className="bg-gradient-to-r from-indigo-500 to-blue-600 rounded-2xl p-6 text-white">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <GraduationCap className="w-5 h-5" />
+                <span className="text-sm font-medium text-white/80">Enrolled Cohort</span>
+              </div>
+              <h1 className="text-2xl font-black" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>
+                {enrolledCohort.name}
+              </h1>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                <span className="text-sm">
+                  {enrolledCohort.currentStudents || 0} / {enrolledCohort.maxStudents || 30} Students
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                <span className="text-sm">
+                  {new Date(enrolledCohort.startDate).toLocaleDateString()} - {new Date(enrolledCohort.endDate).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-900" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>Available Cohorts</h1>
-          <p className="text-sm text-gray-500 mt-1">Join a cohort to access courses</p>
+          <h1 className="text-2xl font-black text-gray-900" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>
+            {enrolledCohortId ? 'Your Cohort' : 'Available Cohorts'}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {enrolledCohortId 
+              ? 'You are enrolled in this cohort. You can unenroll to join a different one.' 
+              : 'Join a cohort to access courses'}
+          </p>
         </div>
+        
+        {enrolledCohortId && (
+          <button
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-semibold text-sm transition-all"
+          >
+            <LogOut className="w-4 h-4" />
+            Unenroll Options
+            <ChevronDown className={`w-4 h-4 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+          </button>
+        )}
+        
+        {showDropdown && (
+          <div className="absolute right-4 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 z-50">
+            <button
+              onClick={handleUnenroll}
+              disabled={unenrolling}
+              className="w-full flex items-center gap-2 px-4 py-3 text-left text-red-600 hover:bg-red-50 transition-colors rounded-xl"
+            >
+              {unenrolling ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <LogOut className="w-4 h-4" />
+              )}
+              <span className="font-medium">
+                {unenrolling ? 'Unenrolling...' : 'Unenroll from this cohort'}
+              </span>
+            </button>
+          </div>
+        )}
       </div>
 
       {error && (
@@ -128,8 +230,9 @@ export default function LearnerCohortsPage() {
         </div>
       )}
 
+      {/* Cohort Cards */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {cohorts.map((cohort, index) => {
+        {displayedCohorts.map((cohort, index) => {
           const cohortId = cohort.id;
           const enrollmentActive = isEnrollmentPeriodActive(cohort);
           const isEnrolled = enrolledCohortId === cohortId;
@@ -188,39 +291,54 @@ export default function LearnerCohortsPage() {
                   </div>
                 )}
 
-                <button
-                  onClick={() => handleJoinCohort(cohortId)}
-                  disabled={isEnrolled || isJoining || !enrollmentActive}
-                  className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all ${
-                    isEnrolled
-                      ? 'bg-green-100 text-green-700 cursor-default'
-                      : isJoining
-                      ? 'bg-gray-100 text-gray-500 cursor-wait'
-                      : !enrollmentActive
-                      ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                  }`}
-                >
-                  {isJoining ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Joining...
-                    </span>
-                  ) : isEnrolled ? (
-                    'Enrolled ✓'
-                  ) : !enrollmentActive ? (
-                    'Enrollment Closed'
-                  ) : (
-                    'Join Cohort'
-                  )}
-                </button>
+                {enrolledCohortId ? (
+                  // Show enrolled status with unenroll option
+                  <div className="space-y-2">
+                    <button
+                      disabled
+                      className="w-full py-2.5 rounded-xl font-semibold text-sm bg-green-100 text-green-700 cursor-default"
+                    >
+                      Enrolled ✓
+                    </button>
+                    <p className="text-xs text-center text-gray-500">
+                      Click "Unenroll Options" above to leave this cohort
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleJoinCohort(cohortId)}
+                    disabled={isEnrolled || isJoining || !enrollmentActive}
+                    className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                      isEnrolled
+                        ? 'bg-green-100 text-green-700 cursor-default'
+                        : isJoining
+                        ? 'bg-gray-100 text-gray-500 cursor-wait'
+                        : !enrollmentActive
+                        ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    }`}
+                  >
+                    {isJoining ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Joining...
+                      </span>
+                    ) : isEnrolled ? (
+                      'Enrolled ✓'
+                    ) : !enrollmentActive ? (
+                      'Enrollment Closed'
+                    ) : (
+                      'Join Cohort'
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           );
         })}
       </div>
 
-      {cohorts.length === 0 && (
+      {displayedCohorts.length === 0 && (
         <div className="text-center py-16">
           <p className="text-gray-500 text-lg">No cohorts available at the moment</p>
         </div>
@@ -228,3 +346,4 @@ export default function LearnerCohortsPage() {
     </div>
   );
 }
+

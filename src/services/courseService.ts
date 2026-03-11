@@ -127,7 +127,7 @@ export const courseService = {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/courses/learner/my-courses?page=${page}&limit=${limit}`,
+        `${API_BASE_URL}/learner/courses?page=${page}&limit=${limit}`,
         {
           method: 'GET',
           headers: {
@@ -139,23 +139,27 @@ export const courseService = {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch courses');
+        throw new Error(errorData.message || errorData.error || 'Failed to fetch courses');
       }
 
-      const data: ApiResponse<Course> = await response.json();
+      const data = await response.json();
 
+      // Backend returns { success: true, data: [...], message: "..." }
+      const coursesData = data.data || [];
+      
       return {
-        courses: data.courses || [],
+        courses: coursesData,
         pagination: data.pagination || {
           page,
           limit,
-          total: data.courses?.length || 0,
+          total: coursesData.length,
           pages: 1,
         },
       };
-    } catch (error: any) {
-      console.error('Course fetch error:', error);
-      throw new Error(error.message || 'Failed to fetch courses');
+    } catch (error) {
+      const err = error as Error;
+      console.error('Course fetch error:', err);
+      throw new Error(err.message || 'Failed to fetch courses');
     }
   },
 
@@ -171,7 +175,7 @@ export const courseService = {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/courses/learner/my-courses?page=${page}&limit=${limit}`,
+        `${API_BASE_URL}/learner/courses?page=${page}&limit=${limit}`,
         {
           method: 'GET',
           headers: {
@@ -197,9 +201,10 @@ export const courseService = {
           pages: 1,
         },
       };
-    } catch (error: any) {
-      console.error('Course fetch error:', error);
-      throw new Error(error.message || 'Failed to fetch courses');
+    } catch (error) {
+      const err = error as Error;
+      console.error('Course fetch error:', err);
+      throw new Error(err.message || 'Failed to fetch courses');
     }
   },
 
@@ -231,8 +236,9 @@ export const courseService = {
       }
 
       return { course: data.course };
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to fetch course');
+    } catch (error) {
+      const err = error as Error;
+      throw new Error(err.message || 'Failed to fetch course');
     }
   },
 
@@ -271,9 +277,9 @@ export const courseService = {
       const modules = modulesData.modules || [];
       const allLessons: Lesson[] = [];
 
-      for (const module of modules) {
+      for (const mod of modules) {
         try {
-          const lessonsRes = await fetch(`${API_BASE_URL}/lessons/module/${module.id}`, {
+          const lessonsRes = await fetch(`${API_BASE_URL}/lessons/module/${mod.id}`, {
             headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
           });
           if (lessonsRes.ok) {
@@ -281,7 +287,7 @@ export const courseService = {
             allLessons.push(...(lessonsData.lessons || []));
           }
         } catch (err) {
-          console.error(`Failed to fetch lessons for module ${module.id}:`, err);
+          console.error(`Failed to fetch lessons for module ${mod.id}:`, err);
         }
       }
 
@@ -290,14 +296,15 @@ export const courseService = {
         modules,
         lessons: allLessons,
       };
-    } catch (error: any) {
-      console.error('getCourseWithModulesAndLessons error:', error);
-      throw new Error(error.message || 'Failed to fetch course details');
+    } catch (error) {
+      const err = error as Error;
+      console.error('getCourseWithModulesAndLessons error:', err);
+      throw new Error(err.message || 'Failed to fetch course details');
     }
   },
 
   // Get all courses (admin/instructor view)
-  async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: BackendCourse[]; pagination: any }> {
+  async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: BackendCourse[]; pagination: PaginationInfo }> {
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/courses?page=${page}&limit=${limit}`, {
@@ -357,8 +364,9 @@ export const courseService = {
           pages: 1,
         },
       };
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to fetch courses');
+    } catch (error) {
+      const err = error as Error;
+      throw new Error(err.message || 'Failed to fetch courses');
     }
   },
 
@@ -430,7 +438,7 @@ export const courseService = {
       const token = getAuthToken();
       if (!token) throw new Error('No authentication token found');
       const response = await fetch(`${API_BASE_URL}/courses/${id}/publish`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -450,7 +458,7 @@ export const courseService = {
   },
 
   // Get instructors for course creation
-  async getInstructors(page: number = 1, limit: number = 20, search?: string): Promise<{ instructors: Instructor[]; pagination: any }> {
+  async getInstructors(page: number = 1, limit: number = 20, search?: string): Promise<{ instructors: Instructor[]; pagination: PaginationInfo }> {
     try {
       const token = getAuthToken();
       if (!token) throw new Error('No authentication token found');
