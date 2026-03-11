@@ -2,6 +2,19 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
+// Backend course interface (matches API response)
+export interface BackendCourse {
+  id: string;
+  title: string;
+  description: string;
+  instructorId: string;
+  cohortId: string;
+  courseType: string;
+  isPublished: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Course {
   id: string;
   title: string;
@@ -65,6 +78,14 @@ export interface QuestionOption {
   orderIndex: number;
 }
 
+// Instructor interface for course creation
+export interface Instructor {
+  uuid: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 const getAuthToken = () => {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('token') || localStorage.getItem('auth_token');
@@ -89,10 +110,10 @@ const handleResponse = async (response: Response) => {
 
 export const courseService = {
   // Get all courses
-  async getAllCourses(): Promise<Course[]> {
+  async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: BackendCourse[]; pagination: any }> {
     try {
       const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/courses`, {
+      const response = await fetch(`${API_BASE_URL}/courses?page=${page}&limit=${limit}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -100,10 +121,13 @@ export const courseService = {
         },
       });
       const data = await handleResponse(response);
-      return data.courses || data || [];
+      return { 
+        courses: data.courses || [], 
+        pagination: data.pagination || { page, limit, total: 0, pages: 0 }
+      };
     } catch (error) {
       console.error('Failed to fetch courses:', error);
-      return [];
+      return { courses: [], pagination: { page, limit, total: 0, pages: 0 } };
     }
   },
 
@@ -222,7 +246,7 @@ export const courseService = {
   },
 
   // Create a new course
-  async createCourse(courseData: Partial<Course>): Promise<Course | null> {
+  async createCourse(courseData: Partial<BackendCourse>): Promise<{ course: BackendCourse } | null> {
     try {
       const token = getAuthToken();
       if (!token) throw new Error('No authentication token found');
@@ -235,7 +259,7 @@ export const courseService = {
         body: JSON.stringify(courseData),
       });
       const data = await handleResponse(response);
-      return data.course || data || null;
+      return data.course ? { course: data.course } : null;
     } catch (error) {
       console.error('Failed to create course:', error);
       throw error;
@@ -243,7 +267,7 @@ export const courseService = {
   },
 
   // Update a course
-  async updateCourse(id: string, courseData: Partial<Course>): Promise<Course | null> {
+  async updateCourse(id: string, courseData: Partial<BackendCourse>): Promise<{ course: BackendCourse } | null> {
     try {
       const token = getAuthToken();
       if (!token) throw new Error('No authentication token found');
@@ -256,7 +280,7 @@ export const courseService = {
         body: JSON.stringify(courseData),
       });
       const data = await handleResponse(response);
-      return data.course || data || null;
+      return data.course ? { course: data.course } : null;
     } catch (error) {
       console.error(`Failed to update course ${id}:`, error);
       throw error;
@@ -302,10 +326,47 @@ export const courseService = {
       throw error;
     }
   },
+
+  // Toggle publish status
+  async togglePublish(id: string): Promise<boolean> {
+    return this.publishCourse(id);
+  },
+
+  // Get instructors for course creation
+  async getInstructors(page: number = 1, limit: number = 20, search?: string): Promise<{ instructors: Instructor[]; pagination: any }> {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('No authentication token found');
+      
+      let url = `${API_BASE_URL}/courses/instructors?page=${page}&limit=${limit}`;
+      if (search) {
+        url += `&search=${encodeURIComponent(search)}`;
+      }
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await handleResponse(response);
+      return {
+        instructors: data.instructors || [],
+        pagination: data.pagination || { page, limit, total: 0, pages: 0 }
+      };
+    } catch (error) {
+      console.error('Failed to fetch instructors:', error);
+      return { instructors: [], pagination: { page, limit, total: 0, pages: 0 } };
+    }
+  },
 };
 
 // Helper function to format course type for display
-export const formatCourseType = (courseType: string): string => {
+export const formatCourseType = (courseType: string | undefined | null): string => {
+  if (!courseType) {
+    return 'Unknown Type';
+  }
   return courseType.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => {
     return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
   });
