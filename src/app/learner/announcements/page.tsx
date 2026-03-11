@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import { Megaphone, Pin, Clock } from "lucide-react";
 import { useSidebar } from "../layout";
