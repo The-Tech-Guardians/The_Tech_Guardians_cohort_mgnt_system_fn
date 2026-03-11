@@ -3,13 +3,12 @@
 import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
-import { Plus, Calendar, Users, BookOpen, Eye, Edit, Search, Trash2, Loader2 } from "lucide-react";
+import { Plus, Search, Trash2, Loader2, Edit, User as UserIcon } from "lucide-react";
 import { 
-  newCohortService as cohortService, 
-  type Cohort as CohortType,
-  type BackendCohort,
+  cohortService, 
   type Cohort,
-} from "@/services/newCohortService";
+} from "@/services/cohortService";
+import { userService, type User } from "@/services/userService";
 
 // Initial form state
 const initialFormData = {
@@ -20,6 +19,7 @@ const initialFormData = {
   enrollmentCloseDate: "",
   extensionDate: "",
   courseType: "COMPUTER_PROGRAMMING",
+  coordinatorId: "",
 };
 
 const courseTypeOptions = [
@@ -33,14 +33,15 @@ const courseTypeOptions = [
 export default function CohortsPage() {
   // State management
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [admins, setAdmins] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [adminLoading, setAdminLoading] = useState(false);
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showLearnersModal, setShowLearnersModal] = useState(false);
 
   // Selected items
   const [selectedCohort, setSelectedCohort] = useState<Cohort | null>(null);
@@ -87,6 +88,47 @@ export default function CohortsPage() {
     setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
   };
 
+  // Fetch admins for coordinator selection
+  const fetchAdmins = useCallback(async () => {
+    try {
+      setAdminLoading(true);
+      const adminList = await userService.getAdmins();
+      setAdmins(adminList);
+    } catch (err) {
+      console.error('Failed to fetch admins:', err);
+    } finally {
+      setAdminLoading(false);
+    }
+  }, []);
+
+  // Open create modal and fetch admins
+  const openCreateModal = () => {
+    if (admins.length === 0) {
+      fetchAdmins();
+    }
+    setFormData(initialFormData);
+    setShowCreateModal(true);
+  };
+
+  // Open edit modal and fetch admins
+  const openEditModalForCohort = (cohort: Cohort) => {
+    if (admins.length === 0) {
+      fetchAdmins();
+    }
+    setSelectedCohort(cohort);
+    setFormData({
+      name: cohort.name,
+      startDate: cohort.startDate.split('T')[0],
+      endDate: cohort.endDate.split('T')[0],
+      enrollmentOpenDate: cohort.enrollmentOpenDate?.split('T')[0] || "",
+      enrollmentCloseDate: cohort.enrollmentCloseDate?.split('T')[0] || "",
+      extensionDate: cohort.extensionDate?.split('T')[0] || "",
+      courseType: cohort.courseType,
+      coordinatorId: cohort.coordinatorId || "",
+    });
+    setShowEditModal(true);
+  };
+
   // Create cohort
   const handleCreateCohort = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +144,7 @@ export default function CohortsPage() {
         enrollmentCloseDate: formData.enrollmentCloseDate,
         extensionDate: formData.extensionDate,
         courseType: formData.courseType,
+        coordinatorId: formData.coordinatorId || undefined,
       });
 
       if (response.cohort) {
@@ -132,6 +175,7 @@ export default function CohortsPage() {
         enrollmentCloseDate: formData.enrollmentCloseDate,
         extensionDate: formData.extensionDate,
         courseType: formData.courseType,
+        coordinatorId: formData.coordinatorId || undefined,
       });
 
       if (response.cohort) {
@@ -168,6 +212,9 @@ export default function CohortsPage() {
   };
 
   const openEditModal = (cohort: Cohort) => {
+    if (admins.length === 0) {
+      fetchAdmins();
+    }
     setSelectedCohort(cohort);
     setFormData({
       name: cohort.name,
@@ -177,6 +224,7 @@ export default function CohortsPage() {
       enrollmentCloseDate: cohort.enrollmentCloseDate?.split('T')[0] || "",
       extensionDate: cohort.extensionDate?.split('T')[0] || "",
       courseType: cohort.courseType,
+      coordinatorId: cohort.coordinatorId || "",
     });
     setShowEditModal(true);
   };
@@ -235,10 +283,7 @@ export default function CohortsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <button
-          onClick={() => {
-            setFormData(initialFormData);
-            setShowCreateModal(true);
-          }}
+          onClick={openCreateModal}
           className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm"
         >
           <Plus className="w-4 h-4" />
@@ -262,27 +307,32 @@ export default function CohortsPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 w-16">#</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Cohort Name</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Course Type</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Instructor</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Coordinator</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Start Date</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">End Date</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Extension Date</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Enrollment</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Created</th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">Actions</th>
+                <th className="px-6 py-3 center text-xs font-semibold text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredCohorts.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center">
+                  <td colSpan={11} className="px-6 py-8 text-center">
                     <p className="text-gray-500">No cohorts found</p>
                   </td>
                 </tr>
               ) : (
                 filteredCohorts.map((cohort, index) => (
-                  <tr key={cohort.id || `cohort-${index}`} className="hover:bg-gray-50 transition-colors">
+                  <tr key={cohort.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-4 text-sm font-medium text-gray-500">
+                      {(pagination.page - 1) * pagination.limit + index + 1}
+                    </td>
                     <td className="px-6 py-4">
                       <p className="text-sm font-medium text-gray-900">{cohort.name}</p>
                     </td>
@@ -291,13 +341,12 @@ export default function CohortsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-gray-600">
-                        {cohort.instructorIds && cohort.instructorIds.length > 0
-                          ? `Instructor: ${
-                              cohort.instructorIds[0].length > 8
-                                ? `${cohort.instructorIds[0].slice(0, 8)}...`
-                                : cohort.instructorIds[0]
-                            }`
-                          : "Instructor: Not assigned"}
+                        {cohort.coordinatorName ? (
+                          <span className="flex items-center gap-1">
+                            <UserIcon className="w-3 h-3" />
+                            {cohort.coordinatorName}
+                          </span>
+                        ) : "Not assigned"}
                       </p>
                     </td>
                     <td className="px-6 py-4">
@@ -308,6 +357,11 @@ export default function CohortsPage() {
                     <td className="px-6 py-4">
                       <p className="text-sm text-gray-600">
                         {new Date(cohort.endDate).toLocaleDateString()}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600">
+                        {cohort.extensionDate ? new Date(cohort.extensionDate).toLocaleDateString() : "N/A"}
                       </p>
                     </td>
                     <td className="px-6 py-4">
@@ -388,6 +442,23 @@ export default function CohortsPage() {
             >
               {courseTypeOptions.map(option => (
                 <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Coordinator (Optional)</label>
+            <select
+              value={formData.coordinatorId}
+              onChange={(e) => setFormData({ ...formData, coordinatorId: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              disabled={adminLoading}
+            >
+              <option value="">Select a coordinator</option>
+              {admins.map(admin => (
+                <option key={admin.uuid} value={admin.uuid}>
+                  {admin.firstName} {admin.lastName}
+                </option>
               ))}
             </select>
           </div>
@@ -500,6 +571,23 @@ export default function CohortsPage() {
             </select>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Coordinator (Optional)</label>
+            <select
+              value={formData.coordinatorId}
+              onChange={(e) => setFormData({ ...formData, coordinatorId: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              disabled={adminLoading}
+            >
+              <option value="">Select a coordinator</option>
+              {admins.map(admin => (
+                <option key={admin.uuid} value={admin.uuid}>
+                  {admin.firstName} {admin.lastName}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
@@ -603,6 +691,30 @@ export default function CohortsPage() {
       </Modal>
 
       <Toast message={toast.message} type={toast.type} isVisible={toast.show} onClose={() => setToast({ ...toast, show: false })} />
+      
+      {/* Pagination */}
+      {pagination.pages > 1 && (
+        <div className="flex justify-center items-center gap-2">
+          <button
+            onClick={() => setPagination(prev => ({ ...prev, page: Math.max(prev.page - 1, 1) }))}
+            disabled={pagination.page === 1 || loading}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm disabled:opacity-50 hover:bg-gray-50 transition-colors"
+          >
+            Previous
+          </button>
+          <span className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-sm">
+            Page {pagination.page} of {pagination.pages}
+          </span>
+          <button
+            onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.page + 1, prev.pages) }))}
+            disabled={pagination.page === pagination.pages || loading}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm disabled:opacity-50 hover:bg-gray-50 transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }
+

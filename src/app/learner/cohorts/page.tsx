@@ -116,7 +116,13 @@ export default function LearnerCohortsPage() {
       setUnenrolling(true);
       setError(null);
 
-      await cohortService.unenrollFromCohort();
+      await fetch(`${API_BASE_URL}/cohorts/unenroll`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
       
       // Clear enrolled cohort and refresh the list
       setEnrolledCohortId(null);

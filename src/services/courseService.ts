@@ -445,7 +445,7 @@ export const courseService = {
   },
 
   // Publish a course
-  async publishCourse(id: string): Promise<boolean> {
+  async publishCourse(id: string): Promise<BackendCourse | null> {
     try {
       const token = getAuthToken();
       if (!token) throw new Error('No authentication token found');
@@ -456,8 +456,8 @@ export const courseService = {
           'Content-Type': 'application/json',
         },
       });
-      await handleResponse(response);
-      return true;
+      const data = await handleResponse(response);
+      return data.course || data || null;
     } catch (error) {
       console.error(`Failed to publish course ${id}:`, error);
       throw error;
@@ -465,7 +465,7 @@ export const courseService = {
   },
 
   // Toggle publish status
-  async togglePublish(id: string): Promise<boolean> {
+  async togglePublish(id: string): Promise<BackendCourse | null> {
     return this.publishCourse(id);
   },
 
