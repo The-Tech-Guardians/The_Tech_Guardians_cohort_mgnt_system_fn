@@ -16,6 +16,7 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [invitationData, setInvitationData] = useState<{email?: string; role?: string} | null>(null);
+  const [enrollmentStatus, setEnrollmentStatus] = useState<{isOpen: boolean; message: string}>({ isOpen: true, message: "Enrollment Open" });
   
   const [form, setForm] = useState({
     firstName: "",
@@ -88,8 +89,19 @@ function RegisterForm() {
   const strengthLabels = ["", "Weak", "Fair", "Good", "Strong"];
   const strength = passwordStrength();
 
-  // ── Step 2: Success screen (unchanged) ──
+  // Auto-redirect to login when step becomes 2
+  useEffect(() => {
+    if (step === 2) {
+      const timer = setTimeout(() => {
+        window.location.href = "/login";
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [step]);
+
+  // ── Step 2: Success screen ──
   if (step === 2) {
+
     return (
       <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center px-6">
         <div className="w-full max-w-md text-center">
@@ -99,25 +111,16 @@ function RegisterForm() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-[#111827] mb-2">Account created!</h2>
+            <h2 className="text-2xl font-bold text-[#111827] mb-2">Account created successfully!</h2>
             <p className="text-gray-500 text-sm leading-relaxed mb-6">
-              We&apos;ve sent a confirmation link to <span className="font-semibold text-[#111827]">{form.email}</span>. Please verify your email to activate your account.
+              Your account has been created. You can now log in with your credentials.
             </p>
-            <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-left mb-6">
-              <div className="flex gap-2.5">
-                <svg className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <p className="text-xs text-amber-700 leading-relaxed">
-                  Enrollment is open. Complete verification before the enrollment window closes.
-                </p>
-              </div>
-            </div>
+            <p className="text-sm text-gray-400 mb-6">Redirecting to login page...</p>
             <Link
               href="/login"
               className="inline-block w-full bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold py-3 rounded-xl transition text-sm shadow-lg shadow-indigo-500/25"
             >
-              Go to Login
+              Go to Login Now
             </Link>
           </div>
         </div>
@@ -129,9 +132,6 @@ function RegisterForm() {
     <div className="min-h-screen bg-white flex">
 
 
-      {/* ═══════════════════════════════════════
-          LEFT PANEL — blue-600 → cyan-500 + Undraw illustration
-      ═══════════════════════════════════════ */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-blue-600 to-cyan-500">
 
         {/* White dot-grid overlay */}
@@ -309,9 +309,6 @@ function RegisterForm() {
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════
-          RIGHT PANEL — signup form (unchanged)
-      ═══════════════════════════════════════ */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 bg-[#F9FAFB]">
         <div className="w-full max-w-md">
           <div className="flex lg:hidden items-center gap-2 mb-8 justify-center">

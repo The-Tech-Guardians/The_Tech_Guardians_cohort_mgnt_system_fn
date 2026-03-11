@@ -5,12 +5,12 @@ import { RefreshCw, Search, Plus, Layers, Edit, Trash2, BookOpen, X } from "luci
 import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
 import { moduleService, type Module } from "@/services/moduleService";
-import { courseService, type Course } from "@/services/courseService";
+import { courseService, type BackendCourse } from "@/services/courseService";
 
 const API_BASE_URL = "http://localhost:3000/api";
 
 export default function ModulesManagementPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<BackendCourse[]>([]);
   const [modules, setModules] = useState<Module[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -49,9 +49,10 @@ export default function ModulesManagementPage() {
       setLoading(true);
       setError(null);
       const response = await courseService.getAllCourses();
-      setCourses(response || []);
-      if (response && response.length > 0) {
-        setSelectedCourse(response[0].id);
+      const coursesArray = response?.courses || [];
+      setCourses(coursesArray);
+      if (coursesArray.length > 0) {
+        setSelectedCourse(coursesArray[0].id);
       }
     } catch (err: any) {
       setError(err.message || "Failed to load courses");
