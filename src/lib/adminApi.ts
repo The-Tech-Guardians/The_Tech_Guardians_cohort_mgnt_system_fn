@@ -320,7 +320,7 @@ export const adminApi = {
   async publishCourse(id: string): Promise<Course> {
     try {
       const response = await fetch(`${API_BASE_URL}/courses/${id}/publish`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: getHeaders(),
       });
 

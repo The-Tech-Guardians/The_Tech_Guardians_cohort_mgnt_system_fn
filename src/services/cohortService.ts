@@ -13,6 +13,8 @@ export interface BackendCohort {
   createdAt?: string;
   updatedAt?: string;
   instructorIds?: string[];
+  coordinatorId?: string | null;
+  coordinatorName?: string | null;
 }
 
 export interface Cohort {
@@ -28,6 +30,8 @@ export interface Cohort {
   createdAt?: string;
   updatedAt?: string;
   instructorIds?: string[];
+  coordinatorId?: string | null;
+  coordinatorName?: string | null;
 }
 
 export interface PaginationInfo {
@@ -85,6 +89,8 @@ export const cohortService = {
         createdAt: cohort.createdAt,
         updatedAt: cohort.updatedAt,
         instructorIds: cohort.instructorIds,
+        coordinatorId: cohort.coordinatorId,
+        coordinatorName: cohort.coordinatorName,
       }));
 
       return {
@@ -139,6 +145,7 @@ export const cohortService = {
         createdAt: data.cohort.createdAt,
         updatedAt: data.cohort.updatedAt,
         instructorIds: data.cohort.instructorIds,
+        coordinatorId: data.cohort.coordinatorId,
       };
 
       return { cohort: transformedCohort };
@@ -155,6 +162,7 @@ export const cohortService = {
     enrollmentCloseDate?: string;
     extensionDate?: string;
     courseType: string;
+    coordinatorId?: string;
   }): Promise<{ cohort: Cohort }> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
     
@@ -177,6 +185,7 @@ export const cohortService = {
           enrollment_close_date: cohortData.enrollmentCloseDate,
           extension_date: cohortData.extensionDate,
           course_type: cohortData.courseType,
+          coordinator_id: cohortData.coordinatorId,
         }),
       });
 
@@ -203,6 +212,8 @@ export const cohortService = {
         isActive: data.cohort.isActive,
         createdAt: data.cohort.createdAt,
         updatedAt: data.cohort.updatedAt,
+        instructorIds: data.cohort.instructorIds,
+        coordinatorId: data.cohort.coordinatorId,
       };
 
       return { cohort: transformedCohort };
@@ -221,6 +232,7 @@ export const cohortService = {
       enrollmentCloseDate?: string;
       extensionDate?: string;
       courseType?: string;
+      coordinatorId?: string;
     }
   ): Promise<{ cohort: Cohort }> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
@@ -238,6 +250,7 @@ export const cohortService = {
       if (updates.enrollmentCloseDate) payload.enrollment_close_date = updates.enrollmentCloseDate;
       if (updates.extensionDate) payload.extension_date = updates.extensionDate;
       if (updates.courseType) payload.course_type = updates.courseType;
+      if (updates.coordinatorId !== undefined) payload.coordinator_id = updates.coordinatorId;
 
       const response = await fetch(`http://localhost:3000/api/cohorts/${id}`, {
         method: 'PUT',
@@ -271,6 +284,8 @@ export const cohortService = {
         isActive: data.cohort.isActive,
         createdAt: data.cohort.createdAt,
         updatedAt: data.cohort.updatedAt,
+        instructorIds: data.cohort.instructorIds,
+        coordinatorId: data.cohort.coordinatorId,
       };
 
       return { cohort: transformedCohort };
@@ -333,3 +348,4 @@ export const cohortService = {
     }
   },
 };
+

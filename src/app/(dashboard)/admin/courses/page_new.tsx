@@ -179,9 +179,22 @@ export default function AdminCoursesPage() {
   const handlePublishCourse = async (courseId: string) => {
     try {
       setLoading(true);
-      await courseService.togglePublish(courseId);
-      showToast("Course status updated successfully!");
-      fetchCourses();
+      const updatedCourse = await courseService.publishCourse(courseId);
+      
+      if (updatedCourse) {
+        // Immediately update local state for better UX
+        setCourses(prevCourses => 
+          prevCourses.map(course => 
+            course.id === courseId 
+              ? { ...course, isPublished: updatedCourse.isPublished }
+              : course
+          )
+        );
+        showToast(`Course ${updatedCourse.isPublished ? 'published' : 'unpublished'} successfully!`);
+      } else {
+        // Fallback: refresh all courses
+        fetchCourses();
+      }
     } catch (err: any) {
       showToast(err.message || 'Failed to update course status', 'error');
     } finally {

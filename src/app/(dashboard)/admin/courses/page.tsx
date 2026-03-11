@@ -26,6 +26,7 @@ const initialCourseForm = {
   description: "",
   cohortId: "",
   instructorId: "",
+  isPublished: false,
 };
 
 const COURSE_TYPE_OPTIONS = [
@@ -161,11 +162,18 @@ export default function AdminCoursesPage() {
       });
 
       if (updated) {
+        // Update local state immediately for better UX
+        setCourses(prevCourses => 
+          prevCourses.map(course => 
+            course.id === selectedCourse.id 
+              ? { ...course, ...updated.course }
+              : course
+          )
+        );
         showToast("Course updated successfully!");
         setCourseForm(initialCourseForm);
         setShowEditModal(false);
         setSelectedCourse(null);
-        fetchCourses();
       }
     } catch (err: any) {
       showToast(err.message || 'Failed to update course', 'error');
@@ -195,9 +203,22 @@ export default function AdminCoursesPage() {
   const handlePublishCourse = async (courseId: string) => {
     try {
       setLoading(true);
-      await courseService.publishCourse(courseId);
-      showToast("Course status updated successfully!");
-      fetchCourses();
+      const updatedCourse = await courseService.publishCourse(courseId);
+      
+      if (updatedCourse) {
+        // Immediately update local state for better UX
+        setCourses(prevCourses => 
+          prevCourses.map(course => 
+            course.id === courseId 
+              ? { ...course, isPublished: updatedCourse.isPublished }
+              : course
+          )
+        );
+        showToast(`Course ${updatedCourse.isPublished ? 'published' : 'unpublished'} successfully!`);
+      } else {
+        // Fallback: refresh all courses
+        fetchCourses();
+      }
     } catch (err: any) {
       showToast(err.message || 'Failed to update course status', 'error');
     } finally {
@@ -213,6 +234,7 @@ export default function AdminCoursesPage() {
       description: course.description,
       cohortId: course.cohortId,
       instructorId: course.instructorId || "",
+      isPublished: course.isPublished || false,
     });
     setShowEditModal(true);
   };
@@ -366,7 +388,7 @@ export default function AdminCoursesPage() {
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900"
               disabled={formLoading}
             >
-              <option value="">Select type</option>
+              <option key="select-type" value="">Select type</option>
               {COURSE_TYPE_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
@@ -381,7 +403,7 @@ export default function AdminCoursesPage() {
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900"
               disabled={formLoading}
             >
-            <option value="">Select cohort</option>
+            <option key="select-cohort" value="">Select cohort</option>
               {cohorts.map(cohort => (
                 <option key={cohort.id} value={cohort.id}>{cohort.name}</option>
               ))}
@@ -407,7 +429,7 @@ export default function AdminCoursesPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
             <textarea
-              rows={4}
+              rows={6}
               required
               value={courseForm.description}
               onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
@@ -506,6 +528,18 @@ export default function AdminCoursesPage() {
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900"
               disabled={formLoading}
             />
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={courseForm.isPublished}
+                onChange={(e) => setCourseForm({ ...courseForm, isPublished: e.target.checked })}
+                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                disabled={formLoading}
+              />
+              <span className="text-sm font-medium text-gray-700">Publish course (visible to learners)</span>
+            </label>
           </div>
           <div className="flex gap-3 pt-4">
             <button 
