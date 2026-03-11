@@ -7,7 +7,7 @@ const TRUST_ITEMS = [
 
 export default function TwoFAPanel() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 ">
       <div>
         <div className="w-12 h-1 bg-[#4F46E5] rounded-full mb-4" />
         <h2 className="text-[34px] font-extrabold text-white leading-tight">
