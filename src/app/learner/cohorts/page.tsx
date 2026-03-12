@@ -151,35 +151,7 @@ export default function LearnerCohortsPage() {
   return (
     <div className={`transition-all duration-300 space-y-6 ${collapsed ? 'mx-4' : 'max-w-6xl mx-auto'}`}>
       {/* Enrolled Cohort Banner - Show when enrolled */}
-      {enrolledCohort && (
-        <div className="bg-gradient-to-r from-indigo-500 to-blue-600 rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <GraduationCap className="w-5 h-5" />
-                <span className="text-sm font-medium text-white/80">Enrolled Cohort</span>
-              </div>
-              <h1 className="text-2xl font-black" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>
-                {enrolledCohort.name}
-              </h1>
-            </div>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                <span className="text-sm">
-                  {enrolledCohort.currentStudents || 0} / {enrolledCohort.maxStudents || 30} Students
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                <span className="text-sm">
-                  {new Date(enrolledCohort.startDate).toLocaleDateString()} - {new Date(enrolledCohort.endDate).toLocaleDateString()}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
