@@ -13,6 +13,8 @@ export default function MyLearningPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
+  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +29,7 @@ export default function MyLearningPage() {
       try {
         setLoading(true);
         setError(null);
-        const data = await courseService.getCourseWithModulesAndLessons(courseId);
+        const data = await courseService.getCourseWithModulesAndLessons(courseId as string);
         setCourse(data.course);
         setModules(data.modules.sort((a, b) => a.orderIndex - b.orderIndex));
         setLessons(data.lessons.sort((a, b) => a.orderIndex - b.orderIndex));
@@ -69,13 +71,28 @@ export default function MyLearningPage() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <div className="hidden lg:block flex-shrink-0 overflow-y-auto">
-        <CourseSidebar course={course} modules={modules} lessons={lessons} />
+      <div className="hidden lg:block flex-shrink-0 overflow-y-auto w-80">
+      <CourseSidebar 
+        course={course} 
+        modules={modules} 
+        lessons={lessons} 
+        selectedModuleId={selectedModuleId}
+        onModuleSelect={setSelectedModuleId}
+        onLessonSelect={setSelectedLessonId}
+      />
+
       </div>
 
       <main className="flex-1 overflow-y-auto bg-[#F3F4F6] scrollbar-hide">
-        <VideoPlayer />
-        <LessonContent />
+      <VideoPlayer lessonId={selectedLessonId || ''} />
+      <LessonContent 
+        course={course}
+        modules={modules}
+        lessons={lessons}
+        selectedModuleId={selectedModuleId}
+        selectedLessonId={selectedLessonId}
+      />
+
       </main>
     </div>
   );

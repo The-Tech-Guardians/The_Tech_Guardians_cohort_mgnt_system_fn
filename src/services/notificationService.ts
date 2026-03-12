@@ -75,7 +75,8 @@ export const notificationService = {
     );
     
     if (!response.ok) {
-      throw new Error('Failed to fetch unread count');
+      console.warn(`Notifications API unavailable (404 expected if no backend): ${response.status}`);
+      return { unreadCount: 0 };
     }
     
     return response.json();
