@@ -235,6 +235,12 @@ export const authAPI = {
 export const tokenManager = {
   setToken(token: string) {
     storage.set('auth_token', token);
+    // Also set a cookie so Next.js middleware can protect routes.
+    // Note: httpOnly cookies require a server; this is a best-effort client cookie.
+    if (typeof window !== 'undefined') {
+      const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = `auth_token=${encodeURIComponent(token)}; Path=/; SameSite=Lax${secure}`;
+    }
   },
 
   getToken(): string | null {
@@ -243,6 +249,9 @@ export const tokenManager = {
 
   removeToken() {
     storage.remove('auth_token');
+    if (typeof window !== 'undefined') {
+      document.cookie = 'auth_token=; Path=/; Max-Age=0; SameSite=Lax';
+    }
   },
 
   setUser(user: any) {

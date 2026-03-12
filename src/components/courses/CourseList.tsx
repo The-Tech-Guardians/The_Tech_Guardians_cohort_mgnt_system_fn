@@ -23,7 +23,7 @@ export function CourseCardList({ course }: { course: Course }) {
             <span className="text-[10.5px] font-medium px-2 py-0.5 rounded-full" style={{ background: `${cat.grad[0]}15`, color: cat.grad[0] }}>{cat.label}</span>
           </div>
           <h3 className="text-[14px] font-semibold text-slate-900 leading-snug truncate">{course.title}</h3>
-          <p className="text-[12px] text-slate-400 mt-0.5 line-clamp-1">{course.description}</p>
+<p className="formatted-content text-slate-500 text-sm mt-0.5">{course.description}</p>
           <div className="flex items-center gap-3 mt-1.5 text-[11.5px] text-slate-400">
             <span className="flex items-center gap-1"><Clock size={10} />{course.duration}</span>
             <span className="flex items-center gap-1"><PlayCircle size={10} />{course.lessons} lessons</span>

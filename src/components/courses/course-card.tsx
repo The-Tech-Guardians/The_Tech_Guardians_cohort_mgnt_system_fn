@@ -29,7 +29,7 @@ export function CourseCardGrid({ course }: { course: Course }) {
           ))}
         </div>
         <h3 className="text-[13.5px] font-semibold text-slate-900 leading-snug line-clamp-2">{course.title}</h3>
-        <p className="text-[11.5px] text-slate-400 leading-relaxed line-clamp-2">{course.description}</p>
+<p className="formatted-content text-slate-500 text-sm leading-relaxed">{course.description}</p>
         <div className="flex items-center gap-1.5">
           <span className="w-5 h-5 rounded-full text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0"
             style={{ background: `linear-gradient(135deg, ${cat.grad[0]}, ${cat.grad[1]})` }}>{course.avatar}</span>

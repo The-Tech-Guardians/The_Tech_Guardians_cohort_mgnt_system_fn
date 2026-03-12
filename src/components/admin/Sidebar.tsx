@@ -9,6 +9,7 @@ const navItems = [
   { label: "Users", href: "/admin/users", icon: Users },
   { label: "Cohorts", href: "/admin/cohorts", icon: Calendar },
   { label: "Courses", href: "/admin/courses", icon: BookOpen },
+  { label: "Lessons", href: "/admin/lessons", icon: FileText },
   { label: "Moderation", href: "/admin/moderation", icon: Shield },
   { label: "Audit Logs", href: "/admin/logs", icon: FileText },
 ];
@@ -70,3 +71,4 @@ export default function Sidebar() {
     </aside>
   );
 }
+

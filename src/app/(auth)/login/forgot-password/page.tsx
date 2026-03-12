@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Logo from "@/components/ui/navbar/Logo";
-import { PasswordStrength } from "@/components/banner/auth/verify-resend-success/forgot-password";
 import { authAPI } from "@/lib/auth";
 
 
@@ -246,9 +245,8 @@ export default function ForgotPasswordPage() {
           <p className="text-white/60 text-xs leading-relaxed">
             Reset links expire after <strong className="text-white/80">15 minutes</strong>. For Admins & Instructors, 2FA will still be required after reset.
           </p>
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 relative z-10">
-          <p className="text-white/35 text-xs leading-relaxed">🔒 Reset links expire after <strong className="text-white/55">15 minutes</strong>. For Admins & Instructors, 2FA will still be required after reset.</p>
         </div>
+
       </div>
 
       {/* ═══════════════════════════════════════

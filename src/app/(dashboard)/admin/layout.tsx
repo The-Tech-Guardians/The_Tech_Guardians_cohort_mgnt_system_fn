@@ -137,6 +137,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { id: "cohorts", label: "Cohorts", icon: Calendar, href: "/admin/cohorts" },
     { id: "courses", label: "Courses", icon: BookOpen, href: "/admin/courses" },
     { id: "modules", label: "Modules", icon: Layers, href: "/admin/modules" },
+    { id: "lessons", label: "Lessons", icon: FileText, href: "/admin/lessons" },
     { id: "moderation", label: "Moderation", icon: Shield, href: "/admin/moderation" },
     { id: "logs", label: "Audit Logs", icon: FileText, href: "/admin/logs" },
   ];
@@ -147,6 +148,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     cohorts: "Cohort Management",
     courses: "Course Management",
     modules: "Modules Management",
+    lessons: "Lessons Management",
     moderation: "Content Moderation",
     logs: "Audit Logs",
   };
@@ -157,6 +159,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     cohorts: "Create and manage cohorts",
     courses: "Manage course content",
     modules: "View modules grouped by course",
+    lessons: "Create and manage lessons",
     moderation: "Review flagged content",
     logs: "System activity logs",
   };
