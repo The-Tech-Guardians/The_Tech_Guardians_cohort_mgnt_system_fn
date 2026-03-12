@@ -8,15 +8,16 @@ import LanguageSelector from "./navbar/LanguageSelector";
 import ThemeToggle from "./navbar/ThemeToggle";
 import AuthButtons from "./navbar/AuthButtons";
 import MobileMenu from "./navbar/MobileMenu";
+import { cohortService } from "@/services/cohortService";
 import Link from "next/link";
 
-// Each category now has a label and its own route
-const categoryItems = [
+// Fallback categories
+const fallbackCategories = [
   { label: "Computer Programming", href: "/computer-programming" },
-  { label: "Entrepreneurship",      href: "/entrepreneurship" },
-  { label: "SRHR",                  href: "/srhr" },
-  { label: "Marketing",             href: "/marketing" },
-  { label: "Data Science",          href: "/data-science" },
+  { label: "Entrepreneurship", href: "/entrepreneurship" },
+  { label: "SRHR", href: "/srhr" },
+  { label: "Marketing", href: "/marketing" },
+  { label: "Data Science", href: "/data-science" },
   { label: "Social Media Branding", href: "/social-media-branding" },
 ];
 
@@ -34,7 +35,28 @@ export default function Header() {
   const [activeCategory, setActiveCategory] = useState(-1);
   const [theme, setTheme] = useState("light");
   const [langOpen, setLangOpen] = useState(false);
-  const [activeLang, setActiveLang] = useState(languages[0]);
+const [activeLang, setActiveLang] = useState(languages[0]);
+  const [categories, setCategories] = useState(fallbackCategories);
+
+  // Fetch dynamic cohorts from backend
+  useEffect(() => {
+    const fetchCohorts = async () => {
+      try {
+        const { cohorts } = await cohortService.getAllCohorts(1, 20);
+        const activeCohorts = cohorts.filter(c => c.isActive);
+        const categoryItems = activeCohorts.map(cohort => ({
+          label: cohort.courseType.charAt(0).toUpperCase() + cohort.courseType.slice(1).replace(/-/g, ' ').replace(/_/g, ' '),
+          href: `/${cohort.courseType}`,
+        }));
+        setCategories(categoryItems.length > 0 ? categoryItems : fallbackCategories);
+      } catch (error) {
+        console.warn('Failed to fetch cohorts:', error);
+        setCategories(fallbackCategories);
+      }
+    };
+
+    fetchCohorts();
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -136,9 +158,7 @@ export default function Header() {
 
         {/* ── Category bar ── */}
         <CategoryBar
-          categories={categoryItems}
-          activeCategory={activeCategory}
-          setActiveCategory={setActiveCategory}
+          categories={categories}
           bg={bg}
           border={border}
           textMuted={textMuted}
