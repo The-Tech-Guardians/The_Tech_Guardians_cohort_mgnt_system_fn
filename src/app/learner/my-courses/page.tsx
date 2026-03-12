@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSidebar } from "../layout";
 import { courseService, type Course } from "@/services/courseService";
-import { GraduationCap, BookOpen } from "lucide-react";
+import { GraduationCap, BookOpen, Users } from "lucide-react";
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
@@ -27,7 +27,7 @@ interface CourseDisplay extends Course {
 export default function LearnerMyCoursesPage() {
   const [filter, setFilter] = useState("all");
   const [courses, setCourses] = useState<CourseDisplay[]>([]);
-  const [cohort, setCohort] = useState<Cohort | null>(null);
+  const [cohort, setCohort] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { collapsed } = useSidebar();
@@ -197,7 +197,7 @@ export default function LearnerMyCoursesPage() {
     <div className={`transition-all duration-300 space-y-6 ${collapsed ? 'mx-4' : 'max-w-6xl mx-auto'}`}>
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-900" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>My Courses</h1>
+<h1 className="text-2xl font-black text-gray-900" style={{fontFamily:"'Bricolage Grotesque',sans-serif"}}>My Courses</h1>
           <p className="text-sm text-gray-500 mt-1">Courses available in your cohort</p>
         </div>
         <div className="flex gap-2">
@@ -211,7 +211,22 @@ export default function LearnerMyCoursesPage() {
         </div>
       </div>
 
+      {cohort && (
+        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-2xl border border-indigo-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-100 rounded-xl">
+              <Users className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Students in <span className="font-bold text-gray-900">{cohort.name}</span></p>
+              <p className="text-2xl font-black text-indigo-600">{cohort.currentStudents || cohort.data?.currentStudents || 0}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid md:grid-cols-3 gap-2">
+
         {filtered.map(course => (
          
           <div key={course._id || course.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden group cursor-pointer">
@@ -259,38 +274,6 @@ export default function LearnerMyCoursesPage() {
                   <div className="text-xs text-gray-400 mb-1">Next Lesson</div>
                   <div className="text-sm font-semibold text-gray-800">{course.nextLesson}</div>
                 </div>
-              )}
-
-              <div className="flex gap-2">
-               
-               
-                <button className={`flex-1  text-white ${course.color} text-sm font-semibold py-2.5 rounded-xl hover:opacity-90 transition-opacity`}>
-                  <Link href={`my-courses/my-learning?courseId=${course.id}`}> {course.progress && course.progress > 0 ? "Continue" : "Start Course"}</Link>
-                </button>
-                <button className="w-10 h-10 flex items-center justify-center border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {filtered.length === 0 && (
-        <div className="text-center py-16">
-          <div className="bg-gray-100 p-4 rounded-full inline-block mb-4">
-            <BookOpen className="w-8 h-8 text-gray-400" />
-          </div>
-          <div className="text-gray-400 text-lg font-semibold">
-            {courses.length === 0 ? "No courses available in your cohort yet" : "No courses match your filter"}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
               )}
 
               <div className="flex gap-2">

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSidebar } from "@/components/ui/SideBarContext";
-import { Users, BookMarked } from "lucide-react";
+import { Users, BookMarked, GraduationCap, Calendar } from "lucide-react";
 import { authAPI, tokenManager } from "@/lib/auth";
 
 type User = {
@@ -132,26 +132,33 @@ export default function LearnerDashboardPage() {
       {/* LEFT SECTION */}
       <div className="flex-1 space-y-5">
 
-        {currentCohort ? (
-          <div className="bg-blue-50 rounded-xl p-5 border">
-            <h2 className="font-bold flex items-center gap-2">
-              <Users size={16} />
-              My Cohort
-            </h2>
-
-            <p className="font-semibold mt-2">{currentCohort.name}</p>
-
-            <p className="text-sm text-gray-600">
-              {currentCohort.currentStudents}/{currentCohort.maxStudents} students
-            </p>
+        <div className="bg-gradient-to-r from-indigo-500 to-blue-600 rounded-2xl p-6 text-white mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <GraduationCap className="w-5 h-5" />
+                <span className="text-sm font-medium text-white/80">Enrolled Cohort</span>
+              </div>
+              <h1 className="text-xl font-black">{currentCohort?.name || 'No Cohort'}</h1>
+            </div>
+            {currentCohort && (
+              <div className="flex items-center gap-6 text-sm">
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  <span>
+                    {currentCohort.currentStudents} / {currentCohort.maxStudents} Students
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  <span>
+                    {new Date(currentCohort.startDate).toLocaleDateString()} - {new Date(currentCohort.endDate).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="bg-yellow-50 p-5 rounded-xl border">
-            <p className="text-sm">
-              You are not enrolled in a cohort yet.
-            </p>
-          </div>
-        )}
+        </div>
 
         {myCourses.length > 0 ? (
           <div className="bg-white rounded-xl p-5 border">
