@@ -75,6 +75,18 @@ export interface QuestionOption {
   orderIndex: number;
 }
 
+export interface Assessment {
+  id: string;
+  courseId: string;
+  title: string;
+  description?: string;
+  totalQuestions: number;
+  timeLimit?: number;
+  orderIndex: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // Instructor interface for course creation
 export interface Instructor {
   uuid: string;
@@ -483,6 +495,66 @@ export const courseService = {
     } catch (error) {
       console.error('Failed to fetch instructors:', error);
       return { instructors: [], pagination: { page, limit, total: 0, pages: 0 } };
+    }
+  },
+
+  // Get modules by course ID for learner course details
+  async getModulesByCourse(courseId: string): Promise<Module[]> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Authentication required');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/modules/course/${courseId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await handleResponse(response);
+      return data.modules || [];
+    } catch (error) {
+      console.error(`Failed to fetch modules for course ${courseId}:`, error);
+      return [];
+    }
+  },
+
+  // Get lessons by module ID for learner course details
+  async getLessonsByModule(moduleId: string): Promise<Lesson[]> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Authentication required');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/lessons/module/${moduleId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await handleResponse(response);
+      return data.lessons || [];
+    } catch (error) {
+      console.error(`Failed to fetch lessons for module ${moduleId}:`, error);
+      return [];
+    }
+  },
+
+  // Get assessments by course ID for learner course details
+  async getAssessmentsByCourse(courseId: string): Promise<Assessment[]> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Authentication required');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/assessments/course/${courseId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await handleResponse(response);
+      return data.assessments || [];
+    } catch (error) {
+      console.error(`Failed to fetch assessments for course ${courseId}:`, error);
+      return [];
     }
   },
 };
