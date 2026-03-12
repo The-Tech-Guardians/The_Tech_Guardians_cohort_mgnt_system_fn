@@ -281,8 +281,8 @@ export default function CohortsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredCohorts.map((cohort) => (
-                  <tr key={cohort.id} className="hover:bg-gray-50 transition-colors">
+                filteredCohorts.map((cohort, index) => (
+                  <tr key={cohort.id || `cohort-${index}`} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <p className="text-sm font-medium text-gray-900">{cohort.name}</p>
                     </td>

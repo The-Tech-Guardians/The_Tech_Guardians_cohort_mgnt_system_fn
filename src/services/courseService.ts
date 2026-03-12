@@ -1,6 +1,15 @@
-// Course Service - Fetch course, modules, lessons, and assessments
+const API_BASE_URL = 'http://localhost:3000/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+export const formatCourseType = (type: string): string => {
+  const formatted: { [key: string]: string } = {
+    COMPUTER_PROGRAMMING: 'Computer Programming',
+    SOCIAL_MEDIA_BRANDING: 'Social Media Branding',
+    ENTREPRENEURSHIP: 'Entrepreneurship',
+    TEAM_MANAGEMENT: 'Team Management',
+    SRHR: 'SRHR',
+  };
+  return formatted[type] || type;
+};
 
 // Backend course interface (matches API response)
 export interface BackendCourse {
@@ -16,15 +25,16 @@ export interface BackendCourse {
 }
 
 export interface Course {
-  id: string;
+  _id?: string;
+  id?: string;
   title: string;
   description: string;
   instructorId: string;
   cohortId: string;
   courseType: string;
   isPublished: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Module {
@@ -33,7 +43,9 @@ export interface Module {
   title: string;
   description?: string;
   orderIndex: number;
-  createdAt: string;
+  releaseWeek: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Lesson {
@@ -41,33 +53,18 @@ export interface Lesson {
   moduleId: string;
   title: string;
   contentType: 'video' | 'pdf' | 'text';
+  contentUrl: string;
   contentBody: string;
-  videoUrl?: string;
-  fileUrl?: string;
   orderIndex: number;
-  createdAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface Assessment {
-  id: string;
-  moduleId: string;
-  title: string;
-  description: string;
-  type: 'QUIZ' | 'ASSIGNMENT';
-  passMark?: number;
-  retakeLimit?: number;
-  timeLimitMinutes?: number;
-  instantFeedback?: boolean;
-  createdAt: string;
-}
-
-export interface Question {
-  id: string;
-  assessmentId: string;
-  questionText: string;
-  type: string;
-  points?: number;
-  options?: QuestionOption[];
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
 }
 
 export interface QuestionOption {
@@ -84,6 +81,14 @@ export interface Instructor {
   firstName: string;
   lastName: string;
   email: string;
+}
+
+interface ApiResponse<T> {
+  courses?: T[];
+  course?: T;
+  message?: string;
+  error?: string;
+  pagination?: PaginationInfo;
 }
 
 const getAuthToken = () => {
@@ -109,8 +114,197 @@ const handleResponse = async (response: Response) => {
 };
 
 export const courseService = {
-  // Get all courses
-  async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: BackendCourse[]; pagination: any }> {
+  // Get learner enrolled courses (learner view)
+  async getLearnerEnrolledCourses(
+    page: number = 1,
+    limit: number = 20
+  ): Promise<{ courses: Course[]; pagination: PaginationInfo }> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || localStorage.getItem('token') : null;
+
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/learner/courses?page=${page}&limit=${limit}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.error || 'Failed to fetch courses');
+      }
+
+      const data = await response.json();
+
+      // Backend returns { success: true, data: [...], message: "..." }
+      const coursesData = data.data || [];
+      
+      return {
+        courses: coursesData,
+        pagination: data.pagination || {
+          page,
+          limit,
+          total: coursesData.length,
+          pages: 1,
+        },
+      };
+    } catch (error) {
+      const err = error as Error;
+      console.error('Course fetch error:', err);
+      throw new Error(err.message || 'Failed to fetch courses');
+    }
+  },
+
+  async getLearnerCohortCourses(
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ courses: Course[]; pagination: PaginationInfo }> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || localStorage.getItem('token') : null;
+
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/learner/courses?page=${page}&limit=${limit}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch courses');
+      }
+
+      const data: ApiResponse<Course> = await response.json();
+
+      return {
+        courses: data.courses || [],
+        pagination: data.pagination || {
+          page,
+          limit,
+          total: data.courses?.length || 0,
+          pages: 1,
+        },
+      };
+    } catch (error) {
+      const err = error as Error;
+      console.error('Course fetch error:', err);
+      throw new Error(err.message || 'Failed to fetch courses');
+    }
+  },
+
+  async getCourseById(id: string): Promise<{ course: Course }> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || localStorage.getItem('token') : null;
+
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/courses/${id}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch course');
+      }
+
+      const data: ApiResponse<Course> = await response.json();
+
+      if (!data.course) {
+        throw new Error('Course not found');
+      }
+
+      return { course: data.course };
+    } catch (error) {
+      const err = error as Error;
+      throw new Error(err.message || 'Failed to fetch course');
+    }
+  },
+
+  async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course; modules: Module[]; lessons: Lesson[] }> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || localStorage.getItem('token') : null;
+
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    try {
+      const courseUrl = `${API_BASE_URL}/courses/${courseId}`;
+      const modulesUrl = `${API_BASE_URL}/modules/course/${courseId}`;
+      
+      console.log('Fetching course from:', courseUrl);
+      console.log('Fetching modules from:', modulesUrl);
+
+      const [courseRes, modulesRes] = await Promise.all([
+        fetch(courseUrl, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        }),
+        fetch(modulesUrl, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        }),
+      ]);
+
+      if (!courseRes.ok) {
+        const errorData = await courseRes.json().catch(() => ({}));
+        console.error('Course fetch error:', courseRes.status, errorData);
+        throw new Error(`Failed to fetch course: ${courseRes.status}`);
+      }
+
+      const courseData = await courseRes.json();
+      const modulesData = modulesRes.ok ? await modulesRes.json() : { modules: [] };
+
+      const modules = modulesData.modules || [];
+      const allLessons: Lesson[] = [];
+
+      for (const mod of modules) {
+        try {
+          const lessonsRes = await fetch(`${API_BASE_URL}/lessons/module/${mod.id}`, {
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          });
+          if (lessonsRes.ok) {
+            const lessonsData = await lessonsRes.json();
+            allLessons.push(...(lessonsData.lessons || []));
+          }
+        } catch (err) {
+          console.error(`Failed to fetch lessons for module ${mod.id}:`, err);
+        }
+      }
+
+      return {
+        course: courseData.course,
+        modules,
+        lessons: allLessons,
+      };
+    } catch (error) {
+      const err = error as Error;
+      console.error('getCourseWithModulesAndLessons error:', err);
+      throw new Error(err.message || 'Failed to fetch course details');
+    }
+  },
+
+  // Get all courses (admin/instructor view)
+  async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: BackendCourse[]; pagination: PaginationInfo }> {
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/courses?page=${page}&limit=${limit}`, {
@@ -131,117 +325,48 @@ export const courseService = {
     }
   },
 
-  // Get course by ID
-  async getCourseById(id: string): Promise<Course | null> {
-    try {
-      const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/courses/${id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-      });
-      const data = await handleResponse(response);
-      return data.course || data || null;
-    } catch (error) {
-      console.error(`Failed to fetch course ${id}:`, error);
-      return null;
-    }
-  },
+  // Legacy method for backward compatibility
+  async getAllCoursesLegacy(
+    page: number = 1,
+    limit: number = 20
+  ): Promise<{ courses: Course[]; pagination: PaginationInfo }> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || localStorage.getItem('token') : null;
 
-  // Get modules for a course
-  async getModulesByCourse(courseId: string): Promise<Module[]> {
-    try {
-      const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/modules?courseId=${courseId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-      });
-      const data = await handleResponse(response);
-      return data.modules || data || [];
-    } catch (error) {
-      console.error(`Failed to fetch modules for course ${courseId}:`, error);
-      return [];
+    if (!token) {
+      throw new Error('Authentication required');
     }
-  },
 
-  // Get lessons for a module
-  async getLessonsByModule(moduleId: string): Promise<Lesson[]> {
     try {
-      const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/lessons?moduleId=${moduleId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-      });
-      const data = await handleResponse(response);
-      return data.lessons || data || [];
-    } catch (error) {
-      console.error(`Failed to fetch lessons for module ${moduleId}:`, error);
-      return [];
-    }
-  },
+      const response = await fetch(
+        `${API_BASE_URL}/courses?page=${page}&limit=${limit}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-  // Get assessments for a module
-  async getAssessmentsByModule(moduleId: string): Promise<Assessment[]> {
-    try {
-      const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/assessments?moduleId=${moduleId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-      });
-      const data = await handleResponse(response);
-      return data.assessments || data || [];
-    } catch (error) {
-      console.error(`Failed to fetch assessments for module ${moduleId}:`, error);
-      return [];
-    }
-  },
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch courses');
+      }
 
-  // Get all assessments for a course
-  async getAssessmentsByCourse(courseId: string): Promise<Assessment[]> {
-    try {
-      const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/assessments?courseId=${courseId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-      });
-      const data = await handleResponse(response);
-      return data.assessments || data || [];
-    } catch (error) {
-      console.error(`Failed to fetch assessments for course ${courseId}:`, error);
-      return [];
-    }
-  },
+      const data: ApiResponse<Course> = await response.json();
 
-  // Get questions for an assessment
-  async getQuestionsByAssessment(assessmentId: string): Promise<Question[]> {
-    try {
-      const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/questions?assessmentId=${assessmentId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
+      return {
+        courses: data.courses || [],
+        pagination: data.pagination || {
+          page,
+          limit,
+          total: data.courses?.length || 0,
+          pages: 1,
         },
-      });
-      const data = await handleResponse(response);
-      return data.questions || data || [];
+      };
     } catch (error) {
-      console.error(`Failed to fetch questions for assessment ${assessmentId}:`, error);
-      return [];
+      const err = error as Error;
+      throw new Error(err.message || 'Failed to fetch courses');
     }
   },
 
@@ -313,7 +438,7 @@ export const courseService = {
       const token = getAuthToken();
       if (!token) throw new Error('No authentication token found');
       const response = await fetch(`${API_BASE_URL}/courses/${id}/publish`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -333,7 +458,7 @@ export const courseService = {
   },
 
   // Get instructors for course creation
-  async getInstructors(page: number = 1, limit: number = 20, search?: string): Promise<{ instructors: Instructor[]; pagination: any }> {
+  async getInstructors(page: number = 1, limit: number = 20, search?: string): Promise<{ instructors: Instructor[]; pagination: PaginationInfo }> {
     try {
       const token = getAuthToken();
       if (!token) throw new Error('No authentication token found');
@@ -363,7 +488,7 @@ export const courseService = {
 };
 
 // Helper function to format course type for display
-export const formatCourseType = (courseType: string | undefined | null): string => {
+export const formatCourseTypeDisplay = (courseType: string | undefined | null): string => {
   if (!courseType) {
     return 'Unknown Type';
   }
@@ -376,3 +501,4 @@ export const formatCourseType = (courseType: string | undefined | null): string 
 export const formatCourseTypeForAPI = (displayType: string): string => {
   return displayType.toUpperCase().replace(/ /g, '_');
 };
+

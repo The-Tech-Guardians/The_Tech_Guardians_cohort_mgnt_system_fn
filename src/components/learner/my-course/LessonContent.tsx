@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import AssignmentTab from './AssigmentTab';
+import AssignmentTab from './AssignmentTab';
 import QuizTab from './QuizTab';
 import DiscussionTab from './discusionTab';
 import OverviewTab from './over-view-tab';

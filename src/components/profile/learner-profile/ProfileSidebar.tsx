@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Mail, Calendar, Award, BookOpen, Target, LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { tokenManager } from '@/lib/auth';
 
 interface ProfileSidebarProps {
@@ -10,6 +11,8 @@ interface ProfileSidebarProps {
 }
 
 export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps) {
+  const router = useRouter();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [user, setUser] = useState({
     name: 'Loading...',
     initials: 'L',
@@ -30,6 +33,13 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
       setUser({ name, initials, email, role, joinDate });
     }
   }, []);
+
+  const handleLogout = () => {
+    tokenManager.logout();
+    setShowLogoutModal(false);
+    onClose();
+    router.push('/login');
+  };
 
   if (!isOpen) return null;
 
@@ -107,12 +117,38 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
 
           <div className="h-px bg-white my-6" />
 
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition">
+          <button onClick={() => setShowLogoutModal(true)} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition">
             <LogOut className="w-4 h-4" />
             Logout
           </button>
         </div>
       </aside>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowLogoutModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm mx-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Sign Out</h2>
+            <p className="text-sm text-gray-600 mb-6">Are you sure you want to sign out? You will need to log in again to access your account.</p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold text-sm transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold text-sm transition-all"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
