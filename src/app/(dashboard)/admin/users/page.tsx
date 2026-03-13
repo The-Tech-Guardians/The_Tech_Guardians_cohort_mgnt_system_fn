@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RefreshCw, Search, Plus, Mail, MoreVertical, Edit, Trash2, UserCheck, UserX } from "lucide-react";
+import { RefreshCw, Search, Plus, Mail, MoreVertical, Edit, Trash2, UserCheck, UserX, LayoutGrid, List } from "lucide-react";
 import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
 import RoleBadge from "@/components/admin/RoleBadge";
@@ -40,6 +40,7 @@ export default function UsersPage() {
   
   // Toast
   const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
+  const [viewMode, setViewMode] = useState<"card" | "list">("list");
 
   const getToken = () => localStorage.getItem("auth_token") || localStorage.getItem("token");
 
@@ -261,13 +262,40 @@ export default function UsersPage() {
           <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
           <p className="text-sm text-gray-500 mt-1">Manage your platform users and roles</p>
         </div>
-        <button
-          onClick={() => setShowInviteModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Invite User
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${
+                viewMode === "list" ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+              title="List view"
+            >
+              <List className="w-4 h-4" />
+              List
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("card")}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${
+                viewMode === "card" ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+              title="Card view"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              Cards
+            </button>
+          </div>
+
+          <button
+            onClick={() => setShowInviteModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Invite User
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -282,85 +310,139 @@ export default function UsersPage() {
         />
       </div>
 
-      {/* Users Table */}
-      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 w-16">#</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">User</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Joined</th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredUsers.length === 0 ? (
+      {viewMode === "list" ? (
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center">
-                    <p className="text-gray-500">No users found</p>
-                  </td>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 w-16">#</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">User</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Joined</th>
+                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">Actions</th>
                 </tr>
-              ) : (
-                filteredUsers.map((user, index) => (
-                  <tr key={user.uuid} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-4 text-sm font-medium text-gray-500">
-                      {index + 1}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                          <span className="text-indigo-600 font-semibold text-sm">
-                            {user.firstName?.[0]}{user.lastName?.[0]}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {user.firstName} {user.lastName}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-600">{user.email}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 text-xs font-semibold rounded-full border inline-block ${getRoleColor(user.role)}`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-500">
-                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => openEditModal(user)}
-                          className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                          title="Edit"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => openDeleteModal(user)}
-                          className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center">
+                      <p className="text-gray-500">No users found</p>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  filteredUsers.map((user, index) => (
+                    <tr key={user.uuid} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-4 text-sm font-medium text-gray-500">
+                        {index + 1}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                            <span className="text-indigo-600 font-semibold text-sm">
+                              {user.firstName?.[0]}{user.lastName?.[0]}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {user.firstName} {user.lastName}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-gray-600">{user.email}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 text-xs font-semibold rounded-full border inline-block ${getRoleColor(user.role)}`}>
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-gray-500">
+                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => openEditModal(user)}
+                            className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                            title="Edit"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => openDeleteModal(user)}
+                            className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filteredUsers.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center md:col-span-2 xl:col-span-3">
+              <p className="text-gray-500">No users found</p>
+            </div>
+          ) : (
+            filteredUsers.map((user) => (
+              <div key={user.uuid} className="bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-md transition-all">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-11 h-11 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
+                      <span className="text-indigo-600 font-bold text-sm">
+                        {user.firstName?.[0]}{user.lastName?.[0]}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-gray-900 truncate">
+                        {user.firstName} {user.lastName}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate">{user.email}</div>
+                    </div>
+                  </div>
+                  <span className={`px-3 py-1 text-xs font-semibold rounded-full border inline-block ${getRoleColor(user.role)}`}>
+                    {user.role}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                  <div className="text-xs text-gray-500">
+                    Joined: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => openEditModal(user)}
+                      className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                      title="Edit"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => openDeleteModal(user)}
+                      className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
 
       {/* Refresh Button */}
       <div className="flex justify-center">

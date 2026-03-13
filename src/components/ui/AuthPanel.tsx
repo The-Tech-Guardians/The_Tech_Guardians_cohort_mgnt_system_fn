@@ -33,7 +33,7 @@ export default function AuthPanel({
 
       {/* Logo */}
       <div className="relative z-10">
-        <Logo/>
+        <Logo textMain="text-white font-extrabold text-xl" />
       </div>
 
       {/* Centre content slot */}

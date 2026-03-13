@@ -9,9 +9,9 @@ export default function ProgressPage() {
   const { collapsed } = useSidebar();
   const [stats, setStats] = useState({
     lessonsCompleted: 0,
-    totalLessons: 0,
+    totalLessons: 12,
     assignmentsDone: 0,
-    totalAssignments: 0,
+    totalAssignments: 4,
     hoursLearned: 0,
     averageScore: 0
   });

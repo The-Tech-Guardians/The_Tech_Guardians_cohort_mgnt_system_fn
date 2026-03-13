@@ -117,30 +117,13 @@ export default function TwoFAPage() {
           tokenManager.setUser(userObj);
         }
 
-        // Get user role from JWT token (most reliable source)
-        const userRole = tokenManager.getRoleFromToken();
-        console.log('User role from token:', userRole);
-        
-        // Redirect based on user role
+        // Get redirect path using helper (supports ?redirect= from login/forgot-password)
+        const finalRedirect = tokenManager.getRedirectPath({ redirect: new URLSearchParams(window.location.search).get('redirect') });
+        console.log('Final redirect path:', finalRedirect);
+
         setTimeout(() => {
-          switch (userRole) {
-            case 'ADMIN':
-              console.log('Redirecting to admin dashboard');
-              router.push('/admin');
-              break;
-            case 'INSTRUCTOR':
-              console.log('Redirecting to instructor dashboard');
-              router.push('/instructor');
-              break;
-            case 'LEARNER':
-              console.log('Redirecting to learner dashboard');
-              router.push('/learner');
-              break;
-            default:
-              console.log('Unknown role, redirecting to learner dashboard');
-              router.push('/learner');
-          }
-        }, 1000);
+          router.push(finalRedirect);
+        }, 1500);
       } else {
         setOtpStatus("error");
         setTimeout(() => setOtpStatus("idle"), 800);

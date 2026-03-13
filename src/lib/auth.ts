@@ -232,21 +232,53 @@ export const authAPI = {
   },
 };
 
-// Token management
+// Token management & Redirect helpers  
 export const tokenManager = {
-  setToken(token: string) {
+  getRedirectPath(searchParams?: any): string {
+    // Priority: 1. searchParams.redirect, 2. localStorage, 3. role-based default
+    if (searchParams?.redirect) return decodeURIComponent(searchParams.redirect as string);
+
+    const stored = storage.get('redirect_path');
+    if (stored) {
+      storage.remove('redirect_path'); // Clear after use
+      return stored;
+    }
+
+    // Role-based defaults
+    const role = tokenManager.getRoleFromToken() || 'LEARNER';
+    const defaults: Record<string, string> = {
+      ADMIN: '/admin',
+      INSTRUCTOR: '/instructor',
+      LEARNER: '/learner/my-courses'
+    };
+    return defaults[role] || '/learner';
+  },
+
+  setRedirectPath(path: string): void {
+    storage.set('redirect_path', path);
+  },
+
+  setToken(token: string): void {
     storage.set('auth_token', token);
+    // Also set a cookie so Next.js middleware can protect routes.
+    if (typeof window !== 'undefined') {
+      const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = `auth_token=${encodeURIComponent(token)}; Path=/; SameSite=Lax${secure}`;
+    }
   },
 
   getToken(): string | null {
     return storage.get('auth_token');
   },
 
-  removeToken() {
+  removeToken(): void {
     storage.remove('auth_token');
+    if (typeof window !== 'undefined') {
+      document.cookie = 'auth_token=; Path=/; Max-Age=0; SameSite=Lax';
+    }
   },
 
-  setUser(user: any) {
+  setUser(user: any): void {
     storage.set('user_data', JSON.stringify(user));
   },
 
@@ -255,7 +287,7 @@ export const tokenManager = {
     return userData ? JSON.parse(userData) : null;
   },
 
-  removeUser() {
+  removeUser(): void {
     storage.remove('user_data');
   },
 
@@ -288,13 +320,14 @@ export const tokenManager = {
   getUsername(): string {
     const user = this.getUser();
     if (user) {
-      return `${user.firstName} ${user.lastName}`.trim() || user.email || 'User';
+      return `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'User';
     }
     return 'User';
   },
 
-  logout() {
+  logout(): void {
     this.removeToken();
     this.removeUser();
   },
 };
+

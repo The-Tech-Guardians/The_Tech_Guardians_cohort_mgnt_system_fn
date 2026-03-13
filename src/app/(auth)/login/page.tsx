@@ -1,14 +1,15 @@
 
 "use client";
-import { useState } from "react";
+import { useState, useSearchParams } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation"; 
 import Logo from "@/components/ui/navbar/Logo";
 import { authAPI, tokenManager } from "@/lib/auth";
 
 
-export default function LoginPage() {
+export default function LoginPage({ searchParams }: { searchParams: { redirect?: string } }) {
   const router = useRouter();
+  const redirectPath = searchParams.redirect || '/learner/my-courses';
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,34 +27,33 @@ export default function LoginPage() {
       console.log('Attempting login with:', { email, password: '***' });
       const result = await authAPI.login({ email, password });
       console.log('Login response:', JSON.stringify(result, null, 2));
-      console.log('Response success:', result.success);
-      console.log('Response data:', result.data);
-      console.log('Response message:', result.message);
-      
-      if ((result.success && result.data?.token && result.data?.user) || 
-          (result.requires_2fa && result.token && result.user_id) ||
-          (result.requires_2fa_setup && result.token && result.user_id)) {
-        console.log('Login successful, storing data and showing message');
-        
-        // Handle different response formats
-        if ((result.requires_2fa || result.requires_2fa_setup) && result.token && result.user_id) {
-          // Backend format: { requires_2fa: true, token, user_id, message }
+
+      const isFullSuccess = result.success && result.data?.token && result.data?.user;
+      const needs2FA = result.requires_2fa || result.requires_2fa_setup;
+
+      if (isFullSuccess || needs2FA) {
+        // Store tokens/user data
+        if (needs2FA && result.token && result.user_id) {
           tokenManager.setToken(result.token);
           tokenManager.setUser({ id: result.user_id, email });
         } else if (result.data?.token && result.data?.user) {
-          // Standard format: { success: true, data: { token, user } }
           tokenManager.setToken(result.data.token);
           tokenManager.setUser(result.data.user);
         }
-        
-        // Show success message
-        setSuccess(result.message || "2FA code sent to your email");
-        
-        // Redirect to 2FA verification after showing message
+
+        // Store redirect path as fallback
+        tokenManager.setRedirectPath(redirectPath);
+
+        setSuccess(result.message || (needs2FA ? "2FA code sent to your email" : "Login successful!"));
+
+        const targetPath = needs2FA 
+          ? `/login/verify-2fa?redirect=${encodeURIComponent(redirectPath)}`
+          : redirectPath;
+
         setTimeout(() => {
-          console.log('Redirecting to 2FA page');
-          router.push("/login/verify-2fa");
-        }, 2000);
+          console.log('Redirecting to:', targetPath);
+          router.push(targetPath);
+        }, needs2FA ? 2000 : 1500);
       } else {
         console.log('Login failed:', result);
         setError(result.message || "Login failed. Please check your credentials.");
