@@ -1,6 +1,6 @@
 // User Service - API interactions for User Management
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:3000/api';
 
 export interface User {
   uuid: string;
@@ -53,7 +53,6 @@ export const userService = {
       const data = await handleResponse(response);
       return data.users || [];
     } catch (error) {
-      console.error('Failed to fetch users:', error);
       throw error;
     }
   },
@@ -74,7 +73,6 @@ export const userService = {
       const data = await handleResponse(response);
       return data.users || [];
     } catch (error) {
-      console.error('Failed to search users:', error);
       throw error;
     }
   },

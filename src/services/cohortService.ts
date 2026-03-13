@@ -18,9 +18,6 @@ export interface BackendCohort {
   instructorIds?: string[];
   coordinatorId?: string | null;
   coordinatorName?: string | null;
-  currentStudents?: number;
-  maxStudents?: number;
-  status?: 'upcoming' | 'active' | 'completed';
 }
 
 export interface Cohort {
@@ -37,11 +34,6 @@ export interface Cohort {
   createdAt?: string;
   updatedAt?: string;
   instructorIds?: string[];
-  coordinatorId?: string | null;
-  coordinatorName?: string | null;
-  currentStudents?: number;
-  maxStudents?: number;
-  status?: 'upcoming' | 'active' | 'completed';
 }
 
 export interface PaginationInfo {
@@ -90,7 +82,7 @@ interface CohortService {
 }
 
 export const cohortService: CohortService = {
-  async getAllCohorts(page = 1, limit = 10): Promise<{ cohorts: Cohort[]; pagination: PaginationInfo;}> {
+  async getAllCohorts(page = 1, limit = 10): Promise<{ cohorts: Cohort[]; pagination: PaginationInfo }> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
     if (!token) throw new Error('Authentication required');
 
@@ -104,7 +96,7 @@ export const cohortService: CohortService = {
       });
 
       if (!response.ok) {
-        console.warn('Cohorts API unavailable:', response.status);
+// Cohorts API unavailable
         return { cohorts: [], pagination: { page, limit, total: 0, pages: 0 } };
       }
 
@@ -123,11 +115,6 @@ export const cohortService: CohortService = {
         createdAt: cohort.createdAt,
         updatedAt: cohort.updatedAt,
         instructorIds: cohort.instructorIds,
-        coordinatorId: cohort.coordinatorId,
-        coordinatorName: cohort.coordinatorName,
-        currentStudents: cohort.currentStudents,
-        maxStudents: cohort.maxStudents,
-        status: cohort.status,
       }));
 
       return {
@@ -135,7 +122,7 @@ export const cohortService: CohortService = {
         pagination: data.pagination || { page, limit, total: cohorts.length, pages: 1 },
       };
     } catch (error) {
-      console.error('Cohort fetch error:', error);
+// Cohort fetch error
       return { cohorts: [], pagination: { page: 1, limit: 10, total: 0, pages: 0 } };
     }
   },
@@ -144,34 +131,42 @@ export const cohortService: CohortService = {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
     if (!token) throw new Error('Authentication required');
 
-    const response = await fetch(`${API_BASE_URL}/cohorts/${id}`, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/cohorts/${id}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
 
-    if (!response.ok) throw new Error('Cohort not found');
-    const data: ApiResponse<BackendCohort> = await response.json();
-    const cohort: Cohort = {
-      id: data.cohort!.id,
-      name: data.cohort!.name,
-      description: data.cohort!.description,
-      startDate: data.cohort!.startDate,
-      endDate: data.cohort!.endDate,
-      enrollmentOpenDate: data.cohort!.enrollmentOpenDate,
-      enrollmentCloseDate: data.cohort!.enrollmentCloseDate,
-      extensionDate: data.cohort!.extensionDate,
-      courseType: data.cohort!.courseType,
-      isActive: data.cohort!.isActive,
-      createdAt: data.cohort!.createdAt,
-      updatedAt: data.cohort!.updatedAt,
-      instructorIds: data.cohort!.instructorIds,
-      coordinatorId: data.cohort!.coordinatorId,
-      coordinatorName: data.cohort!.coordinatorName,
-      currentStudents: data.cohort!.currentStudents,
-      maxStudents: data.cohort!.maxStudents,
-      status: data.cohort!.status,
-    };
-    return { cohort };
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch cohort');
+      }
+
+      const data: ApiResponse<BackendCohort> = await response.json();
+
+      if (!data.cohort) {
+        throw new Error('Cohort not found');
+      }
+
+      const transformedCohort: Cohort = {
+        id: data.cohort.id,
+        name: data.cohort.name,
+        startDate: data.cohort.startDate,
+        endDate: data.cohort.endDate,
+        enrollmentOpenDate: data.cohort.enrollmentOpenDate,
+        enrollmentCloseDate: data.cohort.enrollmentCloseDate,
+        extensionDate: data.cohort.extensionDate,
+        courseType: data.cohort.courseType,
+        isActive: data.cohort.isActive,
+        createdAt: data.cohort.createdAt,
+        updatedAt: data.cohort.updatedAt,
+        instructorIds: data.cohort.instructorIds,
+      };
+
+      return { cohort: transformedCohort };
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to fetch cohort');
+    }
   },
 
   async createCohort(cohortData: {
@@ -186,50 +181,58 @@ export const cohortService: CohortService = {
     coordinatorId?: string;
   }): Promise<{ cohort: Cohort }> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    if (!token) throw new Error('Authentication required');
-
-    const response = await fetch(`${API_BASE_URL}/cohorts`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: cohortData.name,
-        description: cohortData.description || '',
-        start_date: cohortData.startDate,
-        end_date: cohortData.endDate,
-        enrollment_open_date: cohortData.enrollmentOpenDate,
-        enrollment_close_date: cohortData.enrollmentCloseDate,
-        extension_date: cohortData.extensionDate,
-        course_type: cohortData.courseType,
-        coordinator_id: cohortData.coordinatorId,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to create cohort');
+    
+    if (!token) {
+      throw new Error('Authentication required');
     }
-    const data: ApiResponse<BackendCohort> = await response.json();
-    const cohort: Cohort = {
-      id: data.cohort!.id,
-      name: data.cohort!.name,
-      description: data.cohort!.description,
-      startDate: data.cohort!.startDate,
-      endDate: data.cohort!.endDate,
-      enrollmentOpenDate: data.cohort!.enrollmentOpenDate,
-      enrollmentCloseDate: data.cohort!.enrollmentCloseDate,
-      extensionDate: data.cohort!.extensionDate,
-      courseType: data.cohort!.courseType,
-      isActive: data.cohort!.isActive,
-      createdAt: data.cohort!.createdAt,
-      updatedAt: data.cohort!.updatedAt,
-      instructorIds: data.cohort!.instructorIds,
-      coordinatorId: data.cohort!.coordinatorId,
-      coordinatorName: data.cohort!.coordinatorName,
-      currentStudents: data.cohort!.currentStudents,
-      maxStudents: data.cohort!.maxStudents,
-      status: data.cohort!.status,
-    };
-    return { cohort };
+
+    try {
+      const response = await fetch('http://localhost:3000/api/cohorts', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: cohortData.name,
+          start_date: cohortData.startDate,
+          end_date: cohortData.endDate,
+          enrollment_open_date: cohortData.enrollmentOpenDate,
+          enrollment_close_date: cohortData.enrollmentCloseDate,
+          extension_date: cohortData.extensionDate,
+          course_type: cohortData.courseType,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create cohort');
+      }
+
+      const data: ApiResponse<BackendCohort> = await response.json();
+
+      if (!data.cohort) {
+        throw new Error('Failed to create cohort');
+      }
+
+      const transformedCohort: Cohort = {
+        id: data.cohort.id,
+        name: data.cohort.name,
+        startDate: data.cohort.startDate,
+        endDate: data.cohort.endDate,
+        enrollmentOpenDate: data.cohort.enrollmentOpenDate,
+        enrollmentCloseDate: data.cohort.enrollmentCloseDate,
+        extensionDate: data.cohort.extensionDate,
+        courseType: data.cohort.courseType,
+        isActive: data.cohort.isActive,
+        createdAt: data.cohort.createdAt,
+        updatedAt: data.cohort.updatedAt,
+      };
+
+      return { cohort: transformedCohort };
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to create cohort');
+    }
   },
 
   async updateCohort(
@@ -247,46 +250,59 @@ export const cohortService: CohortService = {
     }
   ): Promise<{ cohort: Cohort }> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    if (!token) throw new Error('Authentication required');
-
-    const payload: Record<string, any> = {};
-    Object.entries(updates).forEach(([key, value]) => {
-      const backendKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-      payload[backendKey] = value;
-    });
-
-    const response = await fetch(`${API_BASE_URL}/cohorts/${id}`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to update cohort');
+    
+    if (!token) {
+      throw new Error('Authentication required');
     }
-    const data: ApiResponse<BackendCohort> = await response.json();
-    const cohort: Cohort = {
-      id: data.cohort!.id,
-      name: data.cohort!.name,
-      description: data.cohort!.description,
-      startDate: data.cohort!.startDate,
-      endDate: data.cohort!.endDate,
-      enrollmentOpenDate: data.cohort!.enrollmentOpenDate,
-      enrollmentCloseDate: data.cohort!.enrollmentCloseDate,
-      extensionDate: data.cohort!.extensionDate,
-      courseType: data.cohort!.courseType,
-      isActive: data.cohort!.isActive,
-      createdAt: data.cohort!.createdAt,
-      updatedAt: data.cohort!.updatedAt,
-      instructorIds: data.cohort!.instructorIds,
-      coordinatorId: data.cohort!.coordinatorId,
-      coordinatorName: data.cohort!.coordinatorName,
-      currentStudents: data.cohort!.currentStudents,
-      maxStudents: data.cohort!.maxStudents,
-      status: data.cohort!.status,
-    };
-    return { cohort };
+
+    try {
+      const payload: any = {};
+      if (updates.name) payload.name = updates.name;
+      if (updates.startDate) payload.start_date = updates.startDate;
+      if (updates.endDate) payload.end_date = updates.endDate;
+      if (updates.enrollmentOpenDate) payload.enrollment_open_date = updates.enrollmentOpenDate;
+      if (updates.enrollmentCloseDate) payload.enrollment_close_date = updates.enrollmentCloseDate;
+      if (updates.extensionDate) payload.extension_date = updates.extensionDate;
+      if (updates.courseType) payload.course_type = updates.courseType;
+
+      const response = await fetch(`http://localhost:3000/api/cohorts/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update cohort');
+      }
+
+      const data: ApiResponse<BackendCohort> = await response.json();
+
+      if (!data.cohort) {
+        throw new Error('Failed to update cohort');
+      }
+
+      const transformedCohort: Cohort = {
+        id: data.cohort.id,
+        name: data.cohort.name,
+        startDate: data.cohort.startDate,
+        endDate: data.cohort.endDate,
+        enrollmentOpenDate: data.cohort.enrollmentOpenDate,
+        enrollmentCloseDate: data.cohort.enrollmentCloseDate,
+        extensionDate: data.cohort.extensionDate,
+        courseType: data.cohort.courseType,
+        isActive: data.cohort.isActive,
+        createdAt: data.cohort.createdAt,
+        updatedAt: data.cohort.updatedAt,
+      };
+
+      return { cohort: transformedCohort };
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to update cohort');
+    }
   },
 
   async deleteCohort(id: string): Promise<void> {

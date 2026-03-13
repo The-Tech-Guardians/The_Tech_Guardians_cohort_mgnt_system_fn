@@ -11,31 +11,7 @@ export const formatCourseType = (type: string): string => {
   return formatted[type] || type;
 };
 
-// Backend course interface (matches API response)
-export interface BackendCourse {
-  id: string;
-  title: string;
-  description: string;
-  instructorId: string;
-  cohortId: string;
-  courseType: string;
-  isPublished: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface Course {
-  _id?: string;
-  id?: string;
-  title: string;
-  description: string;
-  instructorId: string;
-  cohortId: string;
-  courseType: string;
-  isPublished: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import { BackendCourse, Course, ExtendedCourse } from '@/types/course';
 
 export interface Module {
   id: string;

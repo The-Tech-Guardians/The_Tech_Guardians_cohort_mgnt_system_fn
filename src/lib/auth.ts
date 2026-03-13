@@ -49,7 +49,6 @@ const storage = {
 export const authAPI = {
   async login(data: LoginData): Promise<AuthResponse> {
     try {
-      console.log('API_BASE_URL:', API_BASE_URL);
       const response = await fetch(`${API_BASE_URL}/auth/Login`, {
         method: 'POST',
         headers: {
@@ -60,7 +59,6 @@ export const authAPI = {
 
       return response.json();
     } catch (error) {
-      console.error('Login API error:', error);
       throw error;
     }
   },
@@ -261,6 +259,7 @@ export const tokenManager = {
   setToken(token: string): void {
     storage.set('auth_token', token);
     // Also set a cookie so Next.js middleware can protect routes.
+    // Note: httpOnly cookies require a server; this is a best-effort client cookie.
     if (typeof window !== 'undefined') {
       const secure = window.location.protocol === 'https:' ? '; Secure' : '';
       document.cookie = `auth_token=${encodeURIComponent(token)}; Path=/; SameSite=Lax${secure}`;

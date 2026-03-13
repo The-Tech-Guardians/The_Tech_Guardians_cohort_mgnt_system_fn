@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Logo from "@/components/ui/navbar/Logo";
-import { authAPI } from "@/lib/auth"; 
+import { authAPI } from "@/lib/auth";
 
 
 type Step = 1 | 2 | 3;
@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
   const [success, setSuccess] = useState("");
   const [leftStep, setLeftStep] = useState<1|2|3>(1);
 
-  const updateLeftDots = (s: number) => setLeftStep(s);
+  const updateLeftDots = (s: number) => setLeftStep(s as 1 | 2 | 3);
 
   const handleStep1 = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,8 +72,8 @@ export default function ForgotPasswordPage() {
       const response = await authAPI.forgotPassword(email);
       if (response.success) {
         setSuccess("OTP sent to your email");
-        setStep(2);
-        updateLeftDots(2);
+        setStep(2 as 1 | 2 | 3);
+        updateLeftDots(2 as 1 | 2 | 3);
       } else {
         setError(response.message || "Failed to send OTP");
       }
@@ -93,8 +93,8 @@ export default function ForgotPasswordPage() {
       const response = await authAPI.verifyOTP(email, otp);
       if (response.success) {
         setSuccess("");
-        setStep(3);
-        updateLeftDots(3);
+        setStep(3 as 1 | 2 | 3);
+        updateLeftDots(3 as 1 | 2 | 3);
       } else {
         setError(response.message || "Invalid OTP");
       }
@@ -159,9 +159,9 @@ export default function ForgotPasswordPage() {
           style={{ backgroundImage: `radial-gradient(circle, #ffffff 1px, transparent 1px)`, backgroundSize: "28px 28px" }} />
         <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
-
+        
         <div className="relative z-10">
-          <Logo />
+          <Logo textMain=""/>
         </div>
 
         <div className="relative z-10 space-y-8">
@@ -347,14 +347,14 @@ export default function ForgotPasswordPage() {
                         
                         // Auto-focus next input
                         if (e.target.value && index < 5) {
-                          const nextInput = e.target.parentElement?.children[index + 1] as HTMLInputElement;
+                        const nextInput = (e.target as HTMLInputElement).parentElement?.children[index + 1] as HTMLInputElement;
                           nextInput?.focus();
                         }
                       }}
                       onKeyDown={(e) => {
                         // Handle backspace
                         if (e.key === 'Backspace' && !otp[index] && index > 0) {
-                          const prevInput = e.target.parentElement?.children[index - 1] as HTMLInputElement;
+                          const prevInput = (e.target as HTMLInputElement).parentElement?.children[index - 1] as HTMLInputElement;
                           prevInput?.focus();
                         }
                       }}

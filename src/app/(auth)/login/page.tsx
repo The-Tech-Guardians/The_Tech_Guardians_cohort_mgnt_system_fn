@@ -1,15 +1,16 @@
 
 "use client";
-import { useState, useSearchParams } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation"; 
+import { useRouter, useSearchParams } from "next/navigation";
 import Logo from "@/components/ui/navbar/Logo";
 import { authAPI, tokenManager } from "@/lib/auth";
 
 
-export default function LoginPage({ searchParams }: { searchParams: { redirect?: string } }) {
+export default function LoginPage() {
   const router = useRouter();
-  const redirectPath = searchParams.redirect || '/learner/my-courses';
+  const searchParamsHook = useSearchParams();
+  const redirectPath = searchParamsHook.get('redirect') || '/learner/my-courses';
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,12 +25,12 @@ export default function LoginPage({ searchParams }: { searchParams: { redirect?:
     setSuccess("");
 
     try {
-      console.log('Attempting login with:', { email, password: '***' });
+
       const result = await authAPI.login({ email, password });
-      console.log('Login response:', JSON.stringify(result, null, 2));
+
 
       const isFullSuccess = result.success && result.data?.token && result.data?.user;
-      const needs2FA = result.requires_2fa || result.requires_2fa_setup;
+      const needs2FA = result.requires_2fa;
 
       if (isFullSuccess || needs2FA) {
         // Store tokens/user data
@@ -51,15 +52,15 @@ export default function LoginPage({ searchParams }: { searchParams: { redirect?:
           : redirectPath;
 
         setTimeout(() => {
-          console.log('Redirecting to:', targetPath);
+
           router.push(targetPath);
         }, needs2FA ? 2000 : 1500);
       } else {
-        console.log('Login failed:', result);
+
         setError(result.message || "Login failed. Please check your credentials.");
       }
     } catch (error) {
-      console.error('Login error:', error);
+
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);

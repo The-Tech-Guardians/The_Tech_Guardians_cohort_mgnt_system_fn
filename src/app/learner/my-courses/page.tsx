@@ -3,28 +3,18 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useSidebar } from '../layout';
-import { courseService, type Course } from '@/services/courseService';
+import { courseService } from '@/services/courseService';
+import type { ExtendedCourse } from '@/types/course';
+import { Cohort } from '@/types/cohort';
 import { authAPI } from '@/lib/auth';
 import { GraduationCap, BookOpen, Users } from 'lucide-react';
 
-interface LearnerCohort {
-  id: string;
-  name: string;
-  currentStudents: number;
-  cohortId?: string;
-}
 
-interface ExtendedCourse extends Course {
-  progress?: number;
-  instructor?: string;
-  modules?: number;
-  lessons?: number;
-}
 
 export default function LearnerMyCoursesPage() {
   const [filter, setFilter] = useState<'all' | 'in-progress' | 'not-started'>('all');
   const [courses, setCourses] = useState<ExtendedCourse[]>([]);
-  const [cohort, setCohort] = useState<LearnerCohort | null>(null);
+  const [cohort, setCohort] = useState<Cohort | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { collapsed } = useSidebar();
@@ -32,19 +22,85 @@ export default function LearnerMyCoursesPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
-        setError(null);
+        const response = await authAPI.getLearnerCourses();
+        
+        if (response.success) {
+          // Transform backend data to match frontend interface
+          const baseCourses = response.data?.map((course: any) => ({
+            id: course.id || course._id,
+            title: course.title || 'Untitled Course',
+            instructorId: course.instructorId as string | undefined,
+            progress: course.progress || 0,
+            modules: course.modules || 0,
+            lessons: course.lessons || 0,
+            nextLesson: course.nextLesson || 'Getting Started',
+            status: course.progress > 0 ? 'active' : 'not-started',
+            thumbnail: course.title?.charAt(0).toUpperCase() || 'C'
+          })) || [];
 
-        const cohortRes = await authAPI.getLearnerCohort();
-        if (cohortRes.success) {
-          setCohort(cohortRes.data || null);
+          // Resolve instructor names (backend returns instructorId)
+          const token = localStorage.getItem("auth_token") || localStorage.getItem("token");
+          const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+          const uniqueInstructorIds = Array.from(new Set(baseCourses.map((c: any) => c.instructorId).filter(Boolean))) as string[];
+          const instructorNameMap = new Map<string, string>();
+
+          if (token && uniqueInstructorIds.length > 0) {
+            await Promise.all(
+              uniqueInstructorIds.map(async (uuid) => {
+                try {
+                  const res = await fetch(`${apiBase}/users/${uuid as string}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                  });
+                  if (!res.ok) return;
+                  const data = await res.json();
+                  const u = data?.user;
+                  if (u?.firstName || u?.lastName || u?.email) {
+                    instructorNameMap.set(uuid, `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.email);
+                  }
+                } catch {
+                  // ignore per-instructor errors
+                }
+              })
+            );
+          }
+
+          const colors = [
+            "bg-gradient-to-r from-blue-600 to-cyan-500",
+            "bg-gradient-to-r from-indigo-600 to-purple-500",
+            "bg-gradient-to-r from-emerald-600 to-teal-500",
+            "bg-gradient-to-r from-amber-500 to-orange-500",
+          ];
+
+          const transformedCourses: ExtendedCourse[] = baseCourses.map((c: any, idx: number) => ({
+            id: c.id,
+            title: c.title,
+            instructor: (c.instructorId && instructorNameMap.get(c.instructorId)) || "Unknown Instructor",
+            progress: c.progress,
+            modules: c.modules,
+            lessons: c.lessons,
+            nextLesson: c.nextLesson,
+            status: c.status,
+            thumbnail: c.thumbnail,
+            color: colors[idx % colors.length],
+          }));
+
+          setCourses(transformedCourses);
+        } else {
+          console.error('Failed to fetch courses:', response.message);
+          setCourses([]);
         }
 
-        const { courses: enrolledCourses } = await courseService.getLearnerEnrolledCourses();
+        const { courses: enrolledCourses } = await courseService.getLearnerEnrolledCourses(1, 20);
+        
+        const cohortRes = await authAPI.getLearnerCohort();
+        if (cohortRes.success && cohortRes.data) {
+          setCohort(cohortRes.data as Cohort);
+        }
+        
         // Extend with mock data for demo
         const extendedCourses = enrolledCourses.map(course => ({
           ...course,
-          progress: course.id === enrolledCourses[0]?.id ? 45 : 0,
+          progress: (course.id as string) === (enrolledCourses[0]?.id as string) ? 45 : 0,
           instructor: 'Tech Guardians Team',
           modules: 8,
           lessons: 42
@@ -153,7 +209,7 @@ export default function LearnerMyCoursesPage() {
             </div>
             <div>
               <p className='text-sm font-medium text-gray-600'>Students in <span className='font-bold text-gray-900'>{cohort.name}</span></p>
-              <p className='text-3xl font-black text-indigo-600'>{cohort.currentStudents}</p>
+              <p className='text-3xl font-black text-indigo-600'>{cohort?.currentStudents ?? 0}</p>
             </div>
           </div>
         </div>
