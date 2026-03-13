@@ -1,4 +1,5 @@
 import { Computer, GraduationCap, Target, Zap } from "lucide-react";
+import type { BackendCourse } from "@/services/courseService";
 
 export const COURSE = {
   id: "crs-0001-uuid",
@@ -64,3 +65,69 @@ export const FAQS = [
   { q: "Is there a certificate upon completion?", a: "Yes. Learners who complete all modules and submit the capstone project receive a verified CohortLMS certificate." },
   { q: "Can I switch to a different cohort date?", a: "Yes, up to 7 days before your cohort's start date you can transfer to any future cohort at no extra cost." },
 ];
+
+export const FALLBACK_BACKEND_COHORTS = [
+  { id: "coh-001", name: "Full-Stack Web Dev · Apr 2026", startDate: "2026-04-14", endDate: "2026-07-07", enrollmentCloseDate: "2026-04-10", courseType: "COMPUTER_PROGRAMMING", isActive: true, createdAt: new Date().toISOString() },
+  { id: "coh-002", name: "UI/UX Design Mastery · May 2026", startDate: "2026-05-12", endDate: "2026-08-04", enrollmentCloseDate: "2026-05-08", courseType: "SOCIAL_MEDIA_BRANDING", isActive: true, createdAt: new Date().toISOString() },
+  { id: "coh-003", name: "Data Science Bootcamp · Jun 2026", startDate: "2026-06-09", endDate: "2026-09-02", enrollmentCloseDate: "2026-06-05", courseType: "DATA_SCIENCE", isActive: true, createdAt: new Date().toISOString() },
+  { id: "coh-004", name: "Entrepreneurship Academy · Sep 2026", startDate: "2026-09-07", endDate: "2026-11-28", enrollmentCloseDate: "2026-09-03", courseType: "ENTREPRENEURSHIP", isActive: false, createdAt: new Date().toISOString() },
+];
+
+export const FALLBACK_BACKEND_COURSES: BackendCourse[] = [
+  {
+    id: "crs-001",
+    title: "Full-Stack Web Development Bootcamp",
+    description: "Build production-ready full-stack apps. React, Node.js, MongoDB, deployment.",
+    instructorId: "ins-001",
+    cohortId: "coh-001",
+    courseType: "COMPUTER_PROGRAMMING",
+    isPublished: true,
+    createdAt: "2026-01-10T00:00:00Z",
+    updatedAt: "2026-01-15T00:00:00Z"
+  },
+  {
+    id: "crs-002",
+    title: "Python for Data Analysis & ML",
+    description: "Master Python, Pandas, Scikit-learn, and deploy ML models.",
+    instructorId: "ins-002",
+    cohortId: "coh-003",
+    courseType: "DATA_SCIENCE",
+    isPublished: true,
+    createdAt: "2026-01-12T00:00:00Z",
+    updatedAt: "2026-01-18T00:00:00Z"
+  },
+  {
+    id: "crs-003",
+    title: "UI/UX Design with Figma Pro",
+    description: "Auto-layout, components, prototypes, handoff to devs.",
+    instructorId: "ins-003",
+    cohortId: "coh-002",
+    courseType: "SOCIAL_MEDIA_BRANDING",
+    isPublished: true,
+    createdAt: "2026-01-20T00:00:00Z",
+    updatedAt: "2026-01-25T00:00:00Z"
+  },
+  {
+    id: "crs-004",
+    title: "Digital Marketing & SEO Mastery",
+    description: "Google Ads, SEO, content strategy, analytics.",
+    instructorId: "ins-004",
+    cohortId: "coh-004",
+    courseType: "ENTREPRENEURSHIP",
+    isPublished: false,
+    createdAt: "2026-02-01T00:00:00Z",
+    updatedAt: "2026-02-05T00:00:00Z"
+  },
+  {
+    id: "crs-005",
+    title: "Launch Your Tech Startup",
+    description: "Idea validation, MVP, funding, growth hacking.",
+    instructorId: "ins-001",
+    cohortId: "coh-001",
+    courseType: "ENTREPRENEURSHIP",
+    isPublished: true,
+    createdAt: "2026-01-15T00:00:00Z",
+    updatedAt: "2026-01-20T00:00:00Z"
+  }
+];
+

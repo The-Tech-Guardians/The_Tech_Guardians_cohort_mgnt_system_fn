@@ -1,11 +1,13 @@
 "use client";
 import Link from "next/link";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Star,  Users, Search,  LayoutGrid, List, SlidersHorizontal, X, ChevronDown,
   BookOpen, GraduationCap, Flame, 
 } from "lucide-react";
-import { ALL_COURSES, CATEGORIES } from "@/components/courses/config/courses-api";
+import { courseService, BackendCourse, PaginationInfo } from "@/services/courseService";
+import { cohortService } from "@/services/cohortService";
+import { FALLBACK_BACKEND_COHORTS } from "@/lib/course-data";
 import { CourseCardGrid } from "@/components/courses/course-card";
 import { CourseCardList } from "@/components/courses/CourseList";
 
@@ -13,37 +15,72 @@ import { CourseCardList } from "@/components/courses/CourseList";
 
 
 
-export function getCatConfig(slug: string) {
-  return CATEGORIES.find(c => c.slug === slug) ?? CATEGORIES[0];
+
+
+export function getCohortConfig(cohortId: string, cohorts: any[]) {
+  return cohorts.find(c => c.id === cohortId) ?? cohorts[0];
 }
+
 
 export default function CoursesPage() {
   const [search, setSearch]           = useState("");
-  const [activeCategory, setCategory] = useState("");
+  const [activeCohortId, setActiveCohortId] = useState("");
+
   const [activeLevel, setLevel]       = useState("");
   const [activePrice, setPrice]       = useState("");  // "" | "free" | "paid"
   const [sort, setSort]               = useState("popular");
   const [viewMode, setViewMode]       = useState<"grid" | "list">("grid");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const featured = ALL_COURSES.filter(c => c.featured);
+  const [courses, setCourses] = useState<BackendCourse[]>([]);
+  const [cohorts, setCohorts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [dataSource, setDataSource] = useState<'live' | 'fallback'>('live');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError('');
+
+        const coursesResult = await courseService.getAllCourses(1, 100);
+        const cohortsResult = await cohortService.getAllCohorts(1, 20).catch(() => ({ cohorts: [] }));
+        
+        setCourses(coursesResult.courses);
+        setDataSource((coursesResult.pagination as any)?.dataSource || 'live');
+
+        // Fallback cohorts if backend fails
+        setCohorts(cohortsResult.cohorts?.length > 0 ? cohortsResult.cohorts : FALLBACK_BACKEND_COHORTS);
+
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+        setError('Backend offline - using demo data');
+        setCourses(FALLBACK_BACKEND_COURSES || []);
+        setCohorts(FALLBACK_BACKEND_COHORTS || []);
+        setDataSource('fallback');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+
+  const featured = courses.filter(c => c.isPublished); // Assume published = featured for now
 
   const filtered = useMemo(() => {
-    let list = [...ALL_COURSES];
-    if (search)         list = list.filter(c => c.title.toLowerCase().includes(search.toLowerCase()) || c.tags.some(t => t.toLowerCase().includes(search.toLowerCase())));
-    if (activeCategory) list = list.filter(c => c.categorySlug === activeCategory);
-    if (activeLevel)    list = list.filter(c => c.level === activeLevel);
-    if (activePrice === "free") list = list.filter(c => c.price === 0);
-    if (activePrice === "paid") list = list.filter(c => c.price > 0);
-    if (sort === "popular") list.sort((a, b) => b.enrolled - a.enrolled);
-    if (sort === "rating")  list.sort((a, b) => b.rating - a.rating);
-    if (sort === "newest")  list.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
-    if (sort === "price-asc")  list.sort((a, b) => a.price - b.price);
-    if (sort === "price-desc") list.sort((a, b) => b.price - a.price);
+    let list = [...courses];
+    if (search) list = list.filter(c => c.title.toLowerCase().includes(search.toLowerCase()));
+    if (activeCohortId) list = list.filter(c => c.cohortId === activeCohortId);
+    // Level/price filtering - add when backend supports
+    if (sort === "popular") list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')); 
+    if (sort === "newest") list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
     return list;
-  }, [search, activeCategory, activeLevel, activePrice, sort]);
+  }, [courses, search, activeCohortId, sort]);
 
-  const hasFilters = search || activeCategory || activeLevel || activePrice;
+
+  const hasFilters = search || activeCohortId || activeLevel || activePrice;
 
   return (
     <main className="min-h-screen font-sans">
@@ -65,12 +102,12 @@ export default function CoursesPage() {
 
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
             <div>
-              <div className="flex items-center pt-12 gap-3 mb-3">
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-semibold text-indigo-300 border border-indigo-500/30"
-                  style={{ background: "rgba(99,102,241,0.1)" }}>
-                  <BookOpen size={12} /> {ALL_COURSES.length} Courses Available
+                <div className="flex items-center pt-12 gap-3 mb-3">
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-semibold text-indigo-300 border border-indigo-500/30"
+                    style={{ background: "rgba(99,102,241,0.1)" }}>
+                    <BookOpen size={12} /> {courses.length} Courses Available
+                  </div>
                 </div>
-              </div>
               <h1 className="text-4xl lg:text-5xl font-bold  tracking-tight leading-tight">
                 Explore All <span style={{ background: "linear-gradient(90deg,#60a5fa,#a78bfa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Courses</span>
               </h1>
@@ -119,29 +156,25 @@ export default function CoursesPage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex items-center gap-2 h-12 overflow-x-auto no-scrollbar">
             <button
-              onClick={() => setCategory("")}
+              onClick={() => setActiveCohortId("")}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12.5px] font-medium whitespace-nowrap border transition-all flex-shrink-0 ${
-                !activeCategory ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-500 border-slate-200 hover:border-slate-400"
+                !activeCohortId ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-500 border-slate-200 hover:border-slate-400"
               }`}
             >
-              All Categories
+              All Cohorts
             </button>
-            {CATEGORIES.map(cat => {
-              const Icon = cat.icon;
-              const isActive = activeCategory === cat.slug;
-              return (
+{cohorts.map((cohort, index) => (
                 <button
-                  key={cat.slug}
-                  onClick={() => setCategory(isActive ? "" : cat.slug)}
+                  key={cohort.id || `cohort-${index}`}
+                  onClick={() => setActiveCohortId(cohort.id || '')}
                   className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12.5px] font-medium whitespace-nowrap border transition-all flex-shrink-0 ${
-                    isActive ? "text-white border-transparent" : " text-slate-500 border-slate-200 hover:border-slate-400"
+                    activeCohortId === cohort.id ? "bg-indigo-500 text-white border-indigo-500" : " text-slate-500 border-slate-200 hover:border-slate-400"
                   }`}
-                  style={isActive ? { background: `linear-gradient(135deg, ${cat.grad[0]}, ${cat.grad[1]})` } : {}}
                 >
-                  <Icon size={12} /> {cat.label}
+                  <Users size={12} /> {cohort.name}
                 </button>
-              );
-            })}
+              ))}
+
           </div>
         </div>
       </section>
@@ -206,12 +239,12 @@ export default function CoursesPage() {
 
                 {/* Reset */}
                 {hasFilters && (
-                  <button
-                    onClick={() => { setSearch(""); setCategory(""); setLevel(""); setPrice(""); }}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium text-rose-500 bg-rose-50 hover:bg-rose-100 transition-all"
-                  >
-                    <X size={12} /> Clear all filters
-                  </button>
+                <button
+                  onClick={() => { setSearch(""); setActiveCohortId(""); setLevel(""); setPrice(""); }}
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium text-rose-500 bg-rose-50 hover:bg-rose-100 transition-all"
+                >
+                  <X size={12} /> Clear all filters
+                </button>
                 )}
               </div>
             </aside>
@@ -268,11 +301,12 @@ export default function CoursesPage() {
                     "{search}" <button onClick={() => setSearch("")}><X size={11} /></button>
                   </span>
                 )}
-                {activeCategory && (
-                  <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-medium bg-slate-100 text-slate-600">
-                    {CATEGORIES.find(c => c.slug === activeCategory)?.label}
-                    <button onClick={() => setCategory("")}><X size={11} /></button>
+                {activeCohortId && (
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-medium bg-slate-100 text-slate-600">
+                    {cohorts.find(c => c.id === activeCohortId)?.name || activeCohortId}
+                    <button onClick={() => setActiveCohortId("")}><X size={11} /></button>
                   </span>
+
                 )}
                 {activeLevel && (
                   <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-medium bg-slate-100 text-slate-600">
@@ -293,24 +327,36 @@ export default function CoursesPage() {
                 <Search size={48} className="mx-auto mb-3 text-slate-200" />
                 <p className="text-[15px] font-semibold text-slate-600">No courses found</p>
                 <p className="text-[13px] text-slate-400 mt-1">Try adjusting your filters or search term</p>
-                <button onClick={() => { setSearch(""); setCategory(""); setLevel(""); setPrice(""); }}
+                <button onClick={() => { setSearch(""); setActiveCohortId(""); setLevel(""); setPrice(""); }}
                   className="mt-4 px-4 py-2 rounded-xl text-[13px] font-medium bg-slate-900 text-white hover:bg-slate-700 transition-all">
                   Clear all filters
                 </button>
               </div>
             )}
 
+            {loading && (
+              <div className="text-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p>Loading courses...</p>
+              </div>
+            )}
+            {error && (
+              <div className="text-center py-20">
+                <p className="text-red-500 mb-4">{error}</p>
+                <button onClick={() => window.location.reload()} className="px-6 py-2 bg-blue-500 text-white rounded-xl">Retry</button>
+              </div>
+            )}
             {/* Grid view */}
             {viewMode === "grid" && filtered.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                {filtered.map(course => <CourseCardGrid key={course.id} course={course} />)}
+                {filtered.map(course => <CourseCardGrid key={course.id} {...course as any} />)}
               </div>
             )}
 
             {/* List view */}
             {viewMode === "list" && filtered.length > 0 && (
               <div className="flex flex-col gap-3">
-                {filtered.map(course => <CourseCardList key={course.id} course={course} />)}
+                {filtered.map(course => <CourseCardList key={course.id} {...course as any} />)}
               </div>
             )}
 

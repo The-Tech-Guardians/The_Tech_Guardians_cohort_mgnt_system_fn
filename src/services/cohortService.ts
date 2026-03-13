@@ -169,5 +169,39 @@ export const cohortService = {
     }
   },
 
+  async joinCohort(cohortId: string): Promise<{ message: string; data: { cohortId: string; cohortName: string } }> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/cohorts/join`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cohort_id: cohortId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to join cohort');
+      }
+
+      const data = await response.json();
+      return {
+        message: data.message,
+        data: data.data,
+      };
+    } catch (error) {
+      const err = error as Error;
+      throw new Error(err.message || 'Failed to join cohort');
+    }
+  },
+
   // Include all other methods if needed...
 };
+

@@ -10,7 +10,7 @@ import {
   type Instructor,
   formatCourseType,
 } from "@/services/courseService";
-import { newCohortService as cohortService, type Cohort } from "@/services/newCohortService";
+import { cohortService, type Cohort } from "@/services/cohortService";
 
 const API_BASE_URL = "http://localhost:3000/api";
 
@@ -78,19 +78,14 @@ export default function AdminCoursesPage() {
 
   const fetchCohorts = useCallback(async () => {
     try {
-      const token = getToken();
-      if (!token) return;
-      
-      const response = await fetch(`${API_BASE_URL}/cohorts`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setCohorts(data.cohorts || []);
-      }
-    } catch (err) {
+      const { cohorts: rawCohorts } = await cohortService.getAllCohorts(1, 100);
+      // Filter valid cohorts only (has id and name)
+      const validCohorts = rawCohorts.filter((cohort: Cohort) => cohort.id && cohort.name);
+      console.log('Valid cohorts loaded:', validCohorts.length, validCohorts);
+      setCohorts(validCohorts);
+    } catch (err: unknown) {
       console.error('Failed to fetch cohorts:', err);
+      setCohorts([]);
     }
   }, []);
 
@@ -112,8 +107,10 @@ export default function AdminCoursesPage() {
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!courseForm.cohortId) {
-      showToast('Please select a cohort', 'error');
+    // Validate cohort exists in loaded cohorts
+    const selectedCohort = cohorts.find(c => c.id === courseForm.cohortId);
+    if (!courseForm.cohortId || !selectedCohort) {
+      showToast('Please select a valid cohort', 'error');
       return;
     }
 
@@ -150,6 +147,13 @@ export default function AdminCoursesPage() {
     e.preventDefault();
     if (!selectedCourse) return;
 
+    // Validate cohort for update too
+    const selectedCohort = cohorts.find(c => c.id === courseForm.cohortId);
+    if (!courseForm.cohortId || !selectedCohort) {
+      showToast('Please select a valid cohort', 'error');
+      return;
+    }
+
     try {
       setFormLoading(true);
       const updated = await courseService.updateCourse(selectedCourse.id, {
@@ -157,7 +161,7 @@ export default function AdminCoursesPage() {
         description: courseForm.description,
         courseType: courseForm.courseType,
         cohortId: courseForm.cohortId,
-        instructorId: courseForm.instructorId,
+        instructorId: courseForm.instructorId
       });
 
       if (updated) {
@@ -382,8 +386,8 @@ export default function AdminCoursesPage() {
               disabled={formLoading}
             >
             <option value="">Select cohort</option>
-              {cohorts.map(cohort => (
-                <option key={cohort.id} value={cohort.id}>{cohort.name}</option>
+              {cohorts.map((cohort, index) => cohort.id && (
+                <option key={`${cohort.id}-${index}`} value={cohort.id}>{cohort.name}</option>
               ))}
             </select>
           </div>
