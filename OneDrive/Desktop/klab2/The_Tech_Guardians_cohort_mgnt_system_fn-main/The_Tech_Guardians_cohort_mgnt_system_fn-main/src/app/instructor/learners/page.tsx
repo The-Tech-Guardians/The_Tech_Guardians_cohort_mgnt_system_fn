@@ -22,6 +22,15 @@ interface CourseOption {
   title: string;
 }
 
+interface ProgressData {
+  learnerId: string;
+  completedLessons: number;
+  totalLessons: number;
+  totalTimeSpent: number;
+  lastAccessed: string;
+  completionRate: number;
+}
+
 export default function LearnersPage() {
   const [courses, setCourses] = useState<CourseOption[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
@@ -30,6 +39,8 @@ export default function LearnersPage() {
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive' | 'completed'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedLearner, setSelectedLearner] = useState<Learner | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
     fetchCourses();
@@ -66,7 +77,7 @@ export default function LearnersPage() {
       ]);
 
       // Merge progress into learner list (match on learner id)
-      const progressMap = new Map(progressData.map((p: any) => [p.learnerId, p]));
+      const progressMap = new Map(progressData.map((p: ProgressData) => [p.learnerId, p]));
       const merged = enrolled.map((learner: any) => {
         const progress = progressMap.get(learner.uuid);
         return {
@@ -277,7 +288,14 @@ export default function LearnersPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button className="text-indigo-600 hover:text-indigo-900">
+                      <button 
+                        onClick={() => {
+                          setSelectedLearner(learner);
+                          setShowDetails(true);
+                        }}
+                        className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1"
+                      >
+                        <Eye size={16} />
                         View Details
                       </button>
                     </td>
@@ -337,6 +355,118 @@ export default function LearnersPage() {
           </div>
         </div>
       </div>
+
+      {/* Learner Details Modal */}
+      {showDetails && selectedLearner && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Learner Details</h2>
+                <button
+                  onClick={() => setShowDetails(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Learner Info */}
+                <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 rounded-full bg-indigo-500 flex items-center justify-center">
+                    <span className="text-xl font-medium text-white">
+                      {selectedLearner.name.split(' ').map(n => n[0]).join('')}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{selectedLearner.name}</h3>
+                    <p className="text-gray-600">{selectedLearner.email}</p>
+                    <span className={`inline-block mt-1 px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedLearner.status)}`}>
+                      {selectedLearner.status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress Overview */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">Progress Overview</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Overall Progress</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedLearner.progress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-indigo-600 h-2 rounded-full"
+                        style={{ width: `${selectedLearner.progress}%` }}
+                      ></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <p className="text-sm text-gray-600">Completed Modules</p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {selectedLearner.completedModules}/{selectedLearner.totalModules}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Time Spent</p>
+                        <p className="text-lg font-semibold text-gray-900">{formatTime(selectedLearner.timeSpent)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Activity Details */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">Activity Details</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Last Active</span>
+                      <span className="text-sm text-gray-900">{selectedLearner.lastActive}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Enrolled Courses</span>
+                      <span className="text-sm text-gray-900">{selectedLearner.enrolledCourses}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Average Session Time</span>
+                      <span className="text-sm text-gray-900">
+                        {selectedLearner.timeSpent > 0 ? formatTime(Math.round(selectedLearner.timeSpent / 10)) : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact Info */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">Contact Information</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Mail size={16} className="text-gray-400" />
+                      <span className="text-sm text-gray-900">{selectedLearner.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone size={16} className="text-gray-400" />
+                      <span className="text-sm text-gray-900">Not available</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4">
+                  <button className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
+                    Send Message
+                  </button>
+                  <button className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">
+                    View Progress Report
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

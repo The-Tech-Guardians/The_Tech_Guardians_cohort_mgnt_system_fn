@@ -18,6 +18,15 @@ interface AnalyticsData {
   courseEngagementData: any[];
   assessmentPerformanceData: any[];
   timeSpentData: any[];
+  learnerEngagementMetrics: {
+    commentsPosted: number;
+    assignmentsSubmitted: number;
+    quizzesTaken: number;
+    averageScore: number;
+    retentionRate: number;
+  };
+  moduleCompletionData: any[];
+  cohortPerformanceData: any[];
 }
 
 export default function AnalyticsPage() {
