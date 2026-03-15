@@ -30,7 +30,7 @@ export default function CohortsPage() {
     try {
       setLoading(true);
       setError("");
-      const response = await fetch("http://localhost:3000/api/cohorts?page=1&limit=20");
+      const response = await fetch(`${API_BASE_URL}/cohorts?page=1&limit=20");
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }

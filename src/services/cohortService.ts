@@ -187,7 +187,7 @@ export const cohortService: CohortService = {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/cohorts', {
+const response = await fetch(`${API_BASE_URL}/cohorts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -265,7 +265,7 @@ export const cohortService: CohortService = {
       if (updates.extensionDate) payload.extension_date = updates.extensionDate;
       if (updates.courseType) payload.course_type = updates.courseType;
 
-      const response = await fetch(`http://localhost:3000/api/cohorts/${id}`, {
+const response = await fetch(`${API_BASE_URL}/cohorts/${id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

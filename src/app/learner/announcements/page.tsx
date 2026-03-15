@@ -4,7 +4,7 @@ import { Megaphone, Pin, Clock } from "lucide-react";
 import { useSidebar } from "../layout";
 import { useState, useEffect } from "react";
 
-const API_BASE_URL = 'http://localhost:3000/api';
+// Using announcementService
 
 interface Announcement {
   id: string;
@@ -25,24 +25,11 @@ export default function AnnouncementsPage() {
   useEffect(() => {
     const fetchAnnouncements = async () => {
       try {
-        const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
-        const response = await fetch(`${API_BASE_URL}/announcements/learner`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch announcements');
-        }
-
-        const data = await response.json();
+        const data = await import('@/services/announcementService').then(m => m.announcementService.getLearnerAnnouncements());
         setAnnouncements(data.announcements || []);
       } catch (err) {
         console.error('Error fetching announcements:', err);
         setError('Failed to load announcements');
-        // Fall back to static data on error
         setAnnouncements([]);
       } finally {
         setLoading(false);

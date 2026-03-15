@@ -133,7 +133,7 @@ export const userService = {
       const token = getAuthToken();
       if (!token) throw new Error('No authentication token found');
 
-      const response = await fetch(`${API_BASE_URL}/users/invite`, {
+const response = await fetch(`${API_BASE_URL}/users/Invite`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

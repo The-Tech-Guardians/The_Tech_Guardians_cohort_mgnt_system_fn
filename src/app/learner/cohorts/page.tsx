@@ -15,6 +15,8 @@ export default function LearnerCohortsPage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const { collapsed } = useSidebar();
 
+  const API_BASE_URL = 'http://localhost:3000/api';
+
   useEffect(() => {
     fetchCohorts();
     checkEnrolledCohort();
@@ -39,7 +41,8 @@ export default function LearnerCohortsPage() {
       const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
       if (!token) return;
 
-      const response = await fetch('http://localhost:3000/api/learner/cohort', {
+      const response = await fetch(`${API_BASE_URL}/learner/cohort`, {
+        method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -116,13 +119,7 @@ export default function LearnerCohortsPage() {
       setUnenrolling(true);
       setError(null);
 
-      await fetch(`${API_BASE_URL}/cohorts/unenroll`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      await cohortService.unenrollFromCohort();
       
       // Clear enrolled cohort and refresh the list
       setEnrolledCohortId(null);
@@ -148,7 +145,7 @@ export default function LearnerCohortsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
+      <div className="flex items-center justify-center min-h-[24rem]">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
       </div>
     );
@@ -234,7 +231,7 @@ export default function LearnerCohortsPage() {
 
                   <div className="flex items-center gap-3 text-sm text-gray-600">
                     <Users className="w-4 h-4 text-indigo-600" />
-                    <span>{cohort.currentStudents || 0} / {cohort.maxStudents || 30} Students</span>
+                    <span>0 / 30 Students</span>
                   </div>
 
                   <div className="flex items-center gap-3 text-sm text-gray-600">
