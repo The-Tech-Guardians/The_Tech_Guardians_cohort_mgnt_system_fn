@@ -7,7 +7,7 @@ import { Plus, Search, Trash2, Loader2, Edit, User as UserIcon, LayoutGrid, List
 import { 
   newCohortService as cohortService, 
   type Cohort,
-} from "@/services/cohortService";
+} from "@/services/newCohortService";
 import { userService, type User } from "@/services/userService";
 
 // Initial form state
