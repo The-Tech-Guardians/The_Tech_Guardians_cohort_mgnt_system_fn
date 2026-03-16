@@ -75,7 +75,7 @@ export const notificationService = {
     );
     
     if (!response.ok) {
-      console.warn(`Notifications API unavailable (404 expected if no backend): ${response.status}`);
+      // Suppress console noise
       return { unreadCount: 0 };
     }
     

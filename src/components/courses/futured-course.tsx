@@ -1,4 +1,4 @@
-import { TYPE_CONFIG } from "@/app/courses/page";
+import { CATEGORIES } from "@/components/courses/config/courses-api";
 import { COHORT, INSTRUCTORS } from "@/lib/api";
 import { Book, Clock, Star, Target, Users } from "lucide-react";
 import { PublishedPill } from "./published-pill";
@@ -7,7 +7,7 @@ import { fmtDate } from "../cohorts/format-data-helper";
 export function FeaturedCourse({ course }: { course: any }) {
   const instructor = INSTRUCTORS[course.instructor_id as keyof typeof INSTRUCTORS];
   const cohort     = COHORT[course.cohort_id as keyof typeof COHORT];
-  const type       = TYPE_CONFIG[course.course_type as keyof typeof TYPE_CONFIG] || { label: course.course_type, color: "", icon: <Book className="w-3 h-3"/> };
+const typeConfig = CATEGORIES.find(c => c.slug === course.course_type.toLowerCase().replace('_', '-')) || { label: course.course_type, icon: <Book className="w-3 h-3"/>, grad: ['#3b82f6', '#06b6d4'] };
 
   return (
     <div className={`relative rounded-3xl bg-gradient-to-br ${course.gradient} p-8 md:p-10 shadow-[0_16px_48px_rgba(37,99,235,0.22)] mb-10 overflow-hidden`}>
@@ -22,11 +22,11 @@ export function FeaturedCourse({ course }: { course: any }) {
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <span className="bg-white/20 border border-white/30 text-white text-[11px] font-bold px-3 py-1 rounded-full inline-flex items-center gap-1.5"><Star className="w-3 h-3 fill-white"/> Featured Course</span>
             <PublishedPill is_published={course.is_published} />
-            <span className="bg-white/15 border border-white/25 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full">{type.icon} {type.label}</span>
+<span className="bg-white/15 border border-white/25 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full">{typeConfig.icon} {typeConfig.label}</span>
           </div>
 
           <h2 className="text-[26px] md:text-[32px] font-black text-white leading-tight mb-3">{course.title}</h2>
-          <p className="text-white/75 text-[15px] leading-relaxed mb-5 max-w-lg">{course.description}</p>
+<p className="formatted-content text-white/90 text-base leading-relaxed mb-5 max-w-lg [&strong]:text-white">{course.description}</p>
 
           {/* Meta chips */}
           <div className="flex flex-wrap gap-2 mb-5">

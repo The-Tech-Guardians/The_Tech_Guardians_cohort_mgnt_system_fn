@@ -298,7 +298,7 @@ export default function CourseDetailPage() {
                                   {lessons.filter(l => l.moduleId === module.id).length} lessons
                                 </span>
                               </div>
-                              <p className="text-[12px] text-slate-500 mt-0.5 truncate">{module.description || 'Module'}</p>
+<p className="formatted-content text-sm text-slate-500 mt-0.5">{module.description || 'Module'}</p>
                             </div>
                           </div>
                         </div>
@@ -346,7 +346,7 @@ export default function CourseDetailPage() {
                       </div>
                     </div>
                   </div>
-                  <p className="text-[14px] text-slate-600 leading-relaxed">{INSTRUCTOR.bio}</p>
+<p className="formatted-content text-base text-slate-600 leading-relaxed [&strong]:font-bold">{INSTRUCTOR.bio}</p>
                 </div>
               )}
 

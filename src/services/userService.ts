@@ -1,6 +1,6 @@
 // User Service - API interactions for User Management
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:3000/api';
 
 export interface User {
   uuid: string;
@@ -53,7 +53,6 @@ export const userService = {
       const data = await handleResponse(response);
       return data.users || [];
     } catch (error) {
-      console.error('Failed to fetch users:', error);
       throw error;
     }
   },
@@ -74,7 +73,6 @@ export const userService = {
       const data = await handleResponse(response);
       return data.users || [];
     } catch (error) {
-      console.error('Failed to search users:', error);
       throw error;
     }
   },
@@ -135,7 +133,7 @@ export const userService = {
       const token = getAuthToken();
       if (!token) throw new Error('No authentication token found');
 
-      const response = await fetch(`${API_BASE_URL}/users/Invite`, {
+const response = await fetch(`${API_BASE_URL}/users/Invite`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -152,6 +150,27 @@ export const userService = {
     } catch (error) {
       console.error('Failed to invite user:', error);
       throw error;
+    }
+  },
+
+  // Get all admins (for coordinator selection)
+  async getAdmins(): Promise<User[]> {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('No authentication token found');
+
+      const response = await fetch(`${API_BASE_URL}/users/admins`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await handleResponse(response);
+      return data.users || [];
+    } catch (error) {
+      console.error('Failed to fetch admins:', error);
+      return [];
     }
   },
 };

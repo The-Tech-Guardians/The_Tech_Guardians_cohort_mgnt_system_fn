@@ -1,3 +1,5 @@
+import { User } from '@/types/user';
+
 const API_BASE_URL = 'http://localhost:3000/api';
 
 export interface LoginData {
@@ -13,20 +15,15 @@ export interface RegisterData {
 }
 
 export interface AuthResponse {
-  success: boolean;
-  message: string;
+  success?: boolean;
+  message?: string;
   data?: {
     token?: string;
-    user?: {
-      id: string;
-      email: string;
-      firstName: string;
-      lastName: string;
-      role: string;
-    };
+    user?: User;
   };
   requires_2fa?: boolean;
   token?: string;
+  user?: User;
   user_id?: string;
 }
 
@@ -46,10 +43,26 @@ const storage = {
   },
 };
 
+interface TokenManager {
+  readonly user: User | null;
+  getRedirectPath(searchParams?: any): string;
+  setRedirectPath(path: string): void;
+  setToken(token: string): void;
+  getToken(): string | null;
+  removeToken(): void;
+  setUser(user: User): void;
+  getUser(): User | null;
+  removeUser(): void;
+  getUserIdFromToken(): string | null;
+  getRoleFromToken(): string | null;
+  getUsername(): string;
+  refreshUser(): Promise<boolean>;
+  logout(): void;
+}
+
 export const authAPI = {
   async login(data: LoginData): Promise<AuthResponse> {
     try {
-      console.log('API_BASE_URL:', API_BASE_URL);
       const response = await fetch(`${API_BASE_URL}/auth/Login`, {
         method: 'POST',
         headers: {
@@ -60,7 +73,6 @@ export const authAPI = {
 
       return response.json();
     } catch (error) {
-      console.error('Login API error:', error);
       throw error;
     }
   },
@@ -101,6 +113,28 @@ export const authAPI = {
       return { success: true, ...result };
     } catch (error) {
       console.error('2FA API error:', error);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  },
+
+  async resend2FA(userId: string): Promise<AuthResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/Resend2fa`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_id: userId }),
+      });
+
+      if (!response.ok) {
+        return { success: false, message: `Server error: ${response.status}` };
+      }
+
+      const result = await response.json();
+      return { success: true, ...result };
+    } catch (error) {
+      console.error('Resend 2FA API error:', error);
       return { success: false, message: 'Network error. Please try again.' };
     }
   },
@@ -210,12 +244,32 @@ export const authAPI = {
 
       return response.json();
     } catch (error: any) {
-      // "Failed to fetch" lands here — log the actual cause
       console.error('[getAvailableCohorts] Network error:', error?.message ?? error);
       console.error('[getAvailableCohorts] Attempted URL:', url);
       console.error('[getAvailableCohorts] Is the API server running? Check NEXT_PUBLIC_API_URL in your .env');
       return { success: false, message: 'Network error: could not reach the API server.' };
     }
+  },
+
+  async getMe(): Promise<any> {
+    const token = tokenManager.getToken();
+    if (!token) {
+      return { success: false, message: 'No token' };
+    }
+
+    const response = await fetch(`${API_BASE_URL}/users/me`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      return { success: false, message: `Server error: ${response.status}` };
+    }
+
+    return response.json();
   },
 
   async joinCohort(cohort_id: string): Promise<any> {
@@ -255,26 +309,41 @@ export const tokenManager = {
 
   setToken(token: string) {
     storage.set('auth_token', token);
+    // Set cookie for Next.js middleware with proper expiry (24h like JWT)
+    if (typeof window !== 'undefined') {
+      const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+      const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toUTCString();
+      document.cookie = `auth_token=${encodeURIComponent(token)}; Path=/; Max-Age=86400; SameSite=Lax; Expires=${expires}${secure}`;
+    }
   },
 
   getToken(): string | null {
     return storage.get('auth_token');
   },
 
-  removeToken() {
+  removeToken(): void {
     storage.remove('auth_token');
+    if (typeof window !== 'undefined') {
+      document.cookie = 'auth_token=; Path=/; Max-Age=0; SameSite=Lax';
+    }
   },
 
-  setUser(user: any) {
+  setUser(user: User): void {
     storage.set('user_data', JSON.stringify(user));
   },
 
-  getUser(): any {
+  getUser(): User | null {
     const userData = storage.get('user_data');
-    return userData ? JSON.parse(userData) : null;
+    if (!userData) return null;
+    try {
+      return JSON.parse(userData) as User;
+    } catch {
+      storage.remove('user_data');
+      return null;
+    }
   },
 
-  removeUser() {
+  removeUser(): void {
     storage.remove('user_data');
   },
 
@@ -307,12 +376,23 @@ export const tokenManager = {
   getUsername(): string {
     const user = this.getUser();
     if (user) {
-      return `${user.firstName} ${user.lastName}`.trim() || user.email || 'User';
+      return `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'User';
     }
     return 'User';
   },
 
-  logout() {
+  async refreshUser(): Promise<boolean> {
+    const result = await authAPI.getMe();
+    if (result.success && result.user) {
+      (tokenManager as any).setUser(result.user as User);
+      console.log('[auth] Refreshed user from /me:', result.user.role);
+      return true;
+    }
+    console.error('[auth] Failed to refresh user:', result.message);
+    return false;
+  },
+
+  logout(): void {
     this.removeToken();
     this.removeUser();
   },

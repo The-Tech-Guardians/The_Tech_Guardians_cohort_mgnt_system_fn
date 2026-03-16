@@ -3,11 +3,12 @@
 import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
-import { Plus, Calendar, Users, BookOpen, Eye, Edit, Search, Trash2, Loader2 } from "lucide-react";
+import { Plus, Search, Trash2, Loader2, Edit, User as UserIcon, LayoutGrid, List } from "lucide-react";
 import { 
   newCohortService as cohortService, 
   type Cohort,
-} from "@/services/newCohortService";
+} from "@/services/cohortService";
+import { userService, type User } from "@/services/userService";
 
 // Initial form state
 const initialFormData = {
@@ -18,6 +19,7 @@ const initialFormData = {
   enrollmentCloseDate: "",
   extensionDate: "",
   courseType: "COMPUTER_PROGRAMMING",
+  coordinatorId: "",
 };
 
 const courseTypeOptions = [
@@ -31,14 +33,15 @@ const courseTypeOptions = [
 export default function CohortsPage() {
   // State management
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [admins, setAdmins] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [adminLoading, setAdminLoading] = useState(false);
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showLearnersModal, setShowLearnersModal] = useState(false);
 
   // Selected items
   const [selectedCohort, setSelectedCohort] = useState<Cohort | null>(null);
@@ -48,6 +51,7 @@ export default function CohortsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
   const [formData, setFormData] = useState(initialFormData);
+  const [viewMode, setViewMode] = useState<"card" | "list">("list");
 
   // Pagination
   const [pagination, setPagination] = useState({
@@ -85,6 +89,47 @@ export default function CohortsPage() {
     setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
   };
 
+  // Fetch admins for coordinator selection
+  const fetchAdmins = useCallback(async () => {
+    try {
+      setAdminLoading(true);
+      const adminList = await userService.getAdmins();
+      setAdmins(adminList);
+    } catch (err) {
+      console.error('Failed to fetch admins:', err);
+    } finally {
+      setAdminLoading(false);
+    }
+  }, []);
+
+  // Open create modal and fetch admins
+  const openCreateModal = () => {
+    if (admins.length === 0) {
+      fetchAdmins();
+    }
+    setFormData(initialFormData);
+    setShowCreateModal(true);
+  };
+
+  // Open edit modal and fetch admins
+  const openEditModalForCohort = (cohort: Cohort) => {
+    if (admins.length === 0) {
+      fetchAdmins();
+    }
+    setSelectedCohort(cohort);
+    setFormData({
+      name: cohort.name,
+      startDate: cohort.startDate.split('T')[0],
+      endDate: cohort.endDate.split('T')[0],
+      enrollmentOpenDate: cohort.enrollmentOpenDate?.split('T')[0] || "",
+      enrollmentCloseDate: cohort.enrollmentCloseDate?.split('T')[0] || "",
+      extensionDate: cohort.extensionDate?.split('T')[0] || "",
+      courseType: cohort.courseType,
+      coordinatorId: cohort.coordinatorId || "",
+    });
+    setShowEditModal(true);
+  };
+
   // Create cohort
   const handleCreateCohort = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,6 +145,7 @@ export default function CohortsPage() {
         enrollmentCloseDate: formData.enrollmentCloseDate,
         extensionDate: formData.extensionDate,
         courseType: formData.courseType,
+        coordinatorId: formData.coordinatorId || undefined,
       });
 
       if (response.cohort) {
@@ -131,6 +177,7 @@ export default function CohortsPage() {
         enrollmentCloseDate: formData.enrollmentCloseDate,
         extensionDate: formData.extensionDate,
         courseType: formData.courseType,
+        coordinatorId: formData.coordinatorId || undefined,
       });
 
       if (response.cohort) {
@@ -169,6 +216,9 @@ export default function CohortsPage() {
   };
 
   const openEditModal = (cohort: Cohort) => {
+    if (admins.length === 0) {
+      fetchAdmins();
+    }
     setSelectedCohort(cohort);
     setFormData({
       name: cohort.name,
@@ -178,6 +228,7 @@ export default function CohortsPage() {
       enrollmentCloseDate: cohort.enrollmentCloseDate?.split('T')[0] || "",
       extensionDate: cohort.extensionDate?.split('T')[0] || "",
       courseType: cohort.courseType,
+      coordinatorId: cohort.coordinatorId || "",
     });
     setShowEditModal(true);
   };
@@ -235,16 +286,40 @@ export default function CohortsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <button
-          onClick={() => {
-            setFormData(initialFormData);
-            setShowCreateModal(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Create Cohort
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${
+                viewMode === "list" ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+              title="List view"
+            >
+              <List className="w-4 h-4" />
+              List
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("card")}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${
+                viewMode === "card" ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+              title="Card view"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              Cards
+            </button>
+          </div>
+
+          <button
+            onClick={openCreateModal}
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Create Cohort
+          </button>
+        </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -257,107 +332,167 @@ export default function CohortsPage() {
         </div>
       </div>
 
-      {/* Cohorts Table */}
-      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Cohort Name</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Course Type</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Instructor</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Start Date</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">End Date</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Enrollment</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Created</th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredCohorts.length === 0 ? (
+      {viewMode === "list" ? (
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center">
-                    <p className="text-gray-500">No cohorts found</p>
-                  </td>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 w-16">#</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Cohort Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Course Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Coordinator</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Start Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">End Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Enrollment</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Created</th>
+                  <th className="px-6 py-3 center text-xs font-semibold text-gray-700">Actions</th>
                 </tr>
-              ) : (
-                filteredCohorts.map((cohort, index) => (
-                  <tr key={cohort.id || `cohort-${index}`} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-medium text-gray-900">{cohort.name}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-600">{formatCourseType(cohort.courseType)}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-600">
-                        {cohort.instructorIds && cohort.instructorIds.length > 0
-                          ? `Instructor: ${
-                              cohort.instructorIds[0].length > 8
-                                ? `${cohort.instructorIds[0].slice(0, 8)}...`
-                                : cohort.instructorIds[0]
-                            }`
-                          : "Instructor: Not assigned"}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-600">
-                        {new Date(cohort.startDate).toLocaleDateString()}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-600">
-                        {new Date(cohort.endDate).toLocaleDateString()}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm">
-                        <p className="text-gray-900 font-medium">
-                          {cohort.enrollmentOpenDate ? new Date(cohort.enrollmentOpenDate).toLocaleDateString() : "N/A"}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {cohort.enrollmentCloseDate ? `- ${new Date(cohort.enrollmentCloseDate).toLocaleDateString()}` : ""}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 text-xs font-semibold rounded-full border inline-block ${getStatusColor(cohort.isActive)}`}>
-                        {cohort.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-600">
-                        {cohort.createdAt ? new Date(cohort.createdAt).toLocaleDateString() : "N/A"}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => openEditModal(cohort)}
-                          className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                          title="Edit"
-                          disabled={loading}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => openDeleteModal(cohort)}
-                          className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                          title="Delete"
-                          disabled={loading}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredCohorts.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="px-6 py-8 text-center">
+                      <p className="text-gray-500">No cohorts found</p>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  filteredCohorts.map((cohort, index) => (
+                    <tr key={cohort.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-4 text-sm font-medium text-gray-500">
+                        {(pagination.page - 1) * pagination.limit + index + 1}
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm font-medium text-gray-900">{cohort.name}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-gray-600">{formatCourseType(cohort.courseType)}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-gray-600">
+                          {cohort.coordinatorName ? (
+                            <span className="flex items-center gap-1">
+                              <UserIcon className="w-3 h-3" />
+                              {cohort.coordinatorName}
+                            </span>
+                          ) : "Not assigned"}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-gray-600">{new Date(cohort.startDate).toLocaleDateString()}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-gray-600">{new Date(cohort.endDate).toLocaleDateString()}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm">
+                          <p className="text-gray-900 font-medium">
+                            {cohort.enrollmentOpenDate ? new Date(cohort.enrollmentOpenDate).toLocaleDateString() : "N/A"}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {cohort.enrollmentCloseDate ? `- ${new Date(cohort.enrollmentCloseDate).toLocaleDateString()}` : ""}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 text-xs font-semibold rounded-full border inline-block ${getStatusColor(cohort.isActive)}`}>
+                          {cohort.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-gray-600">{cohort.createdAt ? new Date(cohort.createdAt).toLocaleDateString() : "N/A"}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => openEditModal(cohort)}
+                            className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                            title="Edit"
+                            disabled={loading}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => openDeleteModal(cohort)}
+                            className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                            title="Delete"
+                            disabled={loading}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filteredCohorts.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center md:col-span-2 xl:col-span-3">
+              <p className="text-gray-500">No cohorts found</p>
+            </div>
+          ) : (
+            filteredCohorts.map((cohort) => (
+              <div key={cohort.id} className="bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-md transition-all">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-gray-900 truncate">{cohort.name}</h3>
+                    <p className="text-xs text-gray-500 mt-1">{formatCourseType(cohort.courseType)}</p>
+                  </div>
+                  <span className={`px-3 py-1 text-xs font-semibold rounded-full border inline-block ${getStatusColor(cohort.isActive)}`}>
+                    {cohort.isActive ? "Active" : "Inactive"}
+                  </span>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-gray-600">
+                  <div>
+                    <div className="text-gray-400">Coordinator</div>
+                    <div className="font-semibold text-gray-800 truncate">{cohort.coordinatorName || "Not assigned"}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-400">Enrollment</div>
+                    <div className="font-semibold text-gray-800">
+                      {cohort.enrollmentOpenDate ? new Date(cohort.enrollmentOpenDate).toLocaleDateString() : "N/A"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-400">Start</div>
+                    <div className="font-semibold text-gray-800">{new Date(cohort.startDate).toLocaleDateString()}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-400">End</div>
+                    <div className="font-semibold text-gray-800">{new Date(cohort.endDate).toLocaleDateString()}</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+                  <button
+                    onClick={() => openEditModal(cohort)}
+                    className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                    title="Edit"
+                    disabled={loading}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => openDeleteModal(cohort)}
+                    className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                    title="Delete"
+                    disabled={loading}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
 
       {/* Create Cohort Modal */}
       <Modal
@@ -389,6 +524,23 @@ export default function CohortsPage() {
             >
               {courseTypeOptions.map(option => (
                 <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Coordinator (Optional)</label>
+            <select
+              value={formData.coordinatorId}
+              onChange={(e) => setFormData({ ...formData, coordinatorId: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              disabled={adminLoading}
+            >
+              <option value="">Select a coordinator</option>
+              {admins.map(admin => (
+                <option key={admin.uuid} value={admin.uuid}>
+                  {admin.firstName} {admin.lastName}
+                </option>
               ))}
             </select>
           </div>
@@ -501,6 +653,23 @@ export default function CohortsPage() {
             </select>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Coordinator (Optional)</label>
+            <select
+              value={formData.coordinatorId}
+              onChange={(e) => setFormData({ ...formData, coordinatorId: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              disabled={adminLoading}
+            >
+              <option value="">Select a coordinator</option>
+              {admins.map(admin => (
+                <option key={admin.uuid} value={admin.uuid}>
+                  {admin.firstName} {admin.lastName}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
@@ -604,6 +773,30 @@ export default function CohortsPage() {
       </Modal>
 
       <Toast message={toast.message} type={toast.type} isVisible={toast.show} onClose={() => setToast({ ...toast, show: false })} />
+      
+      {/* Pagination */}
+      {pagination.pages > 1 && (
+        <div className="flex justify-center items-center gap-2">
+          <button
+            onClick={() => setPagination(prev => ({ ...prev, page: Math.max(prev.page - 1, 1) }))}
+            disabled={pagination.page === 1 || loading}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm disabled:opacity-50 hover:bg-gray-50 transition-colors"
+          >
+            Previous
+          </button>
+          <span className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-sm">
+            Page {pagination.page} of {pagination.pages}
+          </span>
+          <button
+            onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.page + 1, prev.pages) }))}
+            disabled={pagination.page === pagination.pages || loading}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm disabled:opacity-50 hover:bg-gray-50 transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }
+

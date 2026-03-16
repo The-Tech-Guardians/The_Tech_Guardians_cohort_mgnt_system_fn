@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
-import { Plus, Search, Edit, Trash2, Loader2, Eye, EyeOff, BookOpen } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Loader2, Eye, EyeOff, BookOpen, LayoutGrid, List } from "lucide-react";
 import {
   courseService,
   type BackendCourse,
@@ -26,6 +26,7 @@ const initialCourseForm = {
   description: "",
   cohortId: "",
   instructorId: "",
+  isPublished: false,
 };
 
 const COURSE_TYPE_OPTIONS = [
@@ -54,6 +55,8 @@ export default function AdminCoursesPage() {
   const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
   const [courseForm, setCourseForm] = useState(initialCourseForm);
   const [formLoading, setFormLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<"card" | "list">("card");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const getToken = () => localStorage.getItem("auth_token") || localStorage.getItem("token");
 
@@ -165,11 +168,18 @@ export default function AdminCoursesPage() {
       });
 
       if (updated) {
+        // Update local state immediately for better UX
+        setCourses(prevCourses => 
+          prevCourses.map(course => 
+            course.id === selectedCourse.id 
+              ? { ...course, ...updated.course }
+              : course
+          )
+        );
         showToast("Course updated successfully!");
         setCourseForm(initialCourseForm);
         setShowEditModal(false);
         setSelectedCourse(null);
-        fetchCourses();
       }
     } catch (err: any) {
       showToast(err.message || 'Failed to update course', 'error');
@@ -199,9 +209,22 @@ export default function AdminCoursesPage() {
   const handlePublishCourse = async (courseId: string) => {
     try {
       setLoading(true);
-      await courseService.publishCourse(courseId);
-      showToast("Course status updated successfully!");
-      fetchCourses();
+      const updatedCourse = await courseService.publishCourse(courseId);
+      
+      if (updatedCourse) {
+        // Immediately update local state for better UX
+        setCourses(prevCourses => 
+          prevCourses.map(course => 
+            course.id === courseId 
+              ? { ...course, isPublished: updatedCourse.isPublished }
+              : course
+          )
+        );
+        showToast(`Course ${updatedCourse.isPublished ? 'published' : 'unpublished'} successfully!`);
+      } else {
+        // Fallback: refresh all courses
+        fetchCourses();
+      }
     } catch (err: any) {
       showToast(err.message || 'Failed to update course status', 'error');
     } finally {
@@ -217,6 +240,7 @@ export default function AdminCoursesPage() {
       description: course.description,
       cohortId: course.cohortId,
       instructorId: course.instructorId || "",
+      isPublished: course.isPublished || false,
     });
     setShowEditModal(true);
   };
@@ -224,6 +248,14 @@ export default function AdminCoursesPage() {
   const openDeleteModal = (course: BackendCourse) => {
     setCourseToDelete(course);
     setShowDeleteModal(true);
+  };
+
+  const toggleExpanded = (id: string) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  const instructorNameById = (id?: string) => {
+    if (!id) return "N/A";
+    const inst = instructors.find((i) => i.uuid === id);
+    return inst ? `${inst.firstName} ${inst.lastName}`.trim() : "N/A";
   };
 
   const filteredCourses = courses.filter((course) =>
@@ -257,17 +289,44 @@ export default function AdminCoursesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <button
-          onClick={() => {
-            setCourseForm(initialCourseForm);
-            setShowCreateModal(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm"
-          disabled={loading}
-        >
-          <Plus className="w-4 h-4" />
-          Create Course
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => setViewMode("card")}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${
+                viewMode === "card" ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+              title="Card view"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              Cards
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${
+                viewMode === "list" ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+              title="List view"
+            >
+              <List className="w-4 h-4" />
+              List
+            </button>
+          </div>
+
+          <button
+            onClick={() => {
+              setCourseForm(initialCourseForm);
+              setShowCreateModal(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm"
+            disabled={loading}
+          >
+            <Plus className="w-4 h-4" />
+            Create Course
+          </button>
+        </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -287,49 +346,65 @@ export default function AdminCoursesPage() {
           <p className="text-gray-500 mb-2">No courses found</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filteredCourses.map((course) => {
-            const cohort = cohorts.find(c => c.id === course.cohortId);
-            return (
-              <div
-                key={course.id}
-                className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col justify-between hover:shadow-md transition-all"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-semibold text-gray-900 truncate" title={course.title}>
-                        {course.title}
-                      </h3>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {formatCourseType(course.courseType)}
-                      </p>
+        viewMode === "card" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredCourses.map((course) => {
+              const cohort = cohorts.find(c => c.id === course.cohortId);
+              const isOpen = !!expanded[course.id];
+              const desc = (course.description || "No description provided.").trim();
+              const showToggle = desc.length > 240;
+              const visibleDesc = isOpen || !showToggle ? desc : `${desc.slice(0, 240)}…`;
+
+              return (
+                <div
+                  key={course.id}
+                  className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col justify-between hover:shadow-md transition-all"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="text-base font-semibold text-gray-900 line-clamp-2" title={course.title}>
+                          {course.title}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {formatCourseType(course.courseType)}
+                        </p>
+                      </div>
+                      <span
+                        className={`px-3 py-1 text-[11px] font-semibold rounded-full border ${
+                          course.isPublished
+                            ? "bg-green-50 text-green-600 border-green-200"
+                            : "bg-amber-50 text-amber-600 border-amber-200"
+                        }`}
+                      >
+                        {course.isPublished ? "Published" : "Draft"}
+                      </span>
                     </div>
-                    <span
-                      className={`px-3 py-1 text-[11px] font-semibold rounded-full border ${
-                        course.isPublished
-                          ? "bg-green-50 text-green-600 border-green-200"
-                          : "bg-amber-50 text-amber-600 border-amber-200"
-                      }`}
-                    >
-                      {course.isPublished ? "Published" : "Draft"}
-                    </span>
+
+                    <div className="formatted-content text-gray-600 text-sm leading-relaxed [&strong]:font-bold whitespace-pre-wrap">
+                      {visibleDesc}
+                    </div>
+                    {showToggle && (
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(course.id)}
+                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+                      >
+                        {isOpen ? "Show less" : "Show more"}
+                      </button>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-500">
+                      <span className="truncate">Cohort: {cohort?.name || "N/A"}</span>
+                      <span className="text-right">Instructor: {instructorNameById(course.instructorId)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-gray-500">
+                      <span>{course.isPublished ? "Visible to learners" : "Hidden from learners"}</span>
+                      <span>{course.createdAt ? new Date(course.createdAt).toLocaleDateString() : "N/A"}</span>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-600 line-clamp-3">
-                    {course.description || "No description provided."}
-                  </p>
-                  <div className="flex items-center justify-between text-[11px] text-gray-500">
-                    <span>Cohort: {cohort?.name || "N/A"}</span>
-                    <span>
-                      {course.createdAt ? new Date(course.createdAt).toLocaleDateString() : "N/A"}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                  <div className="text-[11px] text-gray-400">
-                    {course.isPublished ? "Visible to learners" : "Hidden from learners"}
-                  </div>
-                  <div className="flex items-center gap-2">
+
+                  <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
                     <button onClick={() => openEditModal(course)} className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100" title="Edit">
                       <Edit className="w-4 h-4" />
                     </button>
@@ -341,10 +416,81 @@ export default function AdminCoursesPage() {
                     </button>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Course</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Cohort</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Instructor</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Created</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredCourses.map((course) => {
+                    const cohort = cohorts.find(c => c.id === course.cohortId);
+                    const isOpen = !!expanded[course.id];
+                    const desc = (course.description || "No description provided.").trim();
+                    const showToggle = desc.length > 240;
+                    const visibleDesc = isOpen || !showToggle ? desc : `${desc.slice(0, 240)}…`;
+
+                    return (
+                      <tr key={course.id} className="hover:bg-gray-50 transition-colors align-top">
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-semibold text-gray-900">{course.title}</div>
+                          <div className="formatted-content text-xs text-gray-600 mt-1 whitespace-pre-wrap">{visibleDesc}</div>
+                          {showToggle && (
+                            <button
+                              type="button"
+                              onClick={() => toggleExpanded(course.id)}
+                              className="mt-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+                            >
+                              {isOpen ? "Show less" : "Show more"}
+                            </button>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{formatCourseType(course.courseType)}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{cohort?.name || "N/A"}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{instructorNameById(course.instructorId)}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-3 py-1 text-xs font-semibold rounded-full border inline-block ${
+                            course.isPublished ? "bg-green-50 text-green-600 border-green-200" : "bg-amber-50 text-amber-600 border-amber-200"
+                          }`}>
+                            {course.isPublished ? "Published" : "Draft"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {course.createdAt ? new Date(course.createdAt).toLocaleDateString() : "N/A"}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <button onClick={() => openEditModal(course)} className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100" title="Edit">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handlePublishCourse(course.id)} className={`p-2 rounded-lg ${course.isPublished ? "bg-amber-50 text-amber-600" : "bg-green-50 text-green-600"}`} title={course.isPublished ? "Unpublish" : "Publish"}>
+                              {course.isPublished ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                            <button onClick={() => openDeleteModal(course)} className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100" title="Delete">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
       )}
 
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Create New Course" size="md">
@@ -370,7 +516,7 @@ export default function AdminCoursesPage() {
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900"
               disabled={formLoading}
             >
-              <option value="">Select type</option>
+              <option key="select-type" value="">Select type</option>
               {COURSE_TYPE_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
@@ -411,7 +557,7 @@ export default function AdminCoursesPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
             <textarea
-              rows={4}
+              rows={6}
               required
               value={courseForm.description}
               onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
@@ -510,6 +656,18 @@ export default function AdminCoursesPage() {
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900"
               disabled={formLoading}
             />
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={courseForm.isPublished}
+                onChange={(e) => setCourseForm({ ...courseForm, isPublished: e.target.checked })}
+                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                disabled={formLoading}
+              />
+              <span className="text-sm font-medium text-gray-700">Publish course (visible to learners)</span>
+            </label>
           </div>
           <div className="flex gap-3 pt-4">
             <button 

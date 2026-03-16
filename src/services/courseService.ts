@@ -11,31 +11,7 @@ export const formatCourseType = (type: string): string => {
   return formatted[type] || type;
 };
 
-// Backend course interface (matches API response)
-export interface BackendCourse {
-  id: string;
-  title: string;
-  description: string;
-  instructorId: string;
-  cohortId: string;
-  courseType: string;
-  isPublished: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface Course {
-  _id?: string;
-  id?: string;
-  title: string;
-  description: string;
-  instructorId: string;
-  cohortId: string;
-  courseType: string;
-  isPublished: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import { BackendCourse, Course, ExtendedCourse } from '@/types/course';
 
 export interface Module {
   id: string;
@@ -75,6 +51,18 @@ export interface QuestionOption {
   optionText: string;
   isCorrect: boolean;
   orderIndex: number;
+}
+
+export interface Assessment {
+  id: string;
+  courseId: string;
+  title: string;
+  description?: string;
+  totalQuestions: number;
+  timeLimit?: number;
+  orderIndex: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Instructor interface for course creation
@@ -474,7 +462,7 @@ async publishCourse(id: string): Promise<boolean> {
 
 
   // Toggle publish status
-  async togglePublish(id: string): Promise<boolean> {
+  async togglePublish(id: string): Promise<BackendCourse | null> {
     return this.publishCourse(id);
   },
 
@@ -504,6 +492,66 @@ async publishCourse(id: string): Promise<boolean> {
     } catch (error) {
       console.error('Failed to fetch instructors:', error);
       return { instructors: [], pagination: { page, limit, total: 0, pages: 0 } };
+    }
+  },
+
+  // Get modules by course ID for learner course details
+  async getModulesByCourse(courseId: string): Promise<Module[]> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Authentication required');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/modules/course/${courseId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await handleResponse(response);
+      return data.modules || [];
+    } catch (error) {
+      console.error(`Failed to fetch modules for course ${courseId}:`, error);
+      return [];
+    }
+  },
+
+  // Get lessons by module ID for learner course details
+  async getLessonsByModule(moduleId: string): Promise<Lesson[]> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Authentication required');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/lessons/module/${moduleId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await handleResponse(response);
+      return data.lessons || [];
+    } catch (error) {
+      console.error(`Failed to fetch lessons for module ${moduleId}:`, error);
+      return [];
+    }
+  },
+
+  // Get assessments by course ID for learner course details
+  async getAssessmentsByCourse(courseId: string): Promise<Assessment[]> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Authentication required');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/assessments/course/${courseId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await handleResponse(response);
+      return data.assessments || [];
+    } catch (error) {
+      console.error(`Failed to fetch assessments for course ${courseId}:`, error);
+      return [];
     }
   },
 };

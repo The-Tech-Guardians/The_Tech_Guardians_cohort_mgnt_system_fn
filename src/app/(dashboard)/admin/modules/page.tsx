@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from "react";
-import { RefreshCw, Search, Plus, Layers, Edit, Trash2, BookOpen, X } from "lucide-react";
+import { RefreshCw, Search, Plus, Layers, Edit, Trash2, BookOpen, X, LayoutGrid, List } from "lucide-react";
 import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
 import { moduleService, type Module } from "@/services/moduleService";
@@ -35,6 +35,8 @@ export default function ModulesManagementPage() {
   
   // Toast
   const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
+  const [viewMode, setViewMode] = useState<"card" | "list">("card");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const getToken = () => localStorage.getItem("auth_token") || localStorage.getItem("token");
 
@@ -174,6 +176,8 @@ export default function ModulesManagementPage() {
     setShowDeleteModal(true);
   };
 
+  const toggleExpanded = (id: string) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+
   const filteredModules = modules.filter(m =>
     m.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     m.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -197,17 +201,44 @@ export default function ModulesManagementPage() {
           <h1 className="text-2xl font-bold text-gray-900">Module Management</h1>
           <p className="text-sm text-gray-500 mt-1">Create and manage course modules</p>
         </div>
-        <button
-          onClick={() => {
-            setFormData({ title: "", description: "", orderIndex: modules.length + 1, releaseWeek: 1 });
-            setShowCreateModal(true);
-          }}
-          disabled={!selectedCourse}
-          className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Plus className="w-4 h-4" />
-          Add Module
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => setViewMode("card")}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${
+                viewMode === "card" ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+              title="Card view"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              Cards
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${
+                viewMode === "list" ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+              title="List view"
+            >
+              <List className="w-4 h-4" />
+              List
+            </button>
+          </div>
+
+          <button
+            onClick={() => {
+              setFormData({ title: "", description: "", orderIndex: modules.length + 1, releaseWeek: 1 });
+              setShowCreateModal(true);
+            }}
+            disabled={!selectedCourse}
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus className="w-4 h-4" />
+            Add Module
+          </button>
+        </div>
       </div>
 
       {/* Course Selection */}
@@ -284,48 +315,140 @@ export default function ModulesManagementPage() {
       {/* Modules List */}
       {selectedCourse ? (
         filteredModules.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredModules.map((module) => (
-              <div
-                key={module.id}
-                className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all"
-              >
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
-                      <Layers className="w-4 h-4" />
+          viewMode === "card" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredModules.map((module) => {
+                const isOpen = !!expanded[module.id];
+                const desc = (module.description || "").trim();
+                const showToggle = desc.length > 220;
+                const visibleDesc = isOpen || !showToggle ? desc : `${desc.slice(0, 220)}…`;
+
+                return (
+                  <div
+                    key={module.id}
+                    className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                          <Layers className="w-4 h-4" />
+                        </div>
+                        <span className="text-xs font-semibold text-gray-500">Week {module.releaseWeek}</span>
+                      </div>
+                      <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded">
+                        #{module.orderIndex}
+                      </span>
                     </div>
-                    <span className="text-xs font-semibold text-gray-500">Week {module.releaseWeek}</span>
+
+                    <h3 className="text-base font-semibold text-gray-900 mb-2">{module.title}</h3>
+
+                    {desc ? (
+                      <div className="space-y-1 mb-4">
+                        <div className="formatted-content text-gray-600 text-sm leading-relaxed [&strong]:font-bold whitespace-pre-wrap">
+                          {visibleDesc}
+                        </div>
+                        {showToggle && (
+                          <button
+                            type="button"
+                            onClick={() => toggleExpanded(module.id)}
+                            className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+                          >
+                            {isOpen ? "Show less" : "Show more"}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-400 mb-4">No description.</p>
+                    )}
+
+                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                      <button
+                        onClick={() => openEditModal(module)}
+                        className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                        title="Edit"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => openDeleteModal(module)}
+                        className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded">
-                    #{module.orderIndex}
-                  </span>
-                </div>
-                
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">{module.title}</h3>
-                {module.description && (
-                  <p className="text-xs text-gray-500 line-clamp-2 mb-4">{module.description}</p>
-                )}
-                
-                <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
-                  <button
-                    onClick={() => openEditModal(module)}
-                    className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                    title="Edit"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => openDeleteModal(module)}
-                    className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Module</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Week</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700">Order</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {filteredModules.map((module) => {
+                      const isOpen = !!expanded[module.id];
+                      const desc = (module.description || "").trim();
+                      const showToggle = desc.length > 220;
+                      const visibleDesc = isOpen || !showToggle ? desc : `${desc.slice(0, 220)}…`;
+
+                      return (
+                        <tr key={module.id} className="hover:bg-gray-50 transition-colors align-top">
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-semibold text-gray-900">{module.title}</div>
+                            {desc ? (
+                              <>
+                                <div className="formatted-content text-xs text-gray-600 mt-1 whitespace-pre-wrap">{visibleDesc}</div>
+                                {showToggle && (
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleExpanded(module.id)}
+                                    className="mt-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+                                  >
+                                    {isOpen ? "Show less" : "Show more"}
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              <div className="text-xs text-gray-400 mt-1">No description.</div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">Week {module.releaseWeek}</td>
+                          <td className="px-6 py-4 text-sm text-gray-600">#{module.orderIndex}</td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => openEditModal(module)}
+                                className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                                title="Edit"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => openDeleteModal(module)}
+                                className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </div>
+            </div>
+          )
         ) : (
           <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
             <Layers className="w-12 h-12 text-gray-300 mx-auto mb-3" />
