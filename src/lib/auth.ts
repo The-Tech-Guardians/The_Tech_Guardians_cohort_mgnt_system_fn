@@ -140,7 +140,7 @@ const response = await fetch(`${API_BASE_URL}/auth/resend-2fa`, {
   },
 
   async forgotPassword(email: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/ForgotPassword`, {
+    const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -152,7 +152,7 @@ const response = await fetch(`${API_BASE_URL}/auth/resend-2fa`, {
   },
 
   async verifyOTP(email: string, otp: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/VerifyResetOtp`, {
+    const response = await fetch(`${API_BASE_URL}/auth/verify-reset-otp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -164,7 +164,7 @@ const response = await fetch(`${API_BASE_URL}/auth/resend-2fa`, {
   },
 
   async resetPassword(email: string, otp: string, newPassword: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/ResetPassword`, {
+    const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
