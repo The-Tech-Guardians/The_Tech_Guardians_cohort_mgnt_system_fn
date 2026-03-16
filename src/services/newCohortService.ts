@@ -1,5 +1,5 @@
 // NEW Cohort service for API interactions
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:3000/api';
 console.log('🚀 NEW COHORT SERVICE LOADED - API_BASE_URL:', API_BASE_URL);
 
 export interface BackendCohort {

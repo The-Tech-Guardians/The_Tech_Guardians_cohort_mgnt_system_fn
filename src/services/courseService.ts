@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 export const formatCourseType = (type: string): string => {
   const formatted: { [key: string]: string } = {
@@ -77,6 +77,8 @@ interface ApiResponse<T> {
   message?: string;
   error?: string;
   pagination?: PaginationInfo;
+  data?: any;
+  success?: boolean;
 }
 
 const getAuthToken = () => {
@@ -146,7 +148,6 @@ export const courseService = {
       };
     } catch (error) {
       const err = error as Error;
-      console.error('Course fetch error:', err);
       throw new Error(err.message || 'Failed to fetch courses');
     }
   },
@@ -191,7 +192,6 @@ export const courseService = {
       };
     } catch (error) {
       const err = error as Error;
-      console.error('Course fetch error:', err);
       throw new Error(err.message || 'Failed to fetch courses');
     }
   },
@@ -241,9 +241,6 @@ export const courseService = {
       const courseUrl = `${API_BASE_URL}/courses/${courseId}`;
       const modulesUrl = `${API_BASE_URL}/modules/course/${courseId}`;
       
-      console.log('Fetching course from:', courseUrl);
-      console.log('Fetching modules from:', modulesUrl);
-
       const [courseRes, modulesRes] = await Promise.all([
         fetch(courseUrl, {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -255,7 +252,6 @@ export const courseService = {
 
       if (!courseRes.ok) {
         const errorData = await courseRes.json().catch(() => ({}));
-        console.error('Course fetch error:', courseRes.status, errorData);
         throw new Error(`Failed to fetch course: ${courseRes.status}`);
       }
 
@@ -275,7 +271,6 @@ export const courseService = {
             allLessons.push(...(lessonsData.lessons || []));
           }
         } catch (err) {
-          console.error(`Failed to fetch lessons for module ${mod.id}:`, err);
         }
       }
 
@@ -286,7 +281,6 @@ export const courseService = {
       };
     } catch (error) {
       const err = error as Error;
-      console.error('getCourseWithModulesAndLessons error:', err);
       throw new Error(err.message || 'Failed to fetch course details');
     }
   },
@@ -308,7 +302,6 @@ export const courseService = {
         pagination: data.pagination || { page, limit, total: 0, pages: 0 }
       };
     } catch (error) {
-      console.error('Failed to fetch courses:', error);
       return { courses: [], pagination: { page, limit, total: 0, pages: 0 } };
     }
   },
@@ -374,7 +367,6 @@ export const courseService = {
       const data = await handleResponse(response);
       return data.course ? { course: data.course } : null;
     } catch (error) {
-      console.error('Failed to create course:', error);
       throw error;
     }
   },
@@ -395,7 +387,6 @@ export const courseService = {
       const data = await handleResponse(response);
       return data.course ? { course: data.course } : null;
     } catch (error) {
-      console.error(`Failed to update course ${id}:`, error);
       throw error;
     }
   },
@@ -415,7 +406,6 @@ export const courseService = {
       await handleResponse(response);
       return true;
     } catch (error) {
-      console.error(`Failed to delete course ${id}:`, error);
       throw error;
     }
   },
@@ -435,7 +425,6 @@ export const courseService = {
       const data = await handleResponse(response);
       return data.course || data || null;
     } catch (error) {
-      console.error(`Failed to publish course ${id}:`, error);
       throw error;
     }
   },
@@ -469,7 +458,6 @@ export const courseService = {
         pagination: data.pagination || { page, limit, total: 0, pages: 0 }
       };
     } catch (error) {
-      console.error('Failed to fetch instructors:', error);
       return { instructors: [], pagination: { page, limit, total: 0, pages: 0 } };
     }
   },
@@ -489,7 +477,6 @@ export const courseService = {
       const data = await handleResponse(response);
       return data.modules || [];
     } catch (error) {
-      console.error(`Failed to fetch modules for course ${courseId}:`, error);
       return [];
     }
   },
@@ -509,7 +496,6 @@ export const courseService = {
       const data = await handleResponse(response);
       return data.lessons || [];
     } catch (error) {
-      console.error(`Failed to fetch lessons for module ${moduleId}:`, error);
       return [];
     }
   },
@@ -529,7 +515,6 @@ export const courseService = {
       const data = await handleResponse(response);
       return data.assessments || [];
     } catch (error) {
-      console.error(`Failed to fetch assessments for course ${courseId}:`, error);
       return [];
     }
   },
