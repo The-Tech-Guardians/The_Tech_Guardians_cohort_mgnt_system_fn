@@ -232,8 +232,27 @@ export const authAPI = {
   },
 };
 
+import { cohortService } from '@/services/cohortService';
+
 // Token management
 export const tokenManager = {
+  
+  async validateAuth(): Promise<boolean> {
+    const token = this.getToken();
+    if (!token) return false;
+    
+    try {
+      // Lightweight auth test - try to fetch first cohort page
+      await cohortService.getAllCohorts(1, 1);
+      return true;
+    } catch (error) {
+      console.warn('Auth validation failed:', error);
+      this.logout();
+      return false;
+    }
+  },
+
+
   setToken(token: string) {
     storage.set('auth_token', token);
   },
@@ -298,3 +317,4 @@ export const tokenManager = {
     this.removeUser();
   },
 };
+

@@ -6,8 +6,6 @@ import Toast from "@/components/admin/Toast";
 import { Plus, Calendar, Users, BookOpen, Eye, Edit, Search, Trash2, Loader2 } from "lucide-react";
 import { 
   newCohortService as cohortService, 
-  type Cohort as CohortType,
-  type BackendCohort,
   type Cohort,
 } from "@/services/newCohortService";
 
@@ -111,6 +109,7 @@ export default function CohortsPage() {
         fetchCohorts();
       }
     } catch (err: any) {
+      console.error('Cohort create error:', err);
       showToast(err.message || 'Failed to create cohort', 'error');
     } finally {
       setLoading(false);
@@ -142,6 +141,7 @@ export default function CohortsPage() {
         fetchCohorts();
       }
     } catch (err: any) {
+      console.error('Cohort update error:', err);
       showToast(err.message || 'Failed to update cohort', 'error');
     } finally {
       setLoading(false);
@@ -161,6 +161,7 @@ export default function CohortsPage() {
       setCohortToDelete(null);
       fetchCohorts();
     } catch (err: any) {
+      console.error('Cohort delete error:', err);
       showToast(err.message || 'Failed to delete cohort', 'error');
     } finally {
       setLoading(false);

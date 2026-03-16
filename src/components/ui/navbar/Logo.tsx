@@ -1,8 +1,10 @@
+import { FC } from "react";
+
 interface LogoProps {
   textMain: string;
 }
 
-export default function Logo({ textMain }: LogoProps) {
+const Logo: FC<LogoProps> = ({ textMain }) => {
   return (
     <div className="flex items-center gap-3 cursor-pointer flex-shrink-0 group">
       <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-[0_2px_12px_rgba(14,165,233,0.3)] overflow-hidden flex-shrink-0 group-hover:shadow-[0_4px_18px_rgba(14,165,233,0.45)] transition-shadow duration-300">
@@ -21,4 +23,7 @@ export default function Logo({ textMain }: LogoProps) {
       </div>
     </div>
   );
-}
+};
+
+export default Logo;
+
