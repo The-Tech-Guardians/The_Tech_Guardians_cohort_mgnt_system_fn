@@ -5,7 +5,7 @@ import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
 import { Plus, Search, Trash2, Loader2, Edit, User as UserIcon, LayoutGrid, List } from "lucide-react";
 import { 
-  cohortService, 
+  newCohortService as cohortService, 
   type Cohort,
 } from "@/services/cohortService";
 import { userService, type User } from "@/services/userService";
@@ -155,6 +155,7 @@ export default function CohortsPage() {
         fetchCohorts();
       }
     } catch (err: any) {
+      console.error('Cohort create error:', err);
       showToast(err.message || 'Failed to create cohort', 'error');
     } finally {
       setLoading(false);
@@ -187,6 +188,7 @@ export default function CohortsPage() {
         fetchCohorts();
       }
     } catch (err: any) {
+      console.error('Cohort update error:', err);
       showToast(err.message || 'Failed to update cohort', 'error');
     } finally {
       setLoading(false);
@@ -206,6 +208,7 @@ export default function CohortsPage() {
       setCohortToDelete(null);
       fetchCohorts();
     } catch (err: any) {
+      console.error('Cohort delete error:', err);
       showToast(err.message || 'Failed to delete cohort', 'error');
     } finally {
       setLoading(false);

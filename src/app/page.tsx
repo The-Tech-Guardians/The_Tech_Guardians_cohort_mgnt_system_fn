@@ -7,7 +7,7 @@ export default function Home() {
   return (
     
     <>
-    <div className="flex flex-col bg-gray-200">
+    <div className="flex flex-col ">
          <HeroSection/>
          <WhyJoinSection/>
     </div>

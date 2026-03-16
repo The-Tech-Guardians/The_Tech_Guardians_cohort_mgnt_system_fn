@@ -50,7 +50,9 @@ const socials = [
   },
 ];
 
-export default function Footer() {
+
+
+export default function Footer(bg:string) {
   
 
   return (
@@ -78,7 +80,7 @@ export default function Footer() {
         }
       `}</style>
 
-      <footer className="footer-font bg-white border-t border-slate-100">
+      <footer className={`footer-font ${bg}  `}>
 
         {/* ── Newsletter band ── */}
         <NewLetter/>
@@ -102,7 +104,7 @@ export default function Footer() {
                   </svg>
                 </div>
                 <div className="flex flex-col leading-none">
-                  <span className="footer-brand text-[21px] text-slate-800 tracking-tight">CohortLMS</span>
+                  <span className="footer-brand text-[21px]  tracking-tight">CohortLMS</span>
                   <span className="text-[9.5px] font-semibold tracking-[0.14em] uppercase text-cyan-500 mt-[3px]">Learning Platform</span>
                 </div>
               </div>

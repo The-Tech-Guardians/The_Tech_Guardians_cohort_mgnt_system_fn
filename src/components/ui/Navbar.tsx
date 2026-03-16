@@ -8,17 +8,11 @@ import LanguageSelector from "./navbar/LanguageSelector";
 import ThemeToggle from "./navbar/ThemeToggle";
 import AuthButtons from "./navbar/AuthButtons";
 import MobileMenu from "./navbar/MobileMenu";
+import { cohortService } from "@/services/cohortService";
 import Link from "next/link";
 
-// Each category now has a label and its own route
-const categoryItems = [
-  { label: "Computer Programming", href: "/computer-programming" },
-  { label: "Entrepreneurship",      href: "/entrepreneurship" },
-  { label: "SRHR",                  href: "/srhr" },
-  { label: "Marketing",             href: "/marketing" },
-  { label: "Data Science",          href: "/data-science" },
-  { label: "Social Media Branding", href: "/social-media-branding" },
-];
+
+
 
 const languages = [
   { code: "en", label: "English",     flag: "🇬🇧" },
@@ -34,7 +28,43 @@ export default function Header() {
   const [activeCategory, setActiveCategory] = useState(-1);
   const [theme, setTheme] = useState("light");
   const [langOpen, setLangOpen] = useState(false);
-  const [activeLang, setActiveLang] = useState(languages[0]);
+const [activeLang, setActiveLang] = useState(languages[0]);
+  const [categories, setCategories] = useState([]);
+
+// Fetch dynamic cohorts from backend (public - no auth required)
+  useEffect(() => {
+    const fetchCohorts = async () => {
+      try {
+        const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch('http://localhost:3000/api/cohorts', { 
+          headers 
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch');
+        }
+        const data = await response.json();
+        const cohorts = data.cohorts || [];
+        const activeCohorts = cohorts.filter((c: any) => c.isActive);
+        const categoryItems = activeCohorts.map((cohort: any) => ({
+          label: cohort.courseType.charAt(0).toUpperCase() + cohort.courseType.slice(1).replace(/-/g, ' ').replace(/_/g, ' '),
+          href: `/${cohort.courseType.toLowerCase().replace(/_/g, '-')}`,
+        }));
+        setCategories(categoryItems);
+      } catch (error: unknown) {
+        console.warn('Failed to fetch cohorts:', error);
+        setCategories([]);
+      }
+    };
+
+    fetchCohorts();
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -110,19 +140,7 @@ export default function Header() {
               <Logo textMain={textMain} />
             </Link>
 
-            <nav className="hidden lg:flex items-center gap-1">
-              <Link
-                href="/lightning-lessons"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium
-                  text-amber-600 bg-amber-50 border border-amber-200
-                  hover:bg-amber-100 hover:border-amber-300 transition-all duration-200"
-              >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" />
-                </svg>
-                Lightning Lessons
-              </Link>
-            </nav>
+           
 
             <AuthButtons textMuted={textMuted} inputBorder={inputBorder} isDark={isDark} />
 
@@ -136,9 +154,7 @@ export default function Header() {
 
         {/* ── Category bar ── */}
         <CategoryBar
-          categories={categoryItems}
-          activeCategory={activeCategory}
-          setActiveCategory={setActiveCategory}
+          categories={categories}
           bg={bg}
           border={border}
           textMuted={textMuted}

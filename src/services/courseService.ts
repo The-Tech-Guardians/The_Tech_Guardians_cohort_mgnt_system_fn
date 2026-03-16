@@ -41,7 +41,9 @@ export interface PaginationInfo {
   limit: number;
   total: number;
   pages: number;
+  dataSource?: 'live' | 'fallback';
 }
+
 
 export interface QuestionOption {
   id: string;
@@ -79,10 +81,13 @@ interface ApiResponse<T> {
   pagination?: PaginationInfo;
 }
 
+import { FALLBACK_BACKEND_COURSES } from "@/lib/course-data";
+
 const getAuthToken = () => {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('token') || localStorage.getItem('auth_token');
 };
+
 
 const handleResponse = async (response: Response) => {
   if (!response.ok) {
@@ -110,7 +115,8 @@ export const courseService = {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || localStorage.getItem('token') : null;
 
     if (!token) {
-      throw new Error('Authentication required');
+      console.warn('No auth token for course details - returning empty');
+      return { course: null, modules: [], lessons: [] };
     }
 
     try {
@@ -292,7 +298,8 @@ export const courseService = {
   },
 
   // Get all courses (admin/instructor view)
-  async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: BackendCourse[]; pagination: PaginationInfo }> {
+
+async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: BackendCourse[]; pagination: PaginationInfo }> {
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/courses?page=${page}&limit=${limit}`, {
@@ -302,16 +309,22 @@ export const courseService = {
           ...(token && { 'Authorization': `Bearer ${token}` }),
         },
       });
-      const data = await handleResponse(response);
+      if (!response.ok) {
+        console.warn('Courses API unavailable:', response.status);
+        return { courses: [], pagination: { page, limit, total: 0, pages: 0 } };
+      }
+      const data = await response.json();
       return { 
         courses: data.courses || [], 
         pagination: data.pagination || { page, limit, total: 0, pages: 0 }
       };
     } catch (error) {
-      console.error('Failed to fetch courses:', error);
+      console.warn('Courses fetch failed:', error);
       return { courses: [], pagination: { page, limit, total: 0, pages: 0 } };
     }
   },
+
+
 
   // Legacy method for backward compatibility
   async getAllCoursesLegacy(
@@ -421,10 +434,13 @@ export const courseService = {
   },
 
   // Publish a course
-  async publishCourse(id: string): Promise<BackendCourse | null> {
+async publishCourse(id: string): Promise<boolean> {
+    const token = getAuthToken();
+    if (!token) {
+      console.error('No token for publishCourse');
+      return false;
+    }
     try {
-      const token = getAuthToken();
-      if (!token) throw new Error('No authentication token found');
       const response = await fetch(`${API_BASE_URL}/courses/${id}/publish`, {
         method: 'PATCH',
         headers: {
@@ -432,13 +448,18 @@ export const courseService = {
           'Content-Type': 'application/json',
         },
       });
-      const data = await handleResponse(response);
-      return data.course || data || null;
+      if (response.ok) {
+        return true;
+      } else {
+        console.error('Publish failed:', response.status, await response.text());
+        return false;
+      }
     } catch (error) {
       console.error(`Failed to publish course ${id}:`, error);
-      throw error;
+      return false;
     }
   },
+
 
   // Toggle publish status
   async togglePublish(id: string): Promise<BackendCourse | null> {

@@ -286,47 +286,28 @@ export const authAPI = {
   },
 };
 
-// Token management with proper TypeScript typing
-const tokenManagerImpl: Omit<TokenManager, 'user'> = {
-  getRedirectPath(searchParams?: any): string {
-    let path = '/learner'; // default fallback
+import { cohortService } from '@/services/cohortService';
 
-    // Priority: 1. searchParams.redirect (skip if / or empty), 2. localStorage (skip if / or empty), 3. role-based
-    if (searchParams?.redirect) {
-      const decoded = decodeURIComponent(searchParams.redirect as string).trim();
-      if (decoded !== '/' && decoded) {
-        path = decoded;
-        console.log('[Redirect] Using searchParams:', path);
-      }
-    } else {
-      const stored = storage.get('redirect_path')?.trim();
-      if (stored && stored !== '/' && !stored.startsWith('/learner') && !stored.startsWith('/admin') && !stored.startsWith('/instructor')) {
-        storage.remove('redirect_path');
-        path = stored;
-        console.log('[Redirect] Using stored:', path);
-      } else {
-        storage.remove('redirect_path'); // Clear stale
-        const role = tokenManager.getRoleFromToken() || 'LEARNER';
-        console.log('[Redirect] Role from token:', role);
-        const defaults: Record<string, string> = {
-          ADMIN: '/admin',
-          INSTRUCTOR: '/instructor',
-          LEARNER: '/learner'
-        };
-        path = defaults[role] || '/learner';
-        console.log('[Redirect] Using role default:', path);
-      }
+// Token management
+export const tokenManager = {
+  
+  async validateAuth(): Promise<boolean> {
+    const token = this.getToken();
+    if (!token) return false;
+    
+    try {
+      // Lightweight auth test - try to fetch first cohort page
+      await cohortService.getAllCohorts(1, 1);
+      return true;
+    } catch (error) {
+      console.warn('Auth validation failed:', error);
+      this.logout();
+      return false;
     }
-
-    console.log('[Redirect] Final path:', path);
-    return path;
   },
 
-  setRedirectPath(path: string): void {
-    storage.set('redirect_path', path);
-  },
 
-  setToken(token: string): void {
+  setToken(token: string) {
     storage.set('auth_token', token);
     // Set cookie for Next.js middleware with proper expiry (24h like JWT)
     if (typeof window !== 'undefined') {
@@ -416,13 +397,4 @@ const tokenManagerImpl: Omit<TokenManager, 'user'> = {
     this.removeUser();
   },
 };
-
-export const tokenManager = {
-  ...tokenManagerImpl,
-  get user(): User | null {
-    return tokenManagerImpl.getUser();
-  }
-} as TokenManager;
-
-export type { User } from '@/types/user';
 

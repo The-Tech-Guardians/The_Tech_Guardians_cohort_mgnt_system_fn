@@ -1,6 +1,8 @@
 // components/ui/Logo.tsx
 // Reusable CohortLMS logo — use anywhere in auth or dashboard layouts.
 
+import Link from "next/link";
+
 interface LogoProps {
   /** Icon size in Tailwind w/h units, e.g. "w-7 h-7" */
   iconSize?: string;
@@ -16,7 +18,9 @@ export default function Logo({
   textClass = "text-white font-extrabold text-xl",
 }: LogoProps) {
   return (
-    <div className="flex items-center gap-3">
+    <div>
+      <Link href="/"> 
+      <div className="flex items-center gap-3">
       <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
         <svg viewBox="0 0 40 40" className={iconSize} fill="none" aria-hidden="true">
           <circle cx="14" cy="10" r="5" fill="#4F46E5" />
@@ -29,5 +33,8 @@ export default function Logo({
       </div>
       {showText && <span className={textClass}>CohortLMS</span>}
     </div>
+      </Link>
+    </div>
+   
   );
 }

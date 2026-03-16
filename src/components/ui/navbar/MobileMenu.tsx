@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface Language {
   code: string;
   label: string;
@@ -32,12 +34,7 @@ export default function MobileMenu({
   return (
     <div className={`lg:hidden ${bg} border-b ${border} shadow-lg transition-colors duration-300`}>
       <div className="px-6 py-4 pb-6">
-        <button className="flex items-center gap-2 w-full text-left text-[14.5px] font-medium text-amber-600 py-3.5 border-b border-amber-100 hover:text-amber-700 transition-colors duration-150">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" />
-          </svg>
-          Lightning Lessons
-        </button>
+       
 
         <div className="pt-4 pb-3">
           <p className={`text-[10.5px] font-semibold uppercase tracking-widest ${textMuted} mb-2`}>Language</p>
@@ -93,13 +90,20 @@ export default function MobileMenu({
         </div>
 
         <div className="flex gap-2.5 pt-5">
-          <button className={`flex-1 text-sm font-medium ${textMuted} py-2.5 rounded-lg border ${inputBorder} transition-all duration-200`}>
+          <Link href="/register">
+            <button className={`flex-1 text-sm font-medium ${textMuted} px-4 py-2.5 rounded-lg border ${inputBorder} transition-all duration-200`}>
+           
             Sign Up
+
           </button>
-          <button className="flex-1 relative text-sm font-semibold text-white py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 shadow-[0_4px_14px_rgba(37,99,235,0.3)] overflow-hidden transition-all duration-200">
+          </Link>
+        <Link href="/login">
+         <button className="flex-1 relative text-sm font-semibold text-white px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 shadow-[0_4px_14px_rgba(37,99,235,0.3)] overflow-hidden transition-all duration-200">
             <span className="absolute inset-0 bg-gradient-to-br from-white/[0.12] to-transparent" />
             <span className="relative">Log In →</span>
           </button>
+        </Link>
+         
         </div>
       </div>
     </div>
