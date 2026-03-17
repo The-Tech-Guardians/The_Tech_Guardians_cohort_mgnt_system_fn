@@ -6,7 +6,7 @@ import { useSidebar } from "../layout";
 import { courseService, type Course } from "@/services/courseService";
 import { GraduationCap, BookOpen, Users } from "lucide-react";
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 interface Cohort {
   id: string;
@@ -43,68 +43,57 @@ export default function LearnerMyCoursesPage() {
           throw new Error('Authentication required');
         }
 
-        // First, get the learner's cohort
-        const cohortResponse = await fetch(`${API_BASE_URL}/learner/cohort`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        };
 
-        let cohortId = null;
+        // Fetch learner's cohort and enrolled courses in parallel
+        const [cohortResponse, coursesResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/learner/cohort`, { headers }),
+          fetch(`${API_BASE_URL}/learner/courses`, { headers }),
+        ]);
+
+        // Set cohort for display
         if (cohortResponse.ok) {
           const cohortData = await cohortResponse.json();
           if (cohortData.success && cohortData.data) {
             setCohort(cohortData.data);
-            // Get cohortId - handle both formats from API
-            cohortId = cohortData.data.cohortId || cohortData.data.id;
           }
         }
 
-        // Only fetch courses if learner is enrolled in a cohort
-        if (cohortId) {
-          const coursesResponse = await fetch(`${API_BASE_URL}/courses?cohortId=${cohortId}&page=1&limit=50`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
+        // Process enrolled courses from /api/learner/courses
+        if (coursesResponse.ok) {
+          const data = await coursesResponse.json();
+          const coursesData = data.data || data.courses || [];
           
-          if (coursesResponse.ok) {
-            const data = await coursesResponse.json();
-            const coursesData = data.courses || [];
-            
-            if (coursesData && coursesData.length > 0) {
-              const transformedCourses = coursesData.map((course: Course) => {
-                const colors = [
-                  'bg-gradient-to-br from-blue-500 to-blue-600',
-                  'bg-gradient-to-br from-purple-500 to-purple-600',
-                  'bg-gradient-to-br from-pink-500 to-pink-600',
-                  'bg-gradient-to-br from-green-500 to-green-600',
-                  'bg-gradient-to-br from-orange-500 to-orange-600',
-                ];
-                const colorIndex = Math.abs(course.title.charCodeAt(0)) % colors.length;
-                
-                return {
-                  ...course,
-                  color: colors[colorIndex],
-                  progress: 0,
-                  modules: 0,
-                  lessons: 0,
-                  nextLesson: 'Getting Started',
-                  status: 'not-started',
-                  thumbnail: course.title?.charAt(0).toUpperCase() || 'C'
-                };
-              });
-              setCourses(transformedCourses);
-            } else {
-              setCourses([]);
-            }
+          if (coursesData && coursesData.length > 0) {
+            const transformedCourses = coursesData.map((course: Course & { progress?: number }) => {
+              const colors = [
+                'bg-gradient-to-br from-blue-500 to-blue-600',
+                'bg-gradient-to-br from-purple-500 to-purple-600',
+                'bg-gradient-to-br from-pink-500 to-pink-600',
+                'bg-gradient-to-br from-green-500 to-green-600',
+                'bg-gradient-to-br from-orange-500 to-orange-600',
+              ];
+              const colorIndex = Math.abs((course.title || '').charCodeAt(0)) % colors.length;
+              
+              return {
+                ...course,
+                color: colors[colorIndex],
+                progress: course.progress ?? 0,
+                modules: 0,
+                lessons: 0,
+                nextLesson: 'Getting Started',
+                status: (course.progress ?? 0) > 0 ? 'in-progress' : 'not-started',
+                thumbnail: course.title?.charAt(0).toUpperCase() || 'C'
+              };
+            });
+            setCourses(transformedCourses);
           } else {
             setCourses([]);
           }
         } else {
-          // Not enrolled in any cohort
           setCourses([]);
         }
       } catch (err: unknown) {
@@ -163,8 +152,8 @@ export default function LearnerMyCoursesPage() {
     );
   }
 
-  // If not enrolled in any cohort, show a message to enroll
-  if (!cohort) {
+  // If not enrolled in any cohort and no courses, show a message to enroll
+  if (!cohort && courses.length === 0) {
     return (
       <div className={`transition-all duration-300 space-y-6 ${collapsed ? 'mx-4' : 'max-w-6xl mx-auto'}`}>
         <div className="flex items-center justify-between flex-wrap gap-4">
@@ -299,7 +288,7 @@ export default function LearnerMyCoursesPage() {
             <BookOpen className="w-8 h-8 text-gray-400" />
           </div>
           <div className="text-gray-400 text-lg font-semibold">
-            {courses.length === 0 ? "No courses available in your cohort yet" : "No courses match your filter"}
+            {courses.length === 0 ? "No enrolled courses yet" : "No courses match your filter"}
           </div>
         </div>
       )}

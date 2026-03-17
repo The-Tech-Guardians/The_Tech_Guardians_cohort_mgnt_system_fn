@@ -39,25 +39,11 @@ export default function LearnerDashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const userData = tokenManager.getUser();
-
-        if (userData) {
-          const name =
-            userData.firstName || userData.lastName
-              ? `${userData.firstName || ""} ${userData.lastName || ""}`.trim()
-              : userData.name ||
-                userData.email?.split("@")[0] ||
-                "User";
-
-          const initials =
-            name
-              .split(" ")
-              .map((n: string) => n[0])
-              .join("")
-              .toUpperCase() || "U";
-
-          setUser({ name, initials });
-        }
+        const userData = tokenManager.getUser() || { firstName: 'User', lastName: '', email: '' };
+        setUser({
+          name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'User',
+          initials: `${userData.firstName?.[0] || 'U'}${userData.lastName?.[0] || ''}`.toUpperCase()
+        });
 
         const coursesRes = await authAPI.getLearnerCourses();
         if (coursesRes?.success) {
@@ -83,7 +69,12 @@ export default function LearnerDashboardPage() {
     fetchData();
   }, []);
 
-  const handleEnrollCohort = async (cohortId: string) => {
+const handleEnrollCohort = async (cohortId: string) => {
+  console.log('Enrolling cohort:', cohortId);
+  if (!cohortId) {
+    alert('Cohort ID is missing');
+    return;
+  }
     try {
       setEnrolling(cohortId);
 

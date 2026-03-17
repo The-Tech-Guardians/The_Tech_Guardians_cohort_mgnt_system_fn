@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 export interface LoginData {
   email: string;
@@ -50,7 +50,7 @@ export const authAPI = {
   async login(data: LoginData): Promise<AuthResponse> {
     try {
       console.log('API_BASE_URL:', API_BASE_URL);
-      const response = await fetch(`${API_BASE_URL}/auth/Login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -58,7 +58,14 @@ export const authAPI = {
         body: JSON.stringify(data),
       });
 
-      return response.json();
+      const result = await response.json();
+      if (result.success && result.token) {
+        tokenManager.setToken(result.token);
+      }
+      if (result.success && result.user) {
+        tokenManager.setUser(result.user);
+      }
+      return result;
     } catch (error) {
       console.error('Login API error:', error);
       throw error;
@@ -90,14 +97,25 @@ export const authAPI = {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ user_id: userId, token: code }),
+        body: JSON.stringify({ user_id: userId, otp: code }),
       });
 
       if (!response.ok) {
-        return { success: false, message: `Server error: ${response.status}` };
+        const errorData = await response.json();
+        console.error('Verify2FA error:', errorData);
+        return { success: false, message: errorData.error || `Server error: ${response.status}` };
       }
 
       const result = await response.json();
+      
+      // Store token and user
+      if (result.success && result.token) {
+        tokenManager.setToken(result.token);
+      }
+      if (result.success && result.user) {
+        tokenManager.setUser(result.user);
+      }
+      
       return { success: true, ...result };
     } catch (error) {
       console.error('2FA API error:', error);
@@ -106,7 +124,7 @@ export const authAPI = {
   },
 
   async forgotPassword(email: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/ForgotPassword`, {
+    const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -118,7 +136,7 @@ export const authAPI = {
   },
 
   async verifyOTP(email: string, otp: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/VerifyResetOtp`, {
+    const response = await fetch(`${API_BASE_URL}/auth/verify-reset-otp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -130,7 +148,7 @@ export const authAPI = {
   },
 
   async resetPassword(email: string, otp: string, newPassword: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/ResetPassword`, {
+    const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

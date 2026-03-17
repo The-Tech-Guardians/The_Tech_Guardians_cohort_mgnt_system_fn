@@ -1,6 +1,6 @@
 // API Test Utility - FIXED
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 export async function testBackendConnection() {
   console.log('🔍 Testing backend connection...\n');
@@ -48,7 +48,7 @@ export async function testAuthFlow() {
 
   try {
     // Test with dummy credentials
-    const response = await fetch(`${API_URL}/auth/Login`, {
+    const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

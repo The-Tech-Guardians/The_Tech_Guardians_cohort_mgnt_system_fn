@@ -20,43 +20,42 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setSuccess("");
+
 
     try {
       console.log('Attempting login with:', { email, password: '***' });
       const result = await authAPI.login({ email, password });
-      console.log('Login response:', JSON.stringify(result, null, 2));
-      console.log('Response success:', result.success);
-      console.log('Response data:', result.data);
-      console.log('Response message:', result.message);
       
-      if ((result.success && result.data?.token && result.data?.user) || 
-          (result.requires_2fa && result.token && result.user_id) ||
-          (result.requires_2fa_setup && result.token && result.user_id)) {
-        console.log('Login successful, storing data and showing message');
+      console.log('Login result:', result);
+      
+      if (result.success) {
+        const token = result.token || result.data?.token;
+        const userData = result.user || result.data?.user;
         
-        // Handle different response formats
-        if ((result.requires_2fa || result.requires_2fa_setup) && result.token && result.user_id) {
-          // Backend format: { requires_2fa: true, token, user_id, message }
-          tokenManager.setToken(result.token);
-          tokenManager.setUser({ id: result.user_id, email });
-        } else if (result.data?.token && result.data?.user) {
-          // Standard format: { success: true, data: { token, user } }
-          tokenManager.setToken(result.data.token);
-          tokenManager.setUser(result.data.user);
+        if (token) {
+          tokenManager.setToken(token);
+          if (userData) {
+            tokenManager.setUser(userData);
+          }
         }
         
-        // Show success message
-        setSuccess(result.message || "2FA code sent to your email");
-        
-        // Redirect to 2FA verification after showing message
-        setTimeout(() => {
-          console.log('Redirecting to 2FA page');
-          router.push("/login/verify-2fa");
-        }, 2000);
+
+        if (result.requires_2fa) {
+          window.location.replace(`/login/verify-2fa?user_id=${result.user_id}&token=${token}`);
+          return;
+        } else {
+
+
+          const role = tokenManager.getRoleFromToken();
+          setTimeout(() => {
+            if (role === 'ADMIN') router.push('/admin');
+            else if (role === 'LEARNER') router.push('/learner');
+            else router.push('/instructor');
+          }, 500);
+          return;
+        }
       } else {
-        console.log('Login failed:', result);
-        setError(result.message || "Login failed. Please check your credentials.");
+        setError(result.message || result.error || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -259,14 +258,8 @@ export default function LoginPage() {
                 </div>
               )}
               
-              {success && (
-                <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  {success}
-                </div>
-              )}
+
+
               
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-[#111827]">Email address</label>
