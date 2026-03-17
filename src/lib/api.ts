@@ -67,7 +67,6 @@ export const apiFetch = async <T = any>(
     }
     return response as any;
   } catch (error) {
-    console.error(`API Error [${endpoint}]:`, error);
     throw error;
   }
 };

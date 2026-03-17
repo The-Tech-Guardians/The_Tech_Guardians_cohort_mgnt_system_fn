@@ -26,8 +26,19 @@ export default function LoginPage() {
     try {
       const result = await authAPI.login({ email, password });
 
-      // Parse backend response correctly (2FA always first step)
-      const token = result.token!;
+      // Handle backend errors (no token returned)
+      const backendError = (result as any)?.error || (!result?.token && !result?.data?.token ? result?.message : undefined);
+      if (backendError) {
+        setError(String(backendError));
+        return;
+      }
+
+      // Parse backend response correctly
+      const token = result.token || result.data?.token;
+      if (!token) {
+        setError(result.message || "Login failed (missing token).");
+        return;
+      }
       const needs2FA = Boolean(result.requires_2fa);
       const tempUserId = result.user_id;
       const fullUserData = result.user as User | undefined;
@@ -36,12 +47,13 @@ export default function LoginPage() {
       
       if (needs2FA && tempUserId) {
         // 2FA flow - partial user
+        const roleFromToken = (tokenManager.getRoleFromToken() || 'LEARNER').toUpperCase() as 'ADMIN' | 'INSTRUCTOR' | 'LEARNER';
         tokenManager.setUser({
           uuid: tempUserId,
           email,
           firstName: '',
           lastName: '',
-          role: 'LEARNER' as const,
+          role: roleFromToken,
           cohortId: '',
           twoFaEnabled: true,
           createdAt: '',
@@ -68,7 +80,7 @@ export default function LoginPage() {
         setSuccess('✅ Login successful!');
         setTimeout(() => router.push(rolePath), 1000);
       } else {
-        setError(result.message || 'Invalid response');
+        setError((result as any)?.error || result.message || 'Invalid response');
       }
     } catch (error) {
       setError("Network error. Please try again.");

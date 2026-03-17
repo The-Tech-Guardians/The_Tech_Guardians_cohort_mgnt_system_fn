@@ -26,7 +26,7 @@ export function middleware(req: NextRequest) {
     }
 
     const payload = decodeJwtPayload(token);
-    const role = payload?.role;
+    const role = String(payload?.role || "").toUpperCase();
 
     if (role !== "ADMIN") {
       const url = req.nextUrl.clone();

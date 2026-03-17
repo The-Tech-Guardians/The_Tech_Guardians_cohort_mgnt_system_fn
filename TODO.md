@@ -1,17 +1,22 @@
-# Fix My-Courses & My-Learning Errors
-Status: In Progress (Approved Plan)
+# Dashboard Consistency Update - Modules & Lessons
 
-## Steps:
-- [ ] 1. Ensure backend running: cd The_Tech_Guardians_cohort_mgnt_system_bn && npm run dev
-- [x] 2. Run test data scripts: node register-test-user.js, node check-user.js (create enrollments)
-- [x] 3. Update my-courses/page.tsx: Better empty state, retry logic
-- [x] 4. Fix my-learning/page.tsx: Handle missing courseId/components, sequential fetches w/ fallbacks
-- [x] 5. Robustify progress/page.tsx: Assignment placeholders
-- [x] 6. Suppress notification console.errors in layout/services
-- [ ] 7. Test all pages as learner
-- [ ] 8. Minor service retries/timeouts
-- [ ] 9. Update this TODO.md as complete
-- [ ] 10. attempt_completion
+## Modules Page: ✅ COMPLETE
+- Full CRUD matching admin lessons pattern
+## Implementation Steps:
 
-**Current:** Test data → UI improvements → Test → Done
+### 1. ✅ Create TODO.md 
+### 2. ✅ Verify services - moduleService.ts and courseService.ts confirmed
+### 3. ✅ Check instructor layout - tokenManager provides auth, role='INSTRUCTOR'
+### 4. ✅ Rewrite src/app/(dashboard)/instructor/modules/page.tsx 
+   - Full CRUD matching admin lessons pattern
+   - Course selector, module cards/list, modals, search, stats
+### 5. [IN PROGRESS] Test API integration with instructor auth
+### 6. [PENDING] Backend verification - test existing /modules endpoints with instructor role
+### 7. [PENDING] Style consistency check
+### 8. [PENDING] Final testing and completion
 
+**Next step:** Test functionality. Backend may need instructor role checks on /modules routes.
+
+**Progress:** 4/8 completed
+
+**Status:** Core implementation complete. Page now matches admin lessons design with full CRUD for modules.

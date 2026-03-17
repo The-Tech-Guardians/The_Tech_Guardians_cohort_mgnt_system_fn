@@ -33,9 +33,9 @@ export default function DataTable<T extends Record<string, any>>({
     : data;
 
   return (
-    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg overflow-hidden">
+    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
       {searchable && (
-        <div className="p-4 border-b border-white/10">
+        <div className="p-4 border-b border-gray-100">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
@@ -43,34 +43,34 @@ export default function DataTable<T extends Record<string, any>>({
               placeholder={searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
         </div>
       )}
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-white/5">
+          <thead className="bg-gray-50">
             <tr>
               {columns.map((col) => (
-                <th key={col.key} className="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th key={col.key} className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   {col.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/10">
+          <tbody className="divide-y divide-gray-100">
             {filteredData.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-6 py-8 text-center text-gray-400">
+                <td colSpan={columns.length} className="px-6 py-8 text-center text-gray-500">
                   No data found
                 </td>
               </tr>
             ) : (
               filteredData.map((item, idx) => (
-                <tr key={idx} className="hover:bg-white/5 transition-colors">
+                <tr key={idx} className="hover:bg-gray-50 transition-colors">
                   {columns.map((col) => (
-                    <td key={col.key} className="px-6 py-4 text-sm text-gray-300">
+                    <td key={col.key} className="px-6 py-4 text-sm text-gray-700">
                       {col.render ? col.render(item) : item[col.key]}
                     </td>
                   ))}

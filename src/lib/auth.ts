@@ -1,6 +1,7 @@
 import { User } from '@/types/user';
+import { TwoFAMethod } from '@/components/banner/auth/two-fa/types';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 export interface LoginData {
   email: string;
@@ -22,9 +23,21 @@ export interface AuthResponse {
     user?: User;
   };
   requires_2fa?: boolean;
+  preferredMethod?: TwoFAMethod;
+  qrDataUrl?: string;
+  secret?: string;
+  setupMode?: boolean;
   token?: string;
   user?: User;
   user_id?: string;
+  method?: TwoFAMethod;
+}
+
+export interface Select2FAResponse extends AuthResponse {
+  method: TwoFAMethod;
+  qrDataUrl?: string;
+  secret?: string;
+  setupMode: boolean;
 }
 
 // Safe localStorage helpers — no-ops during SSR
@@ -61,9 +74,9 @@ interface TokenManager {
 }
 
 export const authAPI = {
-  async login(data: LoginData): Promise<AuthResponse> {
+async login(data: LoginData): Promise<AuthResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/Login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,20 +102,37 @@ export const authAPI = {
     return response.json();
   },
 
-  async verify2FA(email: string, code: string): Promise<AuthResponse> {
+  async verify2FA(userId: string, method: TwoFAMethod, code: string, tempSecret?: string): Promise<AuthResponse> {
     try {
-      const userId = tokenManager.getUserIdFromToken();
-
-      if (!userId) {
-        return { success: false, message: 'User ID not found in token. Please login again.' };
-      }
-
-      const response = await fetch(`${API_BASE_URL}/auth/Verify2fa`, {
+      const body: any = { user_id: userId, method, code };
+      if (tempSecret) body.tempSecret = tempSecret;
+      const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ user_id: userId, token: code }),
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        return { success: false, message: `Server error: ${response.status}` as any };
+      }
+
+      const result = await response.json();
+      return { success: true, ...result };
+    } catch (error) {
+      return { success: false, message: 'Network error. Please try again.' as any };
+    }
+  },
+
+  async resend2FA(userId: string, method: TwoFAMethod): Promise<AuthResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/resend-2fa`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_id: userId, method }),
       });
 
       if (!response.ok) {
@@ -112,35 +142,33 @@ export const authAPI = {
       const result = await response.json();
       return { success: true, ...result };
     } catch (error) {
-      console.error('2FA API error:', error);
       return { success: false, message: 'Network error. Please try again.' };
     }
   },
 
-  async resend2FA(userId: string): Promise<AuthResponse> {
+  async select2FAMethod(userId: string, method: TwoFAMethod): Promise<Select2FAResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/Resend2fa`, {
+      const response = await fetch(`${API_BASE_URL}/auth/select-2fa-method`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ user_id: userId }),
+        body: JSON.stringify({ user_id: userId, method }),
       });
 
       if (!response.ok) {
-        return { success: false, message: `Server error: ${response.status}` };
+        return { success: false, message: `Server error: ${response.status}`, method, setupMode: false } as Select2FAResponse;
       }
 
       const result = await response.json();
-      return { success: true, ...result };
+      return { success: true, method, ...result } as Select2FAResponse;
     } catch (error) {
-      console.error('Resend 2FA API error:', error);
-      return { success: false, message: 'Network error. Please try again.' };
+      return { success: false, message: 'Network error. Please try again.', method, setupMode: false } as Select2FAResponse;
     }
   },
 
   async forgotPassword(email: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/ForgotPassword`, {
+    const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -152,7 +180,7 @@ export const authAPI = {
   },
 
   async verifyOTP(email: string, otp: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/VerifyResetOtp`, {
+    const response = await fetch(`${API_BASE_URL}/auth/verify-reset-otp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -164,7 +192,7 @@ export const authAPI = {
   },
 
   async resetPassword(email: string, otp: string, newPassword: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/ResetPassword`, {
+    const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -225,8 +253,7 @@ async getLearnerCohort(): Promise<any> {
     const token = tokenManager.getToken();
     const url = `${API_BASE_URL}/learner/available-cohorts`;
 
-    console.debug('[getAvailableCohorts] Fetching:', url);
-    console.debug('[getAvailableCohorts] Token present:', !!token);
+    // console.debug('[getAvailableCohorts] Fetching:', url);\n    // console.debug('[getAvailableCohorts] Token present:', !!token);
 
     try {
       const response = await fetch(url, {
@@ -237,16 +264,14 @@ async getLearnerCohort(): Promise<any> {
         },
       });
 
-      if (!response.ok) {
-  // console.error('[getAvailableCohorts] HTTP error:', response.status, response.statusText); // Expected for non-LEARNER roles
+        if (!response.ok) {
+        // console.error('[getAvailableCohorts] HTTP error:', response.status, response.statusText);
         return { success: false, message: `Server error: ${response.status} ${response.statusText}` };
       }
 
       return response.json();
     } catch (error: any) {
-      console.error('[getAvailableCohorts] Network error:', error?.message ?? error);
-      console.error('[getAvailableCohorts] Attempted URL:', url);
-      console.error('[getAvailableCohorts] Is the API server running? Check NEXT_PUBLIC_API_URL in your .env');
+      // console.error('[getAvailableCohorts] Network error:', error?.message ?? error);\n      // console.error('[getAvailableCohorts] Attempted URL:', url);\n      // console.error('[getAvailableCohorts] Is the API server running? Check NEXT_PUBLIC_API_URL in your .env');
       return { success: false, message: 'Network error: could not reach the API server.' };
     }
   },
@@ -354,7 +379,7 @@ export const tokenManager = {
       const payload = JSON.parse(atob(token.split('.')[1]));
       return payload.uuid || payload.user_id || payload.id;
     } catch (error) {
-      console.error('Error decoding token:', error);
+      // console.error('Error decoding token:', error);
       return null;
     }
   },
@@ -367,7 +392,7 @@ export const tokenManager = {
       const payload = JSON.parse(atob(token.split('.')[1]));
       return payload.role;
     } catch (error) {
-      console.error('Error decoding token role:', error);
+      // console.error('Error decoding token role:', error);
       return null;
     }
   },
@@ -384,10 +409,10 @@ export const tokenManager = {
     const result = await authAPI.getMe();
     if (result.success && result.user) {
       (tokenManager as any).setUser(result.user as User);
-      console.log('[auth] Refreshed user from /me:', result.user.role);
+      // console.log('[auth] Refreshed user from /me:', result.user.role);
       return true;
     }
-    console.error('[auth] Failed to refresh user:', result.message);
+    // console.error('[auth] Failed to refresh user:', result.message);
     return false;
   },
 
