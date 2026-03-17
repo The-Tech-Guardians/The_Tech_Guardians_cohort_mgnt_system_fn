@@ -47,12 +47,13 @@ export default function LoginPage() {
       
       if (needs2FA && tempUserId) {
         // 2FA flow - partial user
+        const roleFromToken = (tokenManager.getRoleFromToken() || 'LEARNER').toUpperCase() as 'ADMIN' | 'INSTRUCTOR' | 'LEARNER';
         tokenManager.setUser({
           uuid: tempUserId,
           email,
           firstName: '',
           lastName: '',
-          role: 'LEARNER' as const,
+          role: roleFromToken,
           cohortId: '',
           twoFaEnabled: true,
           createdAt: '',

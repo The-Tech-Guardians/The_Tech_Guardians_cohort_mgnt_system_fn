@@ -1,20 +1,22 @@
-# Fix Admin Dashboard Fetch Issues (Lessons/Courses/Modules/Users/Stats)
+# Dashboard Consistency Update - Modules & Lessons
 
-## Step 1: Environment Setup ✅
-- [x] Created .env.local: `NEXT_PUBLIC_API_URL=http://localhost:3001/api`
+## Modules Page: ✅ COMPLETE
+- Full CRUD matching admin lessons pattern
+## Implementation Steps:
 
-## Step 2: Fix Service API Base URLs ✅\n- [x] courseService.ts → use process.env.NEXT_PUBLIC_API_URL\n- [x] moduleService.ts → fix 5000 → NEXT_PUBLIC_API_URL  \n- [x] userService.ts → fix 3000 → NEXT_PUBLIC_API_URL\n- [x] lessonService.ts → fix URL
+### 1. ✅ Create TODO.md 
+### 2. ✅ Verify services - moduleService.ts and courseService.ts confirmed
+### 3. ✅ Check instructor layout - tokenManager provides auth, role='INSTRUCTOR'
+### 4. ✅ Rewrite src/app/(dashboard)/instructor/modules/page.tsx 
+   - Full CRUD matching admin lessons pattern
+   - Course selector, module cards/list, modals, search, stats
+### 5. [IN PROGRESS] Test API integration with instructor auth
+### 6. [PENDING] Backend verification - test existing /modules endpoints with instructor role
+### 7. [PENDING] Style consistency check
+### 8. [PENDING] Final testing and completion
 
-## Step 3: Standardize to adminApi 🔄
-- [ ] Services delegate to adminApi functions
-- [ ] Pages use adminApi.listCourses/etc
+**Next step:** Test functionality. Backend may need instructor role checks on /modules routes.
 
-## Step 4: Restart & Test 🔧
-- [ ] Frontend: `cd The_Tech_Guardians_cohort_mgnt_system_fn && npm run dev`
-- [ ] Backend: `cd The_Tech_Guardians_cohort_mgnt_system_bn && npm run dev`
-- [ ] Test admin pages load data
-- [ ] Network tab shows localhost:3001/api
+**Progress:** 4/8 completed
 
-## Step 5: Complete ✅
-- [ ] All fetches working: courses ✓ modules ✓ lessons ✓ users ✓ stats ✓
-
+**Status:** Core implementation complete. Page now matches admin lessons design with full CRUD for modules.

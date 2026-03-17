@@ -44,15 +44,15 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
       }}
     >
       <div 
-        className={`bg-gray-800/95 backdrop-blur-xl rounded-xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-hidden border border-white/10 shadow-2xl animate-in fade-in zoom-in-95 duration-200`}
+        className={`bg-white rounded-2xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-hidden border border-gray-200 shadow-2xl animate-in fade-in zoom-in-95 duration-200`}
         style={{ position: 'relative', zIndex: 10000 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h3 className="text-xl font-bold text-white">{title}</h3>
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <h3 className="text-xl font-bold text-gray-900">{title}</h3>
           <button 
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-all text-gray-500 hover:text-gray-700"
+            className="p-2 rounded-lg hover:bg-gray-100 transition-all text-gray-500 hover:text-gray-900"
           >
             <X className="w-5 h-5" />
           </button>

@@ -1,4 +1,5 @@
 import { User } from '@/types/user';
+import { TwoFAMethod } from '@/components/banner/auth/two-fa/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
@@ -22,9 +23,21 @@ export interface AuthResponse {
     user?: User;
   };
   requires_2fa?: boolean;
+  preferredMethod?: TwoFAMethod;
+  qrDataUrl?: string;
+  secret?: string;
+  setupMode?: boolean;
   token?: string;
   user?: User;
   user_id?: string;
+  method?: TwoFAMethod;
+}
+
+export interface Select2FAResponse extends AuthResponse {
+  method: TwoFAMethod;
+  qrDataUrl?: string;
+  secret?: string;
+  setupMode: boolean;
 }
 
 // Safe localStorage helpers — no-ops during SSR
@@ -89,20 +102,37 @@ async login(data: LoginData): Promise<AuthResponse> {
     return response.json();
   },
 
-  async verify2FA(email: string, code: string): Promise<AuthResponse> {
+  async verify2FA(userId: string, method: TwoFAMethod, code: string, tempSecret?: string): Promise<AuthResponse> {
     try {
-      const userId = tokenManager.getUserIdFromToken();
-
-      if (!userId) {
-        return { success: false, message: 'User ID not found in token. Please login again.' };
-      }
-
-const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+      const body: any = { user_id: userId, method, code };
+      if (tempSecret) body.tempSecret = tempSecret;
+      const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ user_id: userId, otp: code }),
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        return { success: false, message: `Server error: ${response.status}` as any };
+      }
+
+      const result = await response.json();
+      return { success: true, ...result };
+    } catch (error) {
+      return { success: false, message: 'Network error. Please try again.' as any };
+    }
+  },
+
+  async resend2FA(userId: string, method: TwoFAMethod): Promise<AuthResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/resend-2fa`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_id: userId, method }),
       });
 
       if (!response.ok) {
@@ -112,30 +142,28 @@ const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
       const result = await response.json();
       return { success: true, ...result };
     } catch (error) {
-      // console.error('2FA API error:', error);
       return { success: false, message: 'Network error. Please try again.' };
     }
   },
 
-  async resend2FA(userId: string): Promise<AuthResponse> {
+  async select2FAMethod(userId: string, method: TwoFAMethod): Promise<Select2FAResponse> {
     try {
-const response = await fetch(`${API_BASE_URL}/auth/resend-2fa`, {
+      const response = await fetch(`${API_BASE_URL}/auth/select-2fa-method`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ user_id: userId }),
+        body: JSON.stringify({ user_id: userId, method }),
       });
 
       if (!response.ok) {
-        return { success: false, message: `Server error: ${response.status}` };
+        return { success: false, message: `Server error: ${response.status}`, method, setupMode: false } as Select2FAResponse;
       }
 
       const result = await response.json();
-      return { success: true, ...result };
+      return { success: true, method, ...result } as Select2FAResponse;
     } catch (error) {
-      // console.error('Resend 2FA API error:', error);
-      return { success: false, message: 'Network error. Please try again.' };
+      return { success: false, message: 'Network error. Please try again.', method, setupMode: false } as Select2FAResponse;
     }
   },
 

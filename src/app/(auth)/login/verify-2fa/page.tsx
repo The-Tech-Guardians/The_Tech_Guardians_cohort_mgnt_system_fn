@@ -11,8 +11,9 @@ import TwoFAPanel from "@/components/banner/auth/TwoFAStep/TwoFAPanel";
 import UserPill from "@/components/banner/auth/audit-note/UserPill";
 
 import OtpVerifyForm from "@/components/banner/auth/Continue-button/OtpVerifyForm";
-import { OtpStatus, TwoFAMethod, TwoFAStep } from "@/components/banner/auth/two-fa/types";
+import { OtpStatus, TwoFAMethod, METHODS } from "@/components/banner/auth/two-fa/types";
 import { authAPI, tokenManager } from "@/lib/auth";
+import { QRCodeSVG } from "qrcode.react";
 
 const OTP_DURATION = 30;
 
@@ -20,6 +21,10 @@ export default function TwoFAPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [selectedMethod, setSelectedMethod] = useState<TwoFAMethod>("email");
+  const [methodSelected, setMethodSelected] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState('');
+  const [tempSecret, setTempSecret] = useState('');
+  const [setupMode, setSetupMode] = useState(false);
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [otpStatus, setOtpStatus] = useState<OtpStatus>("idle");
   const [timeLeft, setTimeLeft] = useState(OTP_DURATION);
@@ -96,7 +101,7 @@ export default function TwoFAPage() {
     setOtpStatus("loading");
 
     try {
-      const response = await authAPI.verify2FA('', code); // email param ignored
+      const response = await authAPI.verify2FA(userId, selectedMethod, code, tempSecret || undefined);
       if (response.success) {
         setOtpStatus("success");
         clearInterval(timerRef.current!);
@@ -108,7 +113,6 @@ export default function TwoFAPage() {
         if (userObj) tokenManager.setUser(userObj);
 
         // Determine redirect based on role
-        // Get final redirect path from tokenManager (handles all cases)
         let finalRedirect = tokenManager.getRedirectPath();
         
         // Override with URL param if present
@@ -136,6 +140,39 @@ export default function TwoFAPage() {
     }
   };
 
+  // Change 2FA Method
+  const handleMethodChange = async () => {
+    const userId = tokenManager.getUserIdFromToken();
+    if (!userId) {
+      setOtpStatus("error");
+      return;
+    }
+
+    setOtpStatus("loading");
+
+    try {
+      const response = await authAPI.select2FAMethod(userId, selectedMethod);
+      if (response.success) {
+        setQrDataUrl(response.qrDataUrl || '');
+        setTempSecret(response.secret || '');
+        setSetupMode(response.setupMode || false);
+        setMethodSelected(true);
+        setOtpStatus("idle");
+        setOtp(Array(6).fill(""));
+        setTimeLeft(OTP_DURATION);
+        setCanResend(false);
+        startTimer();
+      } else {
+        setOtpStatus("error");
+        setTimeout(() => setOtpStatus("idle"), 2000);
+      }
+    } catch (error) {
+      console.error("Method change failed:", error);
+      setOtpStatus("error");
+      setTimeout(() => setOtpStatus("idle"), 2000);
+    }
+  };
+
   // Resend OTP
   const handleResend = async () => {
     const userId = tokenManager.getUserIdFromToken();
@@ -146,7 +183,7 @@ export default function TwoFAPage() {
 
     setOtpStatus("loading");
     try {
-      const response = await authAPI.resend2FA(userId);
+      const response = await authAPI.resend2FA(userId, selectedMethod);
       if (response.success) {
         setOtp(Array(6).fill(""));
         setOtpStatus("idle");
@@ -175,17 +212,55 @@ export default function TwoFAPage() {
           <AuthCard>
               <BackButton href="/login" label="Back to login" />
               {user && <UserPill {...user} />}
-              <OtpVerifyForm
-                method={selectedMethod}
-                otp={otp}
-                status={otpStatus}
-                timeLeft={timeLeft}
-                canResend={canResend}
-                onOtpChange={handleOtpChange}
-                onVerify={() => verifyOTP(otp.join(""))}
-                onResend={handleResend}
-                onChangeMethod={() => {}} // no-op
-              />
+              
+              {!methodSelected ? (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-bold text-gray-900 mb-4">Choose your 2FA method</h2>
+                  <div className="grid grid-cols-1 gap-3">
+                    {METHODS.map((method) => (
+                      <button
+                        key={method.id}
+                        onClick={() => {
+                          setSelectedMethod(method.id as TwoFAMethod);
+                          handleMethodChange();
+                        }}
+                        className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:shadow-md transition-all duration-200 bg-white"
+                      >
+                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
+                          {method.icon}
+                        </div>
+                        <div className="flex-1 text-left">
+                          <h3 className="font-semibold text-gray-900 text-base">{method.label}</h3>
+                          <p className="text-sm text-gray-500">{method.sub}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {qrDataUrl && (
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100 mb-4 text-center">
+                      <p className="text-sm font-medium text-blue-900 mb-2">Authenticator App Setup</p>
+                      <div className="flex justify-center mb-2">
+                        <QRCodeSVG value={qrDataUrl} size={160} />
+                      </div>
+                      <p className="text-xs text-blue-700">Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)</p>
+                    </div>
+                  )}
+                  <OtpVerifyForm
+                    method={selectedMethod}
+                    otp={otp}
+                    status={otpStatus}
+                    timeLeft={timeLeft}
+                    canResend={canResend}
+                    onOtpChange={handleOtpChange}
+                    onVerify={() => verifyOTP(otp.join(""))}
+                    onResend={handleResend}
+                    onChangeMethod={handleMethodChange}
+                  />
+                </>
+              )}
           </AuthCard>
           <AuthFooter />
         </div>
