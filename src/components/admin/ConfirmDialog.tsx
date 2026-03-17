@@ -34,8 +34,8 @@ export default function ConfirmDialog({
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
       <div className="space-y-4">
         <div className="flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-400 mt-0.5" />
-          <p className="text-gray-300">{message}</p>
+          <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
+          <p className="text-gray-700">{message}</p>
         </div>
         <div className="flex gap-3 pt-4">
           <button
@@ -49,7 +49,7 @@ export default function ConfirmDialog({
           </button>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg font-medium transition-all"
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-all"
           >
             {cancelText}
           </button>

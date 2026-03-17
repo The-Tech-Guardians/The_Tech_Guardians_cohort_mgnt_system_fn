@@ -5,18 +5,8 @@ import { RefreshCw, Search, Plus, Mail, MoreVertical, Edit, Trash2, UserCheck, U
 import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
 import RoleBadge from "@/components/admin/RoleBadge";
-
-type User = {
-  uuid: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  status?: string;
-  createdAt?: string;
-};
-
-const API_BASE_URL = "http://localhost:3000/api";
+import { adminApi } from '@/lib/adminApi';
+import type { User } from '@/lib/adminApi';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -42,8 +32,6 @@ export default function UsersPage() {
   const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
   const [viewMode, setViewMode] = useState<"card" | "list">("list");
 
-  const getToken = () => localStorage.getItem("auth_token") || localStorage.getItem("token");
-
   const showToast = (message: string, type: "success" | "error" = "success") => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
@@ -53,28 +41,9 @@ export default function UsersPage() {
     try {
       setRefreshing(true);
       setError(null);
-
-      const token = getToken();
-      if (!token) {
-        setError("Not authenticated. Please log in again.");
-        return;
-      }
-
-      const res = await fetch(`${API_BASE_URL}/users`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP error ${res.status}`);
-      }
-
-      const data = await res.json();
-      const usersArray = data.users || [];
-      setUsers(usersArray);
-      setFilteredUsers(usersArray);
+      const data = await adminApi.listUsers(1, 50) as any;
+      setUsers(data.data);
+      setFilteredUsers(data.data);
     } catch (err: any) {
       setError(err.message || "Failed to load users");
     } finally {
@@ -101,26 +70,7 @@ export default function UsersPage() {
     setFormLoading(true);
 
     try {
-      const token = getToken();
-      if (!token) {
-        showToast("Not authenticated", "error");
-        return;
-      }
-
-      const res = await fetch(`${API_BASE_URL}/users/Invite`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(inviteForm),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Invitation failed");
-      }
-
+      await adminApi.inviteUser(inviteForm.email, inviteForm.role, inviteForm.cohort_id || undefined);
       showToast("User invited successfully!");
       setInviteForm({ email: "", role: "INSTRUCTOR", cohort_id: "" });
       setShowInviteModal(false);
@@ -138,26 +88,7 @@ export default function UsersPage() {
     setFormLoading(true);
 
     try {
-      const token = getToken();
-      if (!token) {
-        showToast("Not authenticated", "error");
-        return;
-      }
-
-      const res = await fetch(`${API_BASE_URL}/users/${userToEdit.uuid}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(editForm),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Update failed");
-      }
-
+      await adminApi.updateUser(userToEdit.uuid, editForm);
       showToast("User updated successfully!");
       setShowEditModal(false);
       setUserToEdit(null);
@@ -174,24 +105,7 @@ export default function UsersPage() {
     setFormLoading(true);
 
     try {
-      const token = getToken();
-      if (!token) {
-        showToast("Not authenticated", "error");
-        return;
-      }
-
-      const res = await fetch(`${API_BASE_URL}/users/${userToDelete.uuid}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Delete failed");
-      }
-
+      await adminApi.deleteUser(userToDelete.uuid);
       showToast("User deleted successfully!");
       setShowDeleteModal(false);
       setUserToDelete(null);

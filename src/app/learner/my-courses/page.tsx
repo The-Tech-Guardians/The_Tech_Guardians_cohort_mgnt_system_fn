@@ -22,90 +22,43 @@ export default function LearnerMyCoursesPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await authAPI.getLearnerCourses();
-        
-        if (response.success) {
-          // Transform backend data to match frontend interface
-          const baseCourses = response.data?.map((course: any) => ({
-            id: course.id || course._id,
-            title: course.title || 'Untitled Course',
-            instructorId: course.instructorId as string | undefined,
-            progress: course.progress || 0,
-            modules: course.modules || 0,
-            lessons: course.lessons || 0,
-            nextLesson: course.nextLesson || 'Getting Started',
-            status: course.progress > 0 ? 'active' : 'not-started',
-            thumbnail: course.title?.charAt(0).toUpperCase() || 'C'
-          })) || [];
-
-          // Resolve instructor names (backend returns instructorId)
-          const token = localStorage.getItem("auth_token") || localStorage.getItem("token");
-          const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
-          const uniqueInstructorIds = Array.from(new Set(baseCourses.map((c: any) => c.instructorId).filter(Boolean))) as string[];
-          const instructorNameMap = new Map<string, string>();
-
-          if (token && uniqueInstructorIds.length > 0) {
-            await Promise.all(
-              uniqueInstructorIds.map(async (uuid) => {
-                try {
-                  const res = await fetch(`${apiBase}/users/${uuid as string}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                  });
-                  if (!res.ok) return;
-                  const data = await res.json();
-                  const u = data?.user;
-                  if (u?.firstName || u?.lastName || u?.email) {
-                    instructorNameMap.set(uuid, `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.email);
-                  }
-                } catch {
-                  // ignore per-instructor errors
-                }
-              })
-            );
-          }
-
-          const colors = [
-            "bg-gradient-to-r from-blue-600 to-cyan-500",
-            "bg-gradient-to-r from-indigo-600 to-purple-500",
-            "bg-gradient-to-r from-emerald-600 to-teal-500",
-            "bg-gradient-to-r from-amber-500 to-orange-500",
-          ];
-
-          const transformedCourses: ExtendedCourse[] = baseCourses.map((c: any, idx: number) => ({
-            id: c.id,
-            title: c.title,
-            instructor: (c.instructorId && instructorNameMap.get(c.instructorId)) || "Unknown Instructor",
-            progress: c.progress,
-            modules: c.modules,
-            lessons: c.lessons,
-            nextLesson: c.nextLesson,
-            status: c.status,
-            thumbnail: c.thumbnail,
-            color: colors[idx % colors.length],
-          }));
-
-          setCourses(transformedCourses);
-        } else {
-          console.error('Failed to fetch courses:', response.message);
-          setCourses([]);
-        }
-
-        const { courses: enrolledCourses } = await courseService.getLearnerEnrolledCourses(1, 20);
-        
         const cohortRes = await authAPI.getLearnerCohort();
         if (cohortRes.success && cohortRes.data) {
           setCohort(cohortRes.data as Cohort);
         }
-        
-        // Extend with mock data for demo
-        const extendedCourses = enrolledCourses.map(course => ({
-          ...course,
-          progress: (course.id as string) === (enrolledCourses[0]?.id as string) ? 45 : 0,
+
+        const cohortCoursesRes = await courseService.getLearnerCohortCourses();
+        const cohortCourses = cohortCoursesRes.courses || [];
+        const cohortCourseType = '';
+
+        const colors = [
+          "bg-gradient-to-r from-blue-600 to-cyan-500",
+          "bg-gradient-to-r from-indigo-600 to-purple-500",
+          "bg-gradient-to-r from-emerald-600 to-teal-500",
+          "bg-gradient-to-r from-amber-500 to-orange-500",
+        ];
+
+        const transformedCourses: ExtendedCourse[] = cohortCourses.map((course: any, idx: number) => ({
+          id: course.id || course._id || '',
+          title: course.title || 'Untitled Course',
+          description: course.description || '',
           instructor: 'Tech Guardians Team',
-          modules: 8,
-          lessons: 42
-        })) as ExtendedCourse[];
-        setCourses(extendedCourses);
+          instructorId: '',
+          cohortId: cohort?.id || '',
+          courseType: cohortCourseType || '',
+          isPublished: true,
+          progress: 0,
+          modules: course.modules || 0,
+          lessons: course.lessons || 0,
+          nextLesson: 'Getting Started',
+          status: 'not-started',
+          thumbnail: course.title?.charAt(0).toUpperCase() || 'C',
+          color: colors[idx % colors.length],
+        }));
+
+
+        setCourses(transformedCourses);
+
       } catch (err: unknown) {
         console.error('Error fetching data:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch data');

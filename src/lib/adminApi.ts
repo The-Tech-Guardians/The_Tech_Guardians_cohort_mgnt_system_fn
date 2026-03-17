@@ -14,15 +14,15 @@ export interface DashboardStats {
 }
 
 export interface User {
-  id: string;
   uuid: string;
   firstName: string;
   lastName: string;
   email: string;
   role: 'ADMIN' | 'INSTRUCTOR' | 'LEARNER';
-  status: 'active' | 'banned';
+  cohortId?: string;
+  twoFaEnabled: boolean;
   createdAt: string;
-  twoFAEnabled?: boolean;
+  updatedAt: string;
 }
 
 export interface Course {
@@ -46,6 +46,17 @@ export interface Module {
   releaseWeek?: number;
 }
 
+export interface Lesson {
+  id: string;
+  title: string;
+  moduleId: string;
+  contentType: 'video' | 'pdf' | 'text';
+  contentBody?: string;
+  orderIndex: number;
+  fileUrl?: string;
+  createdAt: string;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -54,6 +65,13 @@ interface ApiResponse<T> {
   users?: T;
   courses?: T;
   stats?: T;
+  lessons?: T;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
 }
 
 interface PaginatedResponse<T> {
@@ -433,7 +451,7 @@ export const adminApi = {
   },
 
   // Modules - Delete module
-  async deleteModule(id: string): Promise<void> {
+async deleteModule(id: string): Promise<void> {
     try {
       const response = await fetch(`${API_BASE_URL}/modules/${id}`, {
         method: 'DELETE',
@@ -445,6 +463,91 @@ export const adminApi = {
       }
     } catch (error) {
       console.error('Delete module error:', error);
+      throw error;
+    }
+  },
+
+  // Lessons
+async getLessonsByModule(moduleId: string, page: number = 1, limit: number = 10): Promise<PaginatedResponse<Lesson>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/lessons/module/${moduleId}?page=${page}&limit=${limit}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch lessons');
+      }
+
+const data = await response.json() as ApiResponse<Lesson[]>;
+      return {
+        data: data.data || data.lessons || [],
+        pagination: data.pagination || { page, limit, total: 0, pages: 1 },
+      };
+    } catch (error) {
+      console.error('Get lessons error:', error);
+      throw error;
+    }
+  },
+
+  async createLesson(lessonData: FormData): Promise<Lesson> {
+    try {
+      const headers = new Headers(getHeaders());
+      headers.delete('Content-Type'); // Let browser set for FormData
+
+      const response = await fetch(`${API_BASE_URL}/lessons`, {
+        method: 'POST',
+        headers,
+        body: lessonData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create lesson');
+      }
+
+      const data: ApiResponse<Lesson> = await response.json();
+      return data.data || ({} as Lesson);
+    } catch (error) {
+      console.error('Create lesson error:', error);
+      throw error;
+    }
+  },
+
+  async updateLesson(id: string, lessonData: FormData): Promise<Lesson> {
+    try {
+      const headers = new Headers(getHeaders());
+      headers.delete('Content-Type');
+
+      const response = await fetch(`${API_BASE_URL}/lessons/${id}`, {
+        method: 'PUT',
+        headers,
+        body: lessonData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update lesson');
+      }
+
+      const data: ApiResponse<Lesson> = await response.json();
+      return data.data || ({} as Lesson);
+    } catch (error) {
+      console.error('Update lesson error:', error);
+      throw error;
+    }
+  },
+
+  async deleteLesson(id: string): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/lessons/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete lesson');
+      }
+    } catch (error) {
+      console.error('Delete lesson error:', error);
       throw error;
     }
   },
