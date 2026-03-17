@@ -4,7 +4,7 @@ import { FAQItem } from "@/components/course-details/faq-item";
 import { SectionTitle, Stars } from "@/components/course-details/helper";
 import { Sidebar } from "@/components/course-details/side-bar";
 import { COHORTS, COURSE, CURRICULUM, FAQS, HIGHLIGHTS, INSTRUCTOR, OUTCOMES } from "@/lib/course-data";
-import { courseService, Module, Lesson, Assessment } from "@/services/courseService";
+import { courseService, Module, type Lesson, Assessment } from "@/services/courseService";
 import { Clock, Computer, Trophy, Rocket, BookOpen, Globe, Flame } from "lucide-react";
 import { useState, useEffect } from "react";
 

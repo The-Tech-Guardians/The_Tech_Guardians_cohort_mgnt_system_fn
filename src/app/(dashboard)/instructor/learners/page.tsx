@@ -303,9 +303,7 @@ export default function InstructorLearnersPage() {
                     <h2 className="text-3xl font-black text-gray-900 mb-3" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
                       {selectedLearner.name}
                     </h2>
-                    <Badge variant="outline" className="!text-lg !px-6 !py-3">
-                      {selectedLearner.cohort}
-                    </Badge>
+                    <span className="text-lg px-6 py-3 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-white border border-gray-200 text-gray-700">{selectedLearner.cohort}</span>
                   </div>
                 </div>
               </div>
