@@ -208,24 +208,24 @@ export const authAPI = {
     return response.json();
   },
 
-  async getLearnerCourses(): Promise<any> {
+async getLearnerCourses(): Promise<any> {
     const token = tokenManager.getToken();
+    if (!token) return { success: false, message: 'No token' };
     const response = await fetch(`${API_BASE_URL}/learner/courses`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
     });
     return response.json();
   },
 
-  async getLearnerCohort(): Promise<any> {
+async getLearnerCohort(): Promise<any> {
     const token = tokenManager.getToken();
+    if (!token) return { success: false, message: 'No token' };
     const response = await fetch(`${API_BASE_URL}/learner/cohort`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
     });
@@ -248,7 +248,7 @@ export const authAPI = {
         },
       });
 
-      if (!response.ok) {
+        if (!response.ok) {
         // console.error('[getAvailableCohorts] HTTP error:', response.status, response.statusText);
         return { success: false, message: `Server error: ${response.status} ${response.statusText}` };
       }
@@ -262,7 +262,7 @@ export const authAPI = {
     }
   },
 
-  async getMe(): Promise<any> {
+async getMe(): Promise<any> {
     const token = tokenManager.getToken();
     if (!token) {
       return { success: false, message: 'No token' };
@@ -271,7 +271,6 @@ export const authAPI = {
     const response = await fetch(`${API_BASE_URL}/users/me`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
     });

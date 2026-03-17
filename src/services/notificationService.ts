@@ -32,7 +32,8 @@ const getAuthHeaders = (): HeadersInit => {
   if (typeof window === 'undefined') {
     return { 'Content-Type': 'application/json' };
   }
-  const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
+  console.log('[NotificationService] Token:', token ? 'present' : 'MISSING');
   const headers: HeadersInit = { 'Content-Type': 'application/json' };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;

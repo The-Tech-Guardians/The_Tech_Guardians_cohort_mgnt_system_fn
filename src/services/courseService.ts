@@ -52,10 +52,17 @@ interface ApiResponse<T> {
   success?: boolean;
 }
 
+import { FALLBACK_BACKEND_COURSES } from "@/lib/course-data";
+
+// Use consistent auth_token only
 const getAuthToken = () => {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('token') || localStorage.getItem('auth_token');
+  const token = localStorage.getItem('auth_token');
+  console.log('[CourseService] Token:', token ? 'present' : 'MISSING');
+  return token;
 };
+
+
 
 const handleResponse = async (response: Response) => {
   if (!response.ok) {
