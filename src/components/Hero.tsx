@@ -29,7 +29,7 @@ export default function HeroSection() {
                 </div>
 
                 <div>
-                  <h1 className="text-[40px] md:text-[52px] lg:text-[54px] leading-[1.1] font-bold text-slate-900 tracking-tight">
+                  <h1 className="text-[40px] md:text-[52px] lg:text-[54px] leading-[1.1] font-bold text-slate-900- tracking-tight">
                     Welcome to the{" "}
                     <span className="hero-serif italic font-normal" style={{
                       background: "linear-gradient(135deg, #2563EB, #0EA5E9)",

@@ -11,7 +11,19 @@ interface ToastProps {
   duration?: number;
 }
 
-export default function Toast({ message, type = "info", isVisible, onClose, duration = 3000 }: ToastProps) {
+export default function Toast({
+  message,
+  type = 'info' as 'success' | 'error' | 'warning' | 'info',
+  isVisible,
+  onClose,
+  duration = 3000,
+}: {
+  message: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  isVisible: boolean;
+  onClose: () => void;
+  duration?: number;
+}) {
   useEffect(() => {
     if (isVisible && duration > 0) {
       const timer = setTimeout(onClose, duration);

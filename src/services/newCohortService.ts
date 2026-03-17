@@ -153,8 +153,10 @@ export const newCohortService = {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create cohort');
+        const errorText = await response.text();
+        console.error('Backend 500 response:', errorText);
+        const errorData = errorText ? JSON.parse(errorText) : { error: 'Server error' };
+        throw new Error(errorData.error || `Failed to create cohort (${response.status})`);
       }
 
       const data: ApiResponse<BackendCohort> = await response.json();

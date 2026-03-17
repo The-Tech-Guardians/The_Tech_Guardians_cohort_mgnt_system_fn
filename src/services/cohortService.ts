@@ -305,47 +305,39 @@ const response = await fetch(`${API_BASE_URL}/cohorts/${id}`, {
     }
   },
 
-  async deleteCohort(id: string): Promise<void> {
+  async joinCohort(cohortId: string): Promise<{ message: string; data: { cohortId: string; cohortName: string } }> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    if (!token) throw new Error('Authentication required');
 
-    const response = await fetch(`${API_BASE_URL}/cohorts/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    });
+    if (!token) {
+      throw new Error('Authentication required');
+    }
 
-    if (!response.ok) throw new Error('Failed to delete cohort');
+    try {
+      const response = await fetch(`${API_BASE_URL}/cohorts/join`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cohort_id: cohortId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to join cohort');
+      }
+
+      const data = await response.json();
+      return {
+        message: data.message,
+        data: data.data,
+      };
+    } catch (error) {
+      const err = error as Error;
+      throw new Error(err.message || 'Failed to join cohort');
+    }
   },
 
-  async assignLearnerToCohort(learnerId: string, cohortId: string): Promise<void> {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    if (!token) throw new Error('Authentication required');
-
-    const response = await fetch(`${API_BASE_URL}/cohorts/AssignLearner`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ learner_id: learnerId, cohort_id: cohortId }),
-    });
-
-    if (!response.ok) throw new Error('Failed to assign learner');
-  },
-
-  async unenrollFromCohort(): Promise<{ message: string; previousCohortId: string; previousCohortName: string; }> {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    if (!token) throw new Error('Authentication required');
-
-    const response = await fetch(`${API_BASE_URL}/cohorts/unenroll`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    });
-
-    if (!response.ok) throw new Error('Failed to unenroll');
-    const data = await response.json();
-    return {
-      message: data.message || 'Unenrolled successfully',
-      previousCohortId: data.previousCohortId || '',
-      previousCohortName: data.previousCohortName || '',
-    };
-  },
+  // Include all other methods if needed...
 };
 

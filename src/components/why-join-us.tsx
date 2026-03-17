@@ -93,7 +93,7 @@ export default function WhyJoinSection() {
     <>
 
 
-      <section className="wj-font wj-bg py-24 lg:py-32 pt-24np">
+      <section className="wj-font wj-bg  lg:py-32 ">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
 
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -101,7 +101,7 @@ export default function WhyJoinSection() {
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
               <span className="text-[12px] font-semibold text-blue-600 uppercase tracking-widest">Why join us</span>
             </div>
-            <h2 className="text-[36px] md:text-[44px] font-black text-slate-900 leading-[1.1] tracking-tight mb-5">
+            <h2 className="text-[36px] md:text-[44px] font-black leading-[1.1] tracking-tight mb-5">
               Everything you need to{" "}
               <span className="wj-serif italic font-normal"
                 style={{ background: "linear-gradient(135deg, #2563EB, #06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
@@ -110,12 +110,12 @@ export default function WhyJoinSection() {
               {" "}&amp; thrive
             </h2>
 
-            <p className="text-[16px] text-slate-500 leading-relaxed">
+            <p className="text-[16px] leading-relaxed">
               SafED isn&apos;t just a course platform — it&apos;s a structured, supportive community designed to take you from where you are to where you want to be.
             </p>
           </div>
 
-          <div className="bg-white border border-slate-100 rounded-2xl shadow-sm px-6 py-6 mb-14 grid grid-cols-2 md:grid-cols-4 gap-6 divide-x divide-slate-100">
+          <div className=" border border-slate-100 rounded-2xl shadow-sm px-6 py-6 mb-14 grid grid-cols-2 md:grid-cols-4 gap-6 divide-x divide-slate-100">
             {stats.map((s) => (
               <StatPill key={s.label} {...s} />
             ))}
