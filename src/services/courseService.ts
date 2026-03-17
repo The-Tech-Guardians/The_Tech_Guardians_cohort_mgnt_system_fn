@@ -1,40 +1,11 @@
+export type { BackendCourse } from '@/types/course';
+import type { BackendCourse, Course, ExtendedCourse } from '@/types/course';
+import type { Module } from './moduleService';
+export type { Module } from './moduleService';
+import type { BackendLesson } from '@/types/lesson';
+export type Lesson = BackendLesson;
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
-
-export const formatCourseType = (type: string): string => {
-  const formatted: { [key: string]: string } = {
-    COMPUTER_PROGRAMMING: 'Computer Programming',
-    SOCIAL_MEDIA_BRANDING: 'Social Media Branding',
-    ENTREPRENEURSHIP: 'Entrepreneurship',
-    TEAM_MANAGEMENT: 'Team Management',
-    SRHR: 'SRHR',
-  };
-  return formatted[type] || type;
-};
-
-import { BackendCourse, Course, ExtendedCourse } from '@/types/course';
-
-export interface Module {
-  id: string;
-  courseId: string;
-  title: string;
-  description?: string;
-  orderIndex: number;
-  releaseWeek: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface Lesson {
-  id: string;
-  moduleId: string;
-  title: string;
-  contentType: 'video' | 'pdf' | 'text';
-  contentUrl: string;
-  contentBody: string;
-  orderIndex: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
 
 export interface PaginationInfo {
   page: number;
@@ -43,7 +14,6 @@ export interface PaginationInfo {
   pages: number;
   dataSource?: 'live' | 'fallback';
 }
-
 
 export interface QuestionOption {
   id: string;
@@ -65,7 +35,6 @@ export interface Assessment {
   updatedAt?: string;
 }
 
-// Instructor interface for course creation
 export interface Instructor {
   uuid: string;
   firstName: string;
@@ -83,13 +52,10 @@ interface ApiResponse<T> {
   success?: boolean;
 }
 
-import { FALLBACK_BACKEND_COURSES } from "@/lib/course-data";
-
 const getAuthToken = () => {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('token') || localStorage.getItem('auth_token');
 };
-
 
 const handleResponse = async (response: Response) => {
   if (!response.ok) {
@@ -114,11 +80,11 @@ export const courseService = {
     page: number = 1,
     limit: number = 20
   ): Promise<{ courses: Course[]; pagination: PaginationInfo }> {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || localStorage.getItem('token') : null;
+    const token = getAuthToken();
 
     if (!token) {
       console.warn('No auth token for course details - returning empty');
-      return { course: null, modules: [], lessons: [] };
+      return { courses: [], pagination: { page, limit, total: 0, pages: 0 } };
     }
 
     try {
@@ -139,8 +105,6 @@ export const courseService = {
       }
 
       const data = await response.json();
-
-      // Backend returns { success: true, data: [...], message: "..." }
       const coursesData = data.data || [];
       
       return {
@@ -162,7 +126,7 @@ export const courseService = {
     page: number = 1,
     limit: number = 10
   ): Promise<{ courses: Course[]; pagination: PaginationInfo }> {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || localStorage.getItem('token') : null;
+    const token = getAuthToken();
 
     if (!token) {
       throw new Error('Authentication required');
@@ -202,8 +166,8 @@ export const courseService = {
     }
   },
 
-  async getCourseById(id: string): Promise<{ course: Course }> {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || localStorage.getItem('token') : null;
+  async getCourseById(id: string): Promise<{ course: Course | null }> {
+    const token = getAuthToken();
 
     if (!token) {
       throw new Error('Authentication required');
@@ -225,19 +189,15 @@ export const courseService = {
 
       const data: ApiResponse<Course> = await response.json();
 
-      if (!data.course) {
-        throw new Error('Course not found');
-      }
-
-      return { course: data.course };
+      return { course: data.course || null };
     } catch (error) {
       const err = error as Error;
       throw new Error(err.message || 'Failed to fetch course');
     }
   },
 
-  async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course; modules: Module[]; lessons: Lesson[] }> {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || localStorage.getItem('token') : null;
+async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course; modules: Module[]; lessons: BackendLesson[] }> {
+    const token = getAuthToken();
 
     if (!token) {
       throw new Error('Authentication required');
@@ -277,6 +237,7 @@ export const courseService = {
             allLessons.push(...(lessonsData.lessons || []));
           }
         } catch (err) {
+          // Silent fail for individual modules
         }
       }
 
@@ -292,15 +253,14 @@ export const courseService = {
   },
 
   // Get all courses (admin/instructor view)
-
-async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: BackendCourse[]; pagination: PaginationInfo }> {
+  async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: BackendCourse[]; pagination: PaginationInfo }> {
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/courses?page=${page}&limit=${limit}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
       });
       if (!response.ok) {
@@ -313,62 +273,11 @@ async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: Ba
         pagination: data.pagination || { page, limit, total: 0, pages: 0 }
       };
     } catch (error) {
-<<<<<<< HEAD
-=======
       console.warn('Courses fetch failed:', error);
->>>>>>> 36f1724224ae2c66d51b1a815c74edb94fb89201
       return { courses: [], pagination: { page, limit, total: 0, pages: 0 } };
     }
   },
 
-
-
-  // Legacy method for backward compatibility
-  async getAllCoursesLegacy(
-    page: number = 1,
-    limit: number = 20
-  ): Promise<{ courses: Course[]; pagination: PaginationInfo }> {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || localStorage.getItem('token') : null;
-
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/courses?page=${page}&limit=${limit}`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch courses');
-      }
-
-      const data: ApiResponse<Course> = await response.json();
-
-      return {
-        courses: data.courses || [],
-        pagination: data.pagination || {
-          page,
-          limit,
-          total: data.courses?.length || 0,
-          pages: 1,
-        },
-      };
-    } catch (error) {
-      const err = error as Error;
-      throw new Error(err.message || 'Failed to fetch courses');
-    }
-  },
-
-  // Create a new course
   async createCourse(courseData: Partial<BackendCourse>): Promise<{ course: BackendCourse } | null> {
     try {
       const token = getAuthToken();
@@ -388,7 +297,6 @@ async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: Ba
     }
   },
 
-  // Update a course
   async updateCourse(id: string, courseData: Partial<BackendCourse>): Promise<{ course: BackendCourse } | null> {
     try {
       const token = getAuthToken();
@@ -408,7 +316,6 @@ async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: Ba
     }
   },
 
-  // Delete a course
   async deleteCourse(id: string): Promise<boolean> {
     try {
       const token = getAuthToken();
@@ -427,8 +334,7 @@ async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: Ba
     }
   },
 
-  // Publish a course
-async publishCourse(id: string): Promise<boolean> {
+  async publishCourse(id: string): Promise<boolean> {
     const token = getAuthToken();
     if (!token) {
       console.error('No token for publishCourse');
@@ -454,13 +360,38 @@ async publishCourse(id: string): Promise<boolean> {
     }
   },
 
-
-  // Toggle publish status
   async togglePublish(id: string): Promise<BackendCourse | null> {
-    return this.publishCourse(id);
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('No authentication token found');
+      
+      const courseRes = await fetch(`${API_BASE_URL}/courses/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const course = await courseRes.json();
+      const targetStatus = !course.course?.isPublished;
+      const endpoint = targetStatus ? 'publish' : 'unpublish';
+      
+      const response = await fetch(`${API_BASE_URL}/courses/${id}/${endpoint}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const data = await handleResponse(response);
+      return data.course ? data.course : null;
+    } catch (error) {
+      console.error('Toggle publish failed:', error);
+      return null;
+    }
   },
 
-  // Get instructors for course creation
   async getInstructors(page: number = 1, limit: number = 20, search?: string): Promise<{ instructors: Instructor[]; pagination: PaginationInfo }> {
     try {
       const token = getAuthToken();
@@ -488,7 +419,6 @@ async publishCourse(id: string): Promise<boolean> {
     }
   },
 
-  // Get modules by course ID for learner course details
   async getModulesByCourse(courseId: string): Promise<Module[]> {
     const token = getAuthToken();
     if (!token) throw new Error('Authentication required');
@@ -507,8 +437,7 @@ async publishCourse(id: string): Promise<boolean> {
     }
   },
 
-  // Get lessons by module ID for learner course details
-  async getLessonsByModule(moduleId: string): Promise<Lesson[]> {
+async getLessonsByModule(moduleId: string): Promise<BackendLesson[]> {
     const token = getAuthToken();
     if (!token) throw new Error('Authentication required');
 
@@ -526,7 +455,6 @@ async publishCourse(id: string): Promise<boolean> {
     }
   },
 
-  // Get assessments by course ID for learner course details
   async getAssessmentsByCourse(courseId: string): Promise<Assessment[]> {
     const token = getAuthToken();
     if (!token) throw new Error('Authentication required');
@@ -546,7 +474,17 @@ async publishCourse(id: string): Promise<boolean> {
   },
 };
 
-// Helper function to format course type for display
+export const formatCourseType = (type: string): string => {
+  const formatted: Record<string, string> = {
+    COMPUTER_PROGRAMMING: 'Computer Programming',
+    SOCIAL_MEDIA_BRANDING: 'Social Media Branding',
+    ENTREPRENEURSHIP: 'Entrepreneurship',
+    TEAM_MANAGEMENT: 'Team Management',
+    SRHR: 'SRHR',
+  };
+  return formatted[type as keyof typeof formatted] || type;
+};
+
 export const formatCourseTypeDisplay = (courseType: string | undefined | null): string => {
   if (!courseType) {
     return 'Unknown Type';
@@ -556,8 +494,8 @@ export const formatCourseTypeDisplay = (courseType: string | undefined | null): 
   });
 };
 
-// Helper function to format course type for API
 export const formatCourseTypeForAPI = (displayType: string): string => {
   return displayType.toUpperCase().replace(/ /g, '_');
 };
+
 

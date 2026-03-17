@@ -422,7 +422,7 @@ export default function InstructorModulesPage() {
       courseId: module.courseId,
       title: module.title,
       description: module.description || "",
-      orderIndex: module.orderId || 0,
+      orderIndex: module.orderIndex || 0,
       releaseWeek: module.releaseWeek || 1,
     });
     setShowEditModal(true);

@@ -29,7 +29,7 @@ const CONTENT_TYPE_OPTIONS = [
 const initialLessonForm = {
   moduleId: "",
   title: "",
-  contentType: "text" as const,
+contentType: "text",
   contentBody: "",
   orderIndex: 0,
   file: null as File | null,
@@ -252,7 +252,7 @@ function LessonFormModal({
           <select
             value={form.contentType}
             onChange={e => {
-              onChange({ contentType: e.target.value as 'video' | 'pdf' | 'text' });
+onChange({ contentType: e.target.value as "video" | "pdf" | "text" });
               onFileChange(null);
             }}
             className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
