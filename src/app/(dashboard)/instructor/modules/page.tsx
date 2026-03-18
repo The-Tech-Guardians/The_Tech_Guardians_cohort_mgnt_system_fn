@@ -3,21 +3,21 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
-import {
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  Loader2,
-  LayoutGrid,
-  List,
-  Layers
-} from "lucide-react";
-import { Module } from "@/services/moduleService";
-import { moduleService } from "@/services/moduleService";
-import { courseService } from "@/services/courseService";
-import type { BackendCourse } from "@/types/course";
+import { Plus, Search, Edit, Trash2, BookOpen, LayoutGrid, List, Loader2, Layers, RefreshCw } from "lucide-react";
+import { moduleService, type Module } from "@/services/moduleService";
+import { courseService, type BackendCourse } from "@/services/courseService";
+import { cohortService, type Cohort } from "@/services/cohortService";
 import { tokenManager } from "@/lib/auth";
+
+interface Course {
+  id: string;
+  title: string;
+  description?: string;
+}
+
+const getCurrentUser = () => {
+  return tokenManager.getUser();
+};
 
 const initialModuleForm = {
   courseId: "",
@@ -30,7 +30,7 @@ const initialModuleForm = {
 interface ModuleFormProps {
   form: typeof initialModuleForm;
   onChange: (updates: Partial<typeof initialModuleForm>) => void;
-  courses: BackendCourse[];
+  courses: Course[];
   selectedCourseId: string;
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -51,13 +51,13 @@ function formatDate(dateString?: string): string {
   }
 }
 
-function getCourseName(courseId: string, courses: BackendCourse[]): string {
+function getCourseName(courseId: string, courses: Course[]): string {
   return courses.find(c => c.id === courseId)?.title || "Unknown Course";
 }
 
 interface ModuleCardProps {
   module: Module;
-  courses: BackendCourse[];
+  courses: Course[];
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -116,10 +116,9 @@ function ModuleCard({ module, courses, onEdit, onDelete }: ModuleCardProps) {
     </div>
   );
 }
-
 interface ModuleRowProps {
   module: Module;
-  courses: BackendCourse[];
+  courses: Course[];
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -271,7 +270,8 @@ function DeleteModuleModal({ module, onClose, onDelete, loading }: {
 
 export default function InstructorModulesPage() {
   // States
-  const [courses, setCourses] = useState<BackendCourse[]>([]);
+  const [currentUser, setCurrentUser] = useState(getCurrentUser());
+  const [courses, setCourses] = useState<Course[]>([]);
   const [modules, setModules] = useState<Module[]>([]);
   const [selectedCourse, setSelectedCourse] = useState("");
 
@@ -307,16 +307,48 @@ export default function InstructorModulesPage() {
     try {
       setLoading(true);
       setError(null);
-      const { courses } = await courseService.getAllCourses(1, 50);
+      
+      // Debug: Log authentication state
+      console.log('Fetching courses - Current user:', currentUser);
+      console.log('Token exists:', !!tokenManager.getToken());
+      console.log('User from token:', tokenManager.getUser());
+      
+      // Get user ID from token for more reliable authentication
+      const userId = currentUser?.uuid || tokenManager.getUserIdFromToken();
+      
+      if (!userId) {
+        console.error('No user ID found - currentUser:', currentUser, 'tokenUserId:', tokenManager.getUserIdFromToken());
+        throw new Error('User not authenticated');
+      }
+      
+      console.log('Using user ID:', userId);
+      
+      // Get all courses and filter by instructor ID (using existing API)
+      const response = await courseService.getAllCourses(1, 100);
+      const allCourses = response.courses || [];
+      const instructorCourses = allCourses.filter((course: BackendCourse) => 
+        course.instructorId === userId
+      );
+      
+      console.log('Found courses:', instructorCourses.length);
+      
+      // Transform to Course interface
+      const courses: Course[] = instructorCourses.map(course => ({
+        id: course.id,
+        title: course.title,
+        description: course.description
+      }));
+      
       setCourses(courses);
       if (courses.length > 0) setSelectedCourse(courses[0].id);
     } catch (err: any) {
+      console.error('Error fetching courses:', err);
       setError(err.message || "Failed to load courses");
       showToast(err.message || "Failed to load courses", "error");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUser?.uuid]);
 
   const fetchModules = useCallback(async () => {
     if (!selectedCourse) {
@@ -326,7 +358,9 @@ export default function InstructorModulesPage() {
     try {
       setModulesLoading(true);
       setError(null);
+      console.log('Fetching modules for course:', selectedCourse);
       const data = await moduleService.getModulesByCourse(selectedCourse);
+      console.log('Found modules:', data.length);
       setModules(data);
     } catch (err: any) {
       setModules([]);
@@ -338,8 +372,34 @@ export default function InstructorModulesPage() {
   }, [selectedCourse]);
 
   // Effects
+  useEffect(() => {
+    // Update currentUser on mount and when localStorage changes
+    const updateUser = () => {
+      setCurrentUser(getCurrentUser());
+    };
+    
+    updateUser();
+    
+    // Listen for storage changes (in case user logs in/out in another tab)
+    const handleStorageChange = () => {
+      updateUser();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   useEffect(() => { fetchCourses(); }, [fetchCourses]);
-  useEffect(() => { fetchModules(); }, [fetchModules]);
+  useEffect(() => { 
+    if (selectedCourse) {
+      fetchModules(); 
+    } else {
+      setModules([]);
+    }
+  }, [selectedCourse, fetchModules]);
 
   const filteredModules = useMemo(() => {
     const q = searchTerm.toLowerCase().trim();
@@ -410,8 +470,20 @@ export default function InstructorModulesPage() {
     }
   };
 
-  const openCreateModal = () => {
-    if (!selectedCourse) return showToast("Please select a course first", "error");
+  const openCreateModal = async () => {
+    // Ensure courses are loaded
+    if (courses.length === 0) {
+      await fetchCourses();
+    }
+    
+    if (!selectedCourse && courses.length > 0) {
+      setSelectedCourse(courses[0].id);
+    }
+    
+    if (!selectedCourse) {
+      return showToast("Please select a course first", "error");
+    }
+    
     setModuleForm({ ...initialModuleForm, courseId: selectedCourse, orderIndex: modules.length });
     setShowCreateModal(true);
   };
@@ -445,35 +517,72 @@ export default function InstructorModulesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Module Management</h1>
           <p className="text-sm text-gray-500 mt-1">Create and manage course modules</p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1">
+              <button
+                type="button"
+                onClick={() => setViewMode("card")}
+                className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${
+                  viewMode === "card" ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-50"
+                }`}
+                title="Card view"
+              >
+                <LayoutGrid className="w-4 h-4" />
+                Cards
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${
+                  viewMode === "list" ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-50"
+                }`}
+                title="List view"
+              >
+                <List className="w-4 h-4" />
+                List
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
-              type="button"
-              onClick={() => setViewMode("card")}
-              className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${viewMode === "card" ? "bg-indigo-600 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"}`}
-              title="Card view"
+              onClick={fetchCourses}
+              disabled={loading}
+              className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
+              title="Refresh courses"
             >
-              <LayoutGrid className="w-4 h-4" />
-              Cards
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${viewMode === "list" ? "bg-indigo-600 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"}`}
-              title="List view"
+            
+            <select
+              value={selectedCourse}
+              onChange={(e) => {
+                setSelectedCourse(e.target.value);
+                fetchModules();
+              }}
+              className="px-4 py-2 border border-gray-200 rounded-xl text-gray-900 bg-white"
             >
-              <List className="w-4 h-4" />
-              List
+              <option value="">Select a course</option>
+              {courses.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.title}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => {
+                setModuleForm(initialModuleForm);
+                setShowCreateModal(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm"
+              disabled={loading}
+            >
+              <Plus className="w-4 h-4" />
+              Create Module
             </button>
           </div>
-          <button
-            onClick={openCreateModal}
-            disabled={!selectedCourse || formLoading}
-            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Plus className="w-4 h-4" />
-            Add Module
-          </button>
         </div>
       </div>
 
@@ -493,7 +602,10 @@ export default function InstructorModulesPage() {
         <label className="block text-sm font-medium text-gray-700 mb-2">Course</label>
         <select
           value={selectedCourse}
-          onChange={e => setSelectedCourse(e.target.value)}
+          onChange={e => {
+            setSelectedCourse(e.target.value);
+            fetchModules();
+          }}
           disabled={loading || modulesLoading}
           className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
         >

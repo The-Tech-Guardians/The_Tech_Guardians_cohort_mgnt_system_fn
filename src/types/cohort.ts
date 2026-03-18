@@ -1,5 +1,6 @@
 export interface Cohort {
   id: string;
+  coordinatorId?: string;
   name: string;
   description?: string;
   startDate: string;
@@ -15,3 +16,4 @@ export interface Cohort {
   updatedAt?: string;
   instructorIds?: string[];
 }
+

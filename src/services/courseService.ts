@@ -23,16 +23,11 @@ export interface QuestionOption {
   orderIndex: number;
 }
 
-export interface Assessment {
-  id: string;
-  courseId: string;
-  title: string;
-  description?: string;
+import type { Assessment } from '@/types/assessment';
+
+export interface CourseAssessment extends Omit<Assessment, 'questions'> {
   totalQuestions: number;
-  timeLimit?: number;
   orderIndex: number;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface Instructor {
@@ -260,6 +255,36 @@ async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course
     }
   },
 
+  // Get courses for current instructor
+  async getInstructorCourses(instructorId: string): Promise<{ courses: BackendCourse[]; pagination: PaginationInfo }> {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('No authentication token found');
+      
+      const response = await fetch(`${API_BASE_URL}/admin/instructors/${instructorId}?page=1&limit=100`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        console.warn('Instructor courses API unavailable:', response.status);
+        return { courses: [], pagination: { page: 1, limit: 100, total: 0, pages: 0 } };
+      }
+      
+      const data = await response.json();
+      return { 
+        courses: data.courses || [], 
+        pagination: { page: 1, limit: 100, total: data.courses?.length || 0, pages: 1 }
+      };
+    } catch (error) {
+      console.warn('Instructor courses fetch failed:', error);
+      return { courses: [], pagination: { page: 1, limit: 100, total: 0, pages: 0 } };
+    }
+  },
+
   // Get all courses (admin/instructor view)
   async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: BackendCourse[]; pagination: PaginationInfo }> {
     try {
@@ -350,7 +375,7 @@ async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course
     }
     try {
       const response = await fetch(`${API_BASE_URL}/courses/${id}/publish`, {
-        method: 'PATCH',
+        method: 'PUT', // Changed from PATCH to PUT to avoid CORS issues
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -385,7 +410,7 @@ async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course
       const endpoint = targetStatus ? 'publish' : 'unpublish';
       
       const response = await fetch(`${API_BASE_URL}/courses/${id}/${endpoint}`, {
-        method: 'PATCH',
+        method: 'PUT', // Changed from PATCH to PUT to avoid CORS issues
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

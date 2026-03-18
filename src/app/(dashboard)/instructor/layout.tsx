@@ -169,6 +169,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
     { id: "learners", label: "Learners", icon: Users, href: "/instructor/learners" },
     { id: "modules", label: "Modules", icon: Layers, href: "/instructor/modules" },
     { id: "lessons", label: "Lessons", icon: FileText, href: "/instructor/lessons" },
+    { id: "assessments", label: "Assessments", icon: Shield, href: "/instructor/assessments" },
     { id: "analytics", label: "Analytics", icon: TrendingUp, href: "/instructor/analytics" },
   ];
 
@@ -178,6 +179,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
     learners: "Learner Management",
     modules: "Module Management",
     lessons: "Lesson Management",
+    assessments: "Assessment Management",
     analytics: "Analytics & Reports",
   };
 
@@ -187,6 +189,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
     learners: "View enrolled learners and progress",
     modules: "Organize course content by modules",
     lessons: "Create and edit lesson content",
+    assessments: "Create and manage assessments",
     analytics: "Track performance and engagement",
   };
 

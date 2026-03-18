@@ -69,7 +69,17 @@ export default function AdminCoursesPage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await courseService.getAllCourses(1, 100);
+      const currentUser = getCurrentUser();
+      let response;
+      
+      if (currentUser?.role === 'INSTRUCTOR') {
+        // Instructor should only see their own courses
+        response = await courseService.getInstructorCourses(currentUser.uuid);
+      } else {
+        // Admin sees all courses
+        response = await courseService.getAllCourses(1, 100);
+      }
+      
       setCourses(response.courses || []);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch courses');
@@ -209,18 +219,30 @@ export default function AdminCoursesPage() {
   const handlePublishCourse = async (courseId: string) => {
     try {
       setLoading(true);
-      const updatedCourse = await courseService.publishCourse(courseId);
+      
+      // Get the current course first to determine its status
+      const currentCourse = await courseService.getCourseById(courseId);
+      
+      if (!currentCourse) {
+        throw new Error('Course not found');
+      }
+      
+      // Toggle the publish status
+      const updatedCourse = await courseService.updateCourse(courseId, {
+        ...currentCourse.course,
+        isPublished: currentCourse?.course?.isPublished !== undefined ? !currentCourse.course.isPublished : false
+      });
       
       if (updatedCourse) {
         // Immediately update local state for better UX
         setCourses(prevCourses => 
           prevCourses.map(course => 
             course.id === courseId 
-              ? { ...course, isPublished: updatedCourse.isPublished }
+              ? { ...course, isPublished: updatedCourse.course.isPublished }
               : course
           )
         );
-        showToast(`Course ${updatedCourse.isPublished ? 'published' : 'unpublished'} successfully!`);
+        showToast(`Course ${updatedCourse.course.isPublished ? 'published' : 'unpublished'} successfully!`);
       } else {
         // Fallback: refresh all courses
         fetchCourses();
