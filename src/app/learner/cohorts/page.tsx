@@ -119,7 +119,7 @@ export default function LearnerCohortsPage() {
       setUnenrolling(true);
       setError(null);
 
-      await cohortService.unenrollFromCohort();
+  await cohortService.unenrollFromCohort(enrolledCohortId!);
       
       // Clear enrolled cohort and refresh the list
       setEnrolledCohortId(null);

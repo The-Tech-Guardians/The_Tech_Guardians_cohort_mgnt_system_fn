@@ -24,12 +24,13 @@ export default function LearnerMyCoursesPage() {
       try {
         const cohortRes = await authAPI.getLearnerCohort();
         if (cohortRes.success && cohortRes.data) {
-          setCohort(cohortRes.data as Cohort);
+          const raw = cohortRes.data as Cohort & { cohortId?: string };
+          setCohort({ ...raw, id: raw.id || raw.cohortId || '' } as Cohort);
         }
 
         const cohortCoursesRes = await courseService.getLearnerCohortCourses();
         const cohortCourses = cohortCoursesRes.courses || [];
-        const cohortCourseType = '';
+        const cohortCourseType = cohortCoursesRes.cohortCourseType || '';
 
         const colors = [
           "bg-gradient-to-r from-blue-600 to-cyan-500",

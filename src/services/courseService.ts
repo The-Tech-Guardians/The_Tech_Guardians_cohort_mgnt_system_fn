@@ -88,9 +88,7 @@ import { FALLBACK_BACKEND_COURSES } from "@/lib/course-data";
 // Use consistent auth_token only
 const getAuthToken = () => {
   if (typeof window === 'undefined') return null;
-  const token = localStorage.getItem('auth_token');
-  console.log('[CourseService] Token:', token ? 'present' : 'MISSING');
-  return token;
+  return localStorage.getItem('auth_token');
 };
 
 
@@ -121,8 +119,7 @@ export const courseService = {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || localStorage.getItem('token') : null;
 
     if (!token) {
-      console.warn('No auth token for course details - returning empty');
-      return { course: null, modules: [], lessons: [] };
+      return { courses: [], pagination: { page, limit, total: 0, pages: 1 } };
     }
 
     try {
@@ -165,7 +162,7 @@ export const courseService = {
   async getLearnerCohortCourses(
     page: number = 1,
     limit: number = 10
-  ): Promise<{ courses: Course[]; pagination: PaginationInfo }> {
+  ): Promise<{ courses: Course[]; pagination: PaginationInfo; cohortCourseType?: string }> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || localStorage.getItem('token') : null;
 
     if (!token) {
@@ -174,7 +171,7 @@ export const courseService = {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/learner/courses?page=${page}&limit=${limit}`,
+        `${API_BASE_URL}/learner/cohort-courses?page=${page}&limit=${limit}`,
         {
           method: 'GET',
           headers: {
@@ -185,24 +182,27 @@ export const courseService = {
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch courses');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || 'Failed to fetch cohort courses');
       }
 
-      const data: ApiResponse<Course> = await response.json();
+      const data = await response.json();
+      // Backend returns { success: true, data: [...], message, cohortCourseType }
+      const coursesData = data.data || [];
 
       return {
-        courses: data.courses || [],
+        courses: coursesData,
         pagination: data.pagination || {
           page,
           limit,
-          total: data.courses?.length || 0,
+          total: coursesData.length,
           pages: 1,
         },
+        cohortCourseType: data.cohortCourseType,
       };
     } catch (error) {
       const err = error as Error;
-      throw new Error(err.message || 'Failed to fetch courses');
+      throw new Error(err.message || 'Failed to fetch cohort courses');
     }
   },
 
@@ -317,10 +317,6 @@ async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: Ba
         pagination: data.pagination || { page, limit, total: 0, pages: 0 }
       };
     } catch (error) {
-<<<<<<< HEAD
-=======
-      console.warn('Courses fetch failed:', error);
->>>>>>> 36f1724224ae2c66d51b1a815c74edb94fb89201
       return { courses: [], pagination: { page, limit, total: 0, pages: 0 } };
     }
   },
@@ -460,7 +456,7 @@ async publishCourse(id: string): Promise<boolean> {
 
 
   // Toggle publish status
-  async togglePublish(id: string): Promise<BackendCourse | null> {
+  async togglePublish(id: string): Promise<boolean> {
     return this.publishCourse(id);
   },
 

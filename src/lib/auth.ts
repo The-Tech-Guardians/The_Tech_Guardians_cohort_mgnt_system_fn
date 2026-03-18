@@ -102,20 +102,27 @@ async login(data: LoginData): Promise<AuthResponse> {
     return response.json();
   },
 
-  async verify2FA(userId: string, method: TwoFAMethod, code: string, tempSecret?: string): Promise<AuthResponse> {
+async verify2FA(userId: string, method: TwoFAMethod, code: string, tempSecret?: string): Promise<AuthResponse> {
     try {
+      const token = tokenManager.getToken();
       const body: any = { user_id: userId, method, code };
       if (tempSecret) body.tempSecret = tempSecret;
       const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(body),
       });
 
       if (!response.ok) {
-        return { success: false, message: `Server error: ${response.status}` as any };
+        let details: any = null;
+        try { details = await response.json(); } catch { details = null; }
+        return {
+          success: false,
+          message: String(details?.error || details?.message || `Server error: ${response.status}`),
+        } as any;
       }
 
       const result = await response.json();
@@ -127,16 +134,20 @@ async login(data: LoginData): Promise<AuthResponse> {
 
   async resend2FA(userId: string, method: TwoFAMethod): Promise<AuthResponse> {
     try {
+      const token = tokenManager.getToken();
       const response = await fetch(`${API_BASE_URL}/auth/resend-2fa`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ user_id: userId, method }),
       });
 
       if (!response.ok) {
-        return { success: false, message: `Server error: ${response.status}` };
+        let details: any = null;
+        try { details = await response.json(); } catch { details = null; }
+        return { success: false, message: String(details?.error || details?.message || `Server error: ${response.status}`) };
       }
 
       const result = await response.json();
@@ -148,16 +159,20 @@ async login(data: LoginData): Promise<AuthResponse> {
 
   async select2FAMethod(userId: string, method: TwoFAMethod): Promise<Select2FAResponse> {
     try {
+      const token = tokenManager.getToken();
       const response = await fetch(`${API_BASE_URL}/auth/select-2fa-method`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ user_id: userId, method }),
       });
 
       if (!response.ok) {
-        return { success: false, message: `Server error: ${response.status}`, method, setupMode: false } as Select2FAResponse;
+        let details: any = null;
+        try { details = await response.json(); } catch { details = null; }
+        return { success: false, message: String(details?.error || details?.message || `Server error: ${response.status}`), method, setupMode: false } as Select2FAResponse;
       }
 
       const result = await response.json();
@@ -225,10 +240,10 @@ async login(data: LoginData): Promise<AuthResponse> {
     return response.json();
   },
 
-async getLearnerCourses(): Promise<any> {
+async getLearnerCohortCourses(): Promise<AuthResponse> {
     const token = tokenManager.getToken();
     if (!token) return { success: false, message: 'No token' };
-    const response = await fetch(`${API_BASE_URL}/learner/courses`, {
+    const response = await fetch(`${API_BASE_URL}/learner/cohort-courses`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -237,7 +252,21 @@ async getLearnerCourses(): Promise<any> {
     return response.json();
   },
 
-async getLearnerCohort(): Promise<any> {
+  // Keep original for future use
+async getLearnerCohortCourses(): Promise<AuthResponse> {
+    const token = tokenManager.getToken();
+    if (!token) return { success: false, message: 'No token' };
+    const response = await fetch(`${API_BASE_URL}/learner/cohort-courses`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return response.json();
+  },
+
+
+async getLearnerCohort(): Promise<AuthResponse> {
     const token = tokenManager.getToken();
     if (!token) return { success: false, message: 'No token' };
     const response = await fetch(`${API_BASE_URL}/learner/cohort`, {
@@ -314,6 +343,37 @@ import { cohortService } from '@/services/cohortService';
 
 // Token management
 export const tokenManager = {
+  getRedirectPath(searchParams?: any): string {
+    // 1) Prefer explicit redirect query param (Next.js searchParams or URLSearchParams-like)
+    try {
+      const candidate =
+        (typeof searchParams?.get === 'function' ? searchParams.get('redirect') : undefined) ??
+        (typeof searchParams?.redirect === 'string' ? searchParams.redirect : undefined);
+
+      if (typeof candidate === 'string' && candidate.trim()) {
+        const trimmed = candidate.trim();
+        if (trimmed.startsWith('/') && trimmed !== '/login') return trimmed;
+      }
+    } catch {
+      // ignore
+    }
+
+    // 2) Fall back to stored redirect
+    const stored = storage.get('auth_redirect_path');
+    if (stored && stored.startsWith('/') && stored !== '/login') return stored;
+
+    // 3) Default route
+    return '/';
+  },
+
+  setRedirectPath(path: string): void {
+    const trimmed = String(path || '').trim();
+    if (!trimmed || !trimmed.startsWith('/') || trimmed === '/login') {
+      storage.remove('auth_redirect_path');
+      return;
+    }
+    storage.set('auth_redirect_path', trimmed);
+  },
   
   async validateAuth(): Promise<boolean> {
     const token = this.getToken();

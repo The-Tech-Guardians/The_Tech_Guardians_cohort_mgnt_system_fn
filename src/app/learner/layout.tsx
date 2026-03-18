@@ -88,32 +88,7 @@ const userData = tokenManager.getUser?.() || null;
     }
   }, []);
 
-// Role-based routing guard [DISABLED FOR TESTING]
-  /*
-  useEffect(() => {
-    const userRole = tokenManager.getRoleFromToken();
-
-    if (userRole) {
-      switch (userRole) {
-        case 'ADMIN':
-          router.replace('/admin');
-          break;
-        case 'INSTRUCTOR':
-          router.replace('/instructor');
-          break;
-        case 'LEARNER':
-          // Allow access to learner section
-          break;
-        default:
-          // Default to learner for unknown roles
-          break;
-      }
-    } else {
-      // No token, redirect to login
-      router.replace('/login');
-    }
-  }, [router]);
-  */
+ 
 
   // Fetch notifications from backend
   const fetchNotifications = async () => {
@@ -314,7 +289,16 @@ tokenManager.logout?.();
             <Menu size={18} />
           </button>
 
+          <button
+            className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-all lg:ml-4"
+            onClick={() => router.push('/')}
+            title="Back to Home"
+          >
+            <Home size={18} strokeWidth={1.8} />
+          </button>
+
           <div className="flex-1 min-w-0">
+
             <div className="flex items-baseline gap-2">
               <h1 className="text-base font-bold text-gray-900 truncate leading-tight">
                 {titles[view]}
