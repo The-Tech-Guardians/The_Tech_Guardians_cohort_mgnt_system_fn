@@ -56,25 +56,8 @@ const storage = {
   },
 };
 
-interface TokenManager {
-  readonly user: User | null;
-  getRedirectPath(searchParams?: any): string;
-  setRedirectPath(path: string): void;
-  setToken(token: string): void;
-  getToken(): string | null;
-  removeToken(): void;
-  setUser(user: User): void;
-  getUser(): User | null;
-  removeUser(): void;
-  getUserIdFromToken(): string | null;
-  getRoleFromToken(): string | null;
-  getUsername(): string;
-  refreshUser(): Promise<boolean>;
-  logout(): void;
-}
-
 export const authAPI = {
-async login(data: LoginData): Promise<AuthResponse> {
+  async login(data: LoginData): Promise<AuthResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
@@ -282,7 +265,8 @@ async getLearnerCohort(): Promise<AuthResponse> {
     const token = tokenManager.getToken();
     const url = `${API_BASE_URL}/learner/available-cohorts`;
 
-    // console.debug('[getAvailableCohorts] Fetching:', url);\n    // console.debug('[getAvailableCohorts] Token present:', !!token);
+    // console.debug('[getAvailableCohorts] Fetching:', url);
+    // console.debug('[getAvailableCohorts] Token present:', !!token);
 
     try {
       const response = await fetch(url, {
@@ -300,7 +284,9 @@ async getLearnerCohort(): Promise<AuthResponse> {
 
       return response.json();
     } catch (error: any) {
-      // console.error('[getAvailableCohorts] Network error:', error?.message ?? error);\n      // console.error('[getAvailableCohorts] Attempted URL:', url);\n      // console.error('[getAvailableCohorts] Is the API server running? Check NEXT_PUBLIC_API_URL in your .env');
+      // console.error('[getAvailableCohorts] Network error:', error?.message ?? error);
+      // console.error('[getAvailableCohorts] Attempted URL:', url);
+      // console.error('[getAvailableCohorts] Is the API server running? Check NEXT_PUBLIC_API_URL in your .env');
       return { success: false, message: 'Network error: could not reach the API server.' };
     }
   },
@@ -389,7 +375,6 @@ export const tokenManager = {
       return false;
     }
   },
-
 
   setToken(token: string) {
     storage.set('auth_token', token);
@@ -480,5 +465,29 @@ export const tokenManager = {
     this.removeToken();
     this.removeUser();
   },
+
+  getRedirectPath(): string {
+    const role = this.getRoleFromToken();
+    
+    if (!role) return '/login';
+    
+    const rolePaths: Record<string, string> = {
+  'ADMIN': '/admin/',
+      'INSTRUCTOR': '/instructor',
+      'LEARNER': '/learner',
+    };
+    
+    return rolePaths[role as keyof typeof rolePaths] || '/';
+  },
+
+  setRedirectPath(path: string): void {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('redirect', path);
+    window.history.replaceState({}, '', url.toString());
+  },
 };
+
+export { tokenManager };
+export type TokenManager = typeof tokenManager;
 

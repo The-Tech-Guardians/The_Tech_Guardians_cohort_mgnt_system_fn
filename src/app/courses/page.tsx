@@ -5,7 +5,7 @@ import {
   Star,  Users, Search,  LayoutGrid, List, SlidersHorizontal, X, ChevronDown,
   BookOpen, GraduationCap, Flame, 
 } from "lucide-react";
-import { courseService, BackendCourse, PaginationInfo } from "@/services/courseService";
+import { courseService, type BackendCourse, PaginationInfo } from "@/services/courseService";
 import { cohortService } from "@/services/cohortService";
 import { FALLBACK_BACKEND_COHORTS } from "@/lib/course-data";
 import { CourseCardGrid } from "@/components/courses/course-card";
@@ -56,7 +56,7 @@ export default function CoursesPage() {
       } catch (err) {
         console.error('Failed to fetch data:', err);
         setError('Backend offline - using demo data');
-        setCourses(FALLBACK_BACKEND_COURSES || []);
+        setCourses([]);
         setCohorts(FALLBACK_BACKEND_COHORTS || []);
         setDataSource('fallback');
       } finally {
