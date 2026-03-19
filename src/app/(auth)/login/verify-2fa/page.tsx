@@ -33,6 +33,7 @@ export default function TwoFAPage() {
   const [canResend, setCanResend] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoadingMethod, setIsLoadingMethod] = useState(false);
 
   // Timer logic (must be defined unconditionally for hooks rules)
   const startTimer = useCallback(() => {
@@ -121,8 +122,8 @@ export default function TwoFAPage() {
   const rolePath = {
     ADMIN: '/admin',
     INSTRUCTOR: '/instructor',
-    LEARNER: '/learner'
-  }[tokenRole] || '/learner';
+    LEARNER: '/application_process'
+  }[tokenRole] || '/application_process';
   
   // Allow URL param override only for dashboard paths
   const urlParams = new URLSearchParams(window.location.search);
@@ -134,11 +135,13 @@ export default function TwoFAPage() {
   
   console.log(`[2FA SUCCESS] Role: ${tokenRole} → ${finalRedirect}`);
         
-        tokenManager.refreshUser().then(() => {
-          setTimeout(() => router.push(finalRedirect), 500);
-        }).catch(() => {
-          setTimeout(() => router.push(finalRedirect), 500);
-        });
+        // Sync refresh for navbar cache
+        try {
+          await tokenManager.refreshUser();
+        } catch(e) {
+          console.warn('[2FA] refreshUser failed:', e);
+        }
+        setTimeout(() => router.push(finalRedirect), 500);
       } else {
         // Prefer backend message for UI debugging
         console.warn("2FA verify failed:", (response as any)?.message || (response as any)?.error || response);
@@ -154,13 +157,15 @@ export default function TwoFAPage() {
 
   // Start method flow (select method + send email / provide QR)
   const handleSelectMethod = async (method: TwoFAMethod) => {
+    if (isLoadingMethod) return;
+    
     const userId = tokenManager.getUserIdFromToken();
     if (!userId) {
       setOtpStatus("error");
       return;
     }
 
-    setSelectedMethod(method);
+    setIsLoadingMethod(true);
     setOtpStatus("loading");
 
     try {
@@ -184,6 +189,8 @@ export default function TwoFAPage() {
       console.error("Method change failed:", error);
       setOtpStatus("error");
       setTimeout(() => setOtpStatus("idle"), 2000);
+    } finally {
+      setIsLoadingMethod(false);
     }
   };
 
@@ -254,14 +261,31 @@ export default function TwoFAPage() {
                         onClick={() => {
                           handleSelectMethod(method.id as TwoFAMethod);
                         }}
-                        className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:shadow-md transition-all duration-200 bg-white"
+                        disabled={isLoadingMethod}
+                        className={`flex items-center gap-3 p-4 border rounded-xl transition-all duration-200 hover:shadow-md ${
+                          isLoadingMethod
+                            ? 'border-gray-300 bg-gray-50 cursor-not-allowed opacity-70'
+                            : 'border-gray-200 bg-white hover:shadow-md'
+                        }`}
                       >
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-lg font-bold flex-shrink-0 transition-colors ${
+                          isLoadingMethod 
+                            ? 'bg-gray-300' 
+                            : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white'
+                        }`}>
                           {method.icon}
                         </div>
                         <div className="flex-1 text-left">
-                          <h3 className="font-semibold text-gray-900 text-base">{method.label}</h3>
-                          <p className="text-sm text-gray-500">{method.sub}</p>
+                          <h3 className={`font-semibold text-base transition-colors ${
+                            isLoadingMethod ? 'text-gray-500' : 'text-gray-900'
+                          }`}>
+                            {isLoadingMethod ? 'Sending...' : method.label}
+                          </h3>
+                          <p className={`text-sm transition-colors ${
+                            isLoadingMethod ? 'text-gray-400' : 'text-gray-500'
+                          }`}>
+                            {method.sub}
+                          </p>
                         </div>
                       </button>
                     ))}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSidebar } from "../layout";
+import { useSidebar } from "../FixedLayout";
 import { cohortService, type Cohort } from "@/services/cohortService";
 import { Users, Calendar, BookOpen, Loader2, ChevronDown, LogOut, GraduationCap } from "lucide-react";
 
