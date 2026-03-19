@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, Mail, Calendar, Award, BookOpen, Target, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { tokenManager } from '@/lib/auth';
+import BackButton from '@/components/ui/BackButton';
 
 interface ProfileSidebarProps {
   isOpen: boolean;

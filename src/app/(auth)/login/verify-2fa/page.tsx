@@ -12,14 +12,16 @@ import UserPill from "@/components/banner/auth/audit-note/UserPill";
 
 import OtpVerifyForm from "@/components/banner/auth/Continue-button/OtpVerifyForm";
 import { OtpStatus, TwoFAMethod, METHODS } from "@/components/banner/auth/two-fa/types";
+import type { User } from "@/types/user";
+import type { DisplayUser } from "@/types/display-user";
 import { authAPI, tokenManager } from "@/lib/auth";
 import { QRCodeSVG } from "qrcode.react";
 
-const OTP_DURATION = 30;
+const OTP_DURATION = 300;
 
 export default function TwoFAPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<DisplayUser | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<TwoFAMethod>("email");
   const [methodSelected, setMethodSelected] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState('');
@@ -30,50 +32,15 @@ export default function TwoFAPage() {
   const [timeLeft, setTimeLeft] = useState(OTP_DURATION);
   const [canResend, setCanResend] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Initialize user from token, redirect if missing
-  useEffect(() => {
-    const userData = tokenManager.getUser();
-    const roleFromToken = tokenManager.getRoleFromToken();
-    if (!userData?.email || !roleFromToken) {
-      router.push("/login");
-      return;
-    }
-
-    const displayName =
-      (userData?.firstName || userData?.lastName)
-        ? `${userData.firstName || ""} ${userData.lastName || ""}`.trim()
-        : userData.email.split("@")[0];
-
-    const initials = displayName
-      .split(" ")
-      .filter(Boolean)
-      .map((n: string) => n[0])
-      .join("")
-      .toUpperCase() || "U";
-
-    const roleLabel =
-      roleFromToken === "ADMIN"
-        ? "Admin"
-        : roleFromToken === "INSTRUCTOR"
-        ? "Instructor"
-        : "Learner";
-
-    setUser({
-      initials,
-      name: displayName,
-      email: userData.email,
-      role: roleLabel,
-    });
-  }, [router]);
-
-  // Timer logic
+  // Timer logic (must be defined unconditionally for hooks rules)
   const startTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
-          clearInterval(timerRef.current!);
+          if (timerRef.current) clearInterval(timerRef.current);
           setCanResend(true);
           return 0;
         }
@@ -81,6 +48,43 @@ export default function TwoFAPage() {
       });
     }, 1000);
   }, []);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const userData = tokenManager.getUser();
+      const roleFromToken = tokenManager.getRoleFromToken();
+      if (!userData?.email || !roleFromToken) {
+        router.replace("/login");
+        return;
+      }
+
+      const displayName =
+        (userData?.firstName || userData?.lastName)
+          ? `${userData.firstName || ""} ${userData.lastName || ""}`.trim()
+          : userData.email.split("@")[0];
+
+      const initials = displayName
+        .split(" ")
+        .filter(Boolean)
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase() || "U";
+
+      const roleLabel: "Admin" | "Instructor" | "Learner" = 
+        roleFromToken === "ADMIN" ? "Admin" as const :
+        roleFromToken === "INSTRUCTOR" ? "Instructor" as const :
+        "Learner" as const;
+
+      setUser({
+        initials,
+        name: displayName,
+        email: userData.email,
+        role: roleLabel,
+      });
+      setIsAuthenticated(true);
+    };
+    checkAuth();
+  }, [router]);
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
@@ -92,7 +96,7 @@ export default function TwoFAPage() {
   };
 
   // Verify OTP
-  const verifyOTP = async (code: string) => {
+  const verifyOTP = async (code: string, method: TwoFAMethod = selectedMethod) => {
     const userId = tokenManager.getUserIdFromToken();
     if (!userId) {
       setOtpStatus("error");
@@ -101,28 +105,34 @@ export default function TwoFAPage() {
     setOtpStatus("loading");
 
     try {
-      const response = await authAPI.verify2FA(userId, selectedMethod, code, tempSecret || undefined);
+      const response = await authAPI.verify2FA(userId, method, code, tempSecret || undefined);
       if (response.success) {
         setOtpStatus("success");
-        clearInterval(timerRef.current!);
+        if (timerRef.current) clearInterval(timerRef.current);
 
         const token = response.token || response.data?.token;
-        const userObj = (response as any).user || response.data?.user;
+        const userObj = response.user || response.data?.user as User | undefined;
 
         if (token) tokenManager.setToken(token);
         if (userObj) tokenManager.setUser(userObj);
 
-        // Determine redirect based on role
-        let finalRedirect = tokenManager.getRedirectPath();
-        
-        // Override with URL param if present
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirectParam = urlParams.get("redirect");
-        if (redirectParam && redirectParam !== '/' && redirectParam !== '/login') {
-          finalRedirect = redirectParam;
-        }
-        
-        console.log('[2FA SUCCESS] Redirecting to:', finalRedirect);
+// Role-based dashboard redirect (default)
+  const tokenRole = (tokenManager.getRoleFromToken() || 'LEARNER').toUpperCase() as 'ADMIN' | 'INSTRUCTOR' | 'LEARNER';
+  const rolePath = {
+    ADMIN: '/admin',
+    INSTRUCTOR: '/instructor',
+    LEARNER: '/learner'
+  }[tokenRole] || '/learner';
+  
+  // Allow URL param override only for dashboard paths
+  const urlParams = new URLSearchParams(window.location.search);
+  const redirectParam = urlParams.get("redirect");
+  let finalRedirect = rolePath;
+  if (redirectParam && ['/admin','/instructor','/learner'].includes(redirectParam)) {
+    finalRedirect = redirectParam;
+  }
+  
+  console.log(`[2FA SUCCESS] Role: ${tokenRole} → ${finalRedirect}`);
         
         tokenManager.refreshUser().then(() => {
           setTimeout(() => router.push(finalRedirect), 500);
@@ -130,6 +140,8 @@ export default function TwoFAPage() {
           setTimeout(() => router.push(finalRedirect), 500);
         });
       } else {
+        // Prefer backend message for UI debugging
+        console.warn("2FA verify failed:", (response as any)?.message || (response as any)?.error || response);
         setOtpStatus("error");
         setTimeout(() => setOtpStatus("idle"), 800);
       }
@@ -140,18 +152,19 @@ export default function TwoFAPage() {
     }
   };
 
-  // Change 2FA Method
-  const handleMethodChange = async () => {
+  // Start method flow (select method + send email / provide QR)
+  const handleSelectMethod = async (method: TwoFAMethod) => {
     const userId = tokenManager.getUserIdFromToken();
     if (!userId) {
       setOtpStatus("error");
       return;
     }
 
+    setSelectedMethod(method);
     setOtpStatus("loading");
 
     try {
-      const response = await authAPI.select2FAMethod(userId, selectedMethod);
+      const response = await authAPI.select2FAMethod(userId, method);
       if (response.success) {
         setQrDataUrl(response.qrDataUrl || '');
         setTempSecret(response.secret || '');
@@ -163,6 +176,7 @@ export default function TwoFAPage() {
         setCanResend(false);
         startTimer();
       } else {
+        console.warn("2FA select method failed:", (response as any)?.message || (response as any)?.error || response);
         setOtpStatus("error");
         setTimeout(() => setOtpStatus("idle"), 2000);
       }
@@ -171,6 +185,18 @@ export default function TwoFAPage() {
       setOtpStatus("error");
       setTimeout(() => setOtpStatus("idle"), 2000);
     }
+  };
+
+  const handleChangeMethodUi = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setMethodSelected(false);
+    setOtp(Array(6).fill(""));
+    setOtpStatus("idle");
+    setTimeLeft(OTP_DURATION);
+    setCanResend(false);
+    setQrDataUrl("");
+    setTempSecret("");
+    setSetupMode(false);
   };
 
   // Resend OTP
@@ -191,6 +217,7 @@ export default function TwoFAPage() {
         setCanResend(false);
         startTimer();
       } else {
+        console.warn("2FA resend failed:", (response as any)?.message || (response as any)?.error || response);
         setOtpStatus("error");
         setTimeout(() => setOtpStatus("idle"), 2000);
       }
@@ -200,6 +227,10 @@ export default function TwoFAPage() {
       setTimeout(() => setOtpStatus("idle"), 2000);
     }
   };
+
+  if (!isAuthenticated || !user) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen flex bg-white">
@@ -211,7 +242,7 @@ export default function TwoFAPage() {
         <div className="w-full max-w-[420px]">
           <AuthCard>
               <BackButton href="/login" label="Back to login" />
-              {user && <UserPill {...user} />}
+              <UserPill {...user} />
               
               {!methodSelected ? (
                 <div className="space-y-4">
@@ -221,8 +252,7 @@ export default function TwoFAPage() {
                       <button
                         key={method.id}
                         onClick={() => {
-                          setSelectedMethod(method.id as TwoFAMethod);
-                          handleMethodChange();
+                          handleSelectMethod(method.id as TwoFAMethod);
                         }}
                         className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:shadow-md transition-all duration-200 bg-white"
                       >
@@ -257,7 +287,7 @@ export default function TwoFAPage() {
                     onOtpChange={handleOtpChange}
                     onVerify={() => verifyOTP(otp.join(""))}
                     onResend={handleResend}
-                    onChangeMethod={handleMethodChange}
+                    onChangeMethod={handleChangeMethodUi}
                   />
                 </>
               )}

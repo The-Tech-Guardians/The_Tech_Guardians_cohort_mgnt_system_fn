@@ -59,14 +59,22 @@ export default function LearnerDashboardPage() {
           setUser({ name, initials });
         }
 
-        const coursesRes = await authAPI.getLearnerCourses();
-        if (coursesRes?.success) {
-          setMyCourses(coursesRes.data || []);
+        const coursesRes = await authAPI.getLearnerCohortCourses();
+        console.log('Courses API response:', coursesRes); // Debug
+        if (coursesRes?.success && Array.isArray(coursesRes.data)) {
+          setMyCourses(coursesRes.data.map((course: any) => ({
+            id: course.id || course._id || '',
+            title: course.title || 'Untitled Course',
+            progress: 0
+          })));
+        } else {
+          console.warn('No courses data:', coursesRes);
         }
 
         const cohortRes = await authAPI.getLearnerCohort();
-        if (cohortRes?.success) {
-          setCurrentCohort(cohortRes.data);
+        console.log('Cohort API response:', cohortRes); // Debug
+        if (cohortRes?.success && cohortRes.data) {
+          setCurrentCohort(cohortRes.data as Cohort);
         }
 
         const availableRes = await authAPI.getAvailableCohorts();
@@ -151,9 +159,9 @@ export default function LearnerDashboardPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-5 h-5" />
-                  <span>
-                    {new Date(currentCohort.startDate).toLocaleDateString()} - {new Date(currentCohort.endDate).toLocaleDateString()}
-                  </span>
+                <span>
+                  {new Date(currentCohort!.startDate).toLocaleDateString()} - {new Date(currentCohort!.startDate).toLocaleDateString()}
+                </span>
                 </div>
               </div>
             )}
