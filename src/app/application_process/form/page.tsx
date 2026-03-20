@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { tokenManager } from '@/lib/auth';
 import { ApplicationForm } from "@/components/application-component/application-form";
 import Link from "next/link";
 
 export default function FormPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const cohortId = searchParams.get('cohortId') || '';
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -28,7 +30,7 @@ export default function FormPage() {
           ← Back to Application Process
         </Link>
         
-        <ApplicationForm />
+        <ApplicationForm cohortId={cohortId} />
       </div>
     </div>
   );

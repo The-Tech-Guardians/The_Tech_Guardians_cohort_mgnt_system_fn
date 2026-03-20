@@ -1,5 +1,6 @@
 
 import HeroSection from "@/components/Hero";
+import TestimonialsAndPartners from "@/components/TestmoniolsAndPartners";
 import WhyJoinSection from "@/components/why-join-us";
 
 export default function Home() {
@@ -10,6 +11,7 @@ export default function Home() {
     <div className="flex flex-col ">
          <HeroSection/>
          <WhyJoinSection/>
+         <TestimonialsAndPartners/>
     </div>
     </>
     
