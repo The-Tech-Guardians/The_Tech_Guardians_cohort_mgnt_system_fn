@@ -1,4 +1,5 @@
-import {  GraduationCap, Lock } from "lucide-react";
+import Link from "next/link";
+import {  Globe, GraduationCap, Lock } from "lucide-react";
 import NewLetter from "./footer/NewLetter";
 
 const courses = [
@@ -51,6 +52,25 @@ const socials = [
 ];
 
 
+
+function getCompanyHref(item: string): string {
+  const hrefMap: Record<string, string> = {
+    "About Us": "/about_us",
+    "Contact": "/contact", 
+    "Privacy": "/privacy",
+    "Careers": "/careers"
+  };
+  return hrefMap[item] || "#";
+}
+
+function getLegalHref(term: string): string {
+  const hrefMap: Record<string, string> = {
+    "Terms": "/terms",
+    "Privacy": "/privacy", 
+    "Cookies": "/cookies"
+  };
+  return hrefMap[term] || "#";
+}
 
 export default function Footer(bg:string) {
   
@@ -141,9 +161,9 @@ export default function Footer(bg:string) {
               <ul className="space-y-3">
                 {courses.map((c) => (
                   <li key={c.id}>
-                    <button className="footer-link text-[13.5px] text-slate-600 hover:text-blue-600 transition-colors duration-150 text-left">
+                    <Link href="/courses" className="footer-link text-[13.5px] text-slate-600 hover:text-blue-600 transition-colors duration-150 text-left block">
                       {c.name}
-                    </button>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -155,9 +175,9 @@ export default function Footer(bg:string) {
               <ul className="space-y-3">
                 {["Individual", "Group", "Team", "Enterprise"].map((lvl) => (
                   <li key={lvl}>
-                    <button className="footer-link text-[13.5px] text-slate-600 hover:text-blue-600 transition-colors duration-150">
+                    <Link href="/courses" className="footer-link text-[13.5px] text-slate-600 hover:text-blue-600 transition-colors duration-150 block">
                       {lvl}
-                    </button>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -167,11 +187,11 @@ export default function Footer(bg:string) {
             <div className="md:col-span-2">
               <h4 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400 mb-5">Company</h4>
               <ul className="space-y-3">
-                {["About Us", "Contact", "Privacy", "Careers"].map((item) => (
+{["About Us", "Contact", "Privacy", "Careers"].map((item) => (
                   <li key={item}>
-                    <button className="footer-link text-[13.5px] text-slate-600 hover:text-blue-600 transition-colors duration-150">
+                    <Link href={getCompanyHref(item)} className="footer-link text-[13.5px] text-slate-600 hover:text-blue-600 transition-colors duration-150 block">
                       {item}
-                    </button>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -194,7 +214,7 @@ export default function Footer(bg:string) {
                   <span className="text-[12px] font-medium text-slate-600">99.9% uptime</span>
                 </div>
                 <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
-                  <span className="text-base leading-none">🌍</span>
+                  <Globe className="w-4 h-4 text-slate-600"/>
                   <span className="text-[12px] font-medium text-slate-600">Global access</span>
                 </div>
               </div>
@@ -217,9 +237,9 @@ export default function Footer(bg:string) {
             </p>
             <div className="flex items-center gap-4">
               {["Terms", "Privacy", "Cookies"].map((t) => (
-                <button key={t} className="text-[12px] text-slate-400 hover:text-slate-700 transition-colors duration-150">
+                <Link key={t} href={getLegalHref(t)} className="text-[12px] text-slate-400 hover:text-slate-700 transition-colors duration-150">
                   {t}
-                </button>
+                </Link>
               ))}
             </div>
           </div>

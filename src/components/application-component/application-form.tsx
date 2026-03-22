@@ -2,125 +2,217 @@ import { educationOptions } from "@/app/application_process/page";
 import { Label } from "./lable";
 import { Textarea } from "./textarrea";
 import { Input } from "./input";
-import { CheckCircle, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { CheckCircle, ChevronRight, Clock, AlertCircle } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 import { Btn } from "../instructor/ui/SharedUI";
+import { applicationService, Application } from "@/services/applicationService";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-export function ApplicationForm() {
+interface Props {
+  cohortId: string;
+}
+
+export function ApplicationForm({ cohortId }: Props) {
+  const router = useRouter();
   const [form, setForm] = useState({
-    name: "",
-    age: "",
-    email: "",
+    age: '',
     education: "",
     timeCommitment: "",
     teamwork: "",
     technicalTeamship: "",
     communityProblem: "",
   });
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'submitted' | 'pending' | 'approved' | 'rejected'>('idle');
+  const [appStatus, setAppStatus] = useState<Application | null>(null);
+  const [error, setError] = useState('');
 
-  const set = (field) => (e) =>
+  const setField = useCallback((field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  }, []);
 
-  const handleSubmit = (e) => {
+  const checkApplicationStatus = useCallback(async () => {
+    if (!cohortId) return;
+    try {
+      const apps = await applicationService.getMyApplications();
+      const app = apps.find(a => a.cohortId === cohortId);
+      if (app) {
+        setAppStatus(app);
+        if (app.status === 'PENDING') {
+          setStatus('pending');
+        } else if (app.status === 'APPROVED') {
+          setStatus('approved');
+        } else if (app.status === 'REJECTED') {
+          setStatus('rejected');
+        }
+      }
+    } catch (err) {
+      console.error('Status check failed:', err);
+    }
+  }, [cohortId]);
+
+  useEffect(() => {
+    if (status === 'submitted') {
+      const interval = setInterval(checkApplicationStatus, 5000); // Poll every 5s
+      return () => clearInterval(interval);
+    }
+  }, [status, checkApplicationStatus]);
+
+  useEffect(() => {
+    const initialCheck = async () => {
+      await checkApplicationStatus();
+    };
+    initialCheck();
+  }, [checkApplicationStatus]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    if (!cohortId) {
+      setError('No cohort selected');
+      return;
+    }
+    setStatus('submitting');
+    setError('');
+
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+    
+    try {
+      await applicationService.submitApplication(cohortId, formData);
+      setStatus('submitted');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Submission failed';
+      setError(message);
+      setStatus('idle');
+    }
   };
 
-  if (submitted) {
+  if (status === 'approved' && appStatus) {
     return (
-      <div className="border border-gray-200 rounded-lg p-8 bg-white text-center">
-        <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="w-6 h-6 text-blue-500" />
+      <div className="border border-green-200 rounded-lg p-8 bg-green-50 text-center">
+        <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
+          <CheckCircle className="w-8 h-8 text-green-500" />
         </div>
-        <h3 className="text-base font-semibold text-gray-800 mb-2">
-          Application Submitted!
+        <h3 className="text-xl font-bold text-green-800 mb-3">
+          Congratulations!
         </h3>
-        <p className="text-sm text-gray-500 leading-relaxed">
-          Thank you,{" "}
-          <span className="font-medium text-gray-700">{form.name}</span>. We&apos;ve
-          received your application and our team will review it personally. Expect a
-          response within <strong>2 weeks</strong> at{" "}
-          <span className="text-blue-600">{form.email}</span>.
+        <p className="text-lg text-green-700 mb-6 leading-relaxed">
+          Your application for this cohort has been <strong>APPROVED</strong>. Welcome to the cohort!
         </p>
+        <Link href="/learner" className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+          Continue to Learner Dashboard
+          <ChevronRight className="w-5 h-5" />
+        </Link>
       </div>
     );
   }
 
+  if (status === 'rejected') {
+    return (
+      <div className="border border-red-200 rounded-lg p-8 bg-red-50 text-center">
+        <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-6">
+          <AlertCircle className="w-8 h-8 text-red-500" />
+        </div>
+        <h3 className="text-xl font-bold text-red-800 mb-3">
+          Application Not Approved
+        </h3>
+        <p className="text-lg text-red-700 mb-6 leading-relaxed">
+          Thank you for applying. Unfortunately, your application for this cohort has been rejected at this time.
+        </p>
+        <p className="text-sm text-red-600 mb-8">
+          Please wait for upcoming opportunities and continue improving your skills.
+        </p>
+        <Link href="/cohorts" className="inline-flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+          View Upcoming Cohorts
+          <ChevronRight className="w-5 h-5" />
+        </Link>
+      </div>
+    );
+  }
+
+  if (status === 'pending') {
+    return (
+      <div className="border border-yellow-200 rounded-lg p-8 bg-yellow-50 text-center">
+        <div className="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center mx-auto mb-6 animate-pulse">
+          <Clock className="w-8 h-8 text-yellow-600" />
+        </div>
+        <h3 className="text-xl font-bold text-yellow-800 mb-3">
+          Application Pending Review
+        </h3>
+        <p className="text-lg text-yellow-700 mb-6 leading-relaxed">
+          Your application has been received and is under review by our team.
+        </p>
+        <p className="text-sm text-yellow-600 mb-8">
+          We&apos;ll notify you within 2 weeks with our decision. Check back here for updates.
+        </p>
+        <div className="inline-flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+          Refresh Status
+        </div>
+      </div>
+    );
+  }
+
+  // Form
   return (
     <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
       {/* Header */}
       <div className="px-4 sm:px-6 pt-6 pb-4 border-b border-gray-100">
         <h3 className="text-sm font-semibold text-gray-800">The Application Form</h3>
         <p className="text-xs text-gray-500 mt-1">
-          Answer honestly — we want to understand who you are, not just what you&apos;ve
-          done. This takes about 5–10 minutes.
+          Answer honestly — we want to understand who you are, not just what you&apos;ve done. This takes about 5–10 minutes.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-5 space-y-5">
+      {error && (
+        <div className="p-4 border border-red-200 bg-red-50 rounded-b-lg">
+          <p className="text-sm text-red-800">{error}</p>
+        </div>
+      )}
 
-        {/* Name + Age */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <Label required>Full Name</Label>
+      <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-5 space-y-5">
+        {/* Name + Age + Education */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label>Name (Auto-filled)</Label>
             <Input
               id="name"
-              placeholder="e.g. Freddy Bijanja"
-              value={form.name}
-              onChange={set("name")}
-              required
+              type="text"
+              value="Auto-filled from profile"
+              className="bg-gray-50 text-sm cursor-not-allowed"
             />
           </div>
-          <div className="sm:w-24">
+          <div>
             <Label required>Age</Label>
             <Input
               id="age"
               type="number"
               placeholder="e.g. 21"
               value={form.age}
-              onChange={set("age")}
+              onChange={setField("age")}
               required
+              min="13"
+              max="100"
             />
           </div>
-        </div>
-
-        {/* Email */}
-        <div>
-          <Label required>Email Address</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="you@example.com"
-            value={form.email}
-            onChange={set("email")}
-            required
-          />
-          <p className="text-xs text-gray-400 mt-1">
-            We&apos;ll send your decision to this address.
-          </p>
-        </div>
-
-        {/* Education */}
-        <div>
-          <Label required>Education Level</Label>
-          <select
-            id="education"
-            value={form.education}
-            onChange={set("education")}
-            required
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
-          >
-            <option value="" disabled>Select your current level…</option>
-            {educationOptions.map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
+          <div>
+            <Label required>Education Level</Label>
+            <select
+              id="education"
+              value={form.education}
+              onChange={setField("education")}
+              required
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
+            >
+              <option value="" disabled>Select your current level…</option>
+              {educationOptions.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <hr className="border-gray-100" />
 
-        {/* Q1 */}
+        {/* Questions */}
         <div>
           <Label required>
             How much time can you realistically commit to this cohort per week?
@@ -130,15 +222,14 @@ export function ApplicationForm() {
           </p>
           <Textarea
             id="timeCommitment"
-            placeholder=""
+            placeholder="e.g. 'I can commit 10-15 hours per week, mostly evenings and weekends...'"
             value={form.timeCommitment}
-            onChange={set("timeCommitment")}
+            onChange={setField("timeCommitment")}
             required
             rows={3}
           />
         </div>
 
-        {/* Q2 */}
         <div>
           <Label required>
             How do you feel about working with strangers or like-minded youth towards a common goal?
@@ -148,15 +239,14 @@ export function ApplicationForm() {
           </p>
           <Textarea
             id="teamwork"
-            placeholder=""
+            placeholder="e.g. 'I'm excited about group work because I learn from different perspectives...'"
             value={form.teamwork}
-            onChange={set("teamwork")}
+            onChange={setField("teamwork")}
             required
             rows={4}
           />
         </div>
 
-        {/* Q3 */}
         <div>
           <Label required>
             How do you think technical skills and teamwork can help in entrepreneurship?
@@ -166,15 +256,14 @@ export function ApplicationForm() {
           </p>
           <Textarea
             id="technicalTeamship"
-            placeholder=""
+            placeholder="e.g. 'Technical skills let us build solutions, teamwork brings diverse ideas...'"
             value={form.technicalTeamship}
-            onChange={set("technicalTeamship")}
+            onChange={setField("technicalTeamship")}
             required
             rows={4}
           />
         </div>
 
-        {/* Q4 */}
         <div>
           <Label required>
             What is one specific problem you&apos;ve seen in your community that requires a team to solve through entrepreneurship?
@@ -184,9 +273,9 @@ export function ApplicationForm() {
           </p>
           <Textarea
             id="communityProblem"
-            placeholder=""
+            placeholder="e.g. 'In my community, students struggle with internet access for online learning...'"
             value={form.communityProblem}
-            onChange={set("communityProblem")}
+            onChange={setField("communityProblem")}
             required
             rows={4}
           />
@@ -194,16 +283,9 @@ export function ApplicationForm() {
 
         {/* Submit */}
         <div className="pt-2">
-          {/* <button
-            type="submit"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
-          >
-            Submit Application
-           
-          </button> */}
-          <Btn>
-            Sumit Application
-             <ChevronRight className="w-4 h-4" />
+          <Btn type="submit" disabled={status === 'submitting'}>
+            {status === 'submitting' ? 'Submitting...' : 'Submit Application'}
+            <ChevronRight className="w-4 h-4" />
           </Btn>
           <p className="text-xs text-gray-400 mt-2">
             By submitting, you confirm that all information provided is truthful and accurate.
