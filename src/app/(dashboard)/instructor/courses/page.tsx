@@ -92,19 +92,20 @@ export default function InstructorCoursesPage() {
 
   const fetchCohorts = useCallback(async () => {
     try {
-      const { cohorts: rawCohorts } = await cohortService.getAllCohorts(1, 100);
+      const result = await cohortService.getAllCohorts(1, 100);
+      const rawCohorts = result.cohorts;
       const validCohorts = rawCohorts.filter((cohort: Cohort) => cohort.id && cohort.name);
       setCohorts(validCohorts);
     } catch (err: unknown) {
       console.error('Failed to fetch cohorts:', err);
       setCohorts([]);
     }
-  }, []);
+  }, []); 
 
   const fetchInstructors = useCallback(async () => {
     try {
-      const response = await courseService.getInstructors(1, 100);
-      setInstructors(response.instructors || []);
+      const result = await courseService.getInstructors(1, 100);
+      setInstructors(result.instructors || []);
     } catch (err) {
       console.error('Failed to fetch instructors:', err);
       setInstructors([]);
@@ -158,7 +159,7 @@ export default function InstructorCoursesPage() {
       const response = await courseService.createCourse(courseData);
       
       if (response && response.course) {
-        showToast("Course created successfully!");
+showToast("Course created successfully!", "success");
         setCourseForm(initialCourseForm);
         setShowCreateModal(false);
         
@@ -206,7 +207,7 @@ export default function InstructorCoursesPage() {
               : course
           )
         );
-        showToast("Course updated successfully!");
+        showToast("Course updated successfully!", "success");
         setCourseForm(initialCourseForm);
         setShowEditModal(false);
         setSelectedCourse(null);
@@ -225,7 +226,7 @@ export default function InstructorCoursesPage() {
       setFormLoading(true);
       await courseService.deleteCourse(courseToDelete.id);
       
-      showToast("Course deleted successfully!");
+      showToast("Course deleted successfully!", "success");
       setShowDeleteModal(false);
       setCourseToDelete(null);
       fetchCourses();
@@ -246,11 +247,11 @@ export default function InstructorCoursesPage() {
         setCourses(prevCourses => 
           prevCourses.map(course => 
             course.id === courseId 
-              ? { ...course, isPublished: updatedCourse.isPublished }
+              ? { ...course, isPublished: Boolean(updatedCourse.isPublished) }
               : course
           )
         );
-        showToast(`Course ${updatedCourse.isPublished ? 'published' : 'unpublished'} successfully!`);
+        showToast(`Course ${updatedCourse.isPublished ? 'published' : 'unpublished'} successfully!`, 'success');
       } else {
         // Fallback: refresh all courses
         fetchCourses();
