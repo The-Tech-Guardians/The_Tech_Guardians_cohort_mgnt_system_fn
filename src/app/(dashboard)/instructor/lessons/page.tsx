@@ -22,6 +22,7 @@ import { moduleService, type Module } from "@/services/moduleService";
 import { lessonService } from "@/services/lessonService";
 import type { BackendLesson as Lesson } from "@/types/lesson";
 import { tokenManager } from "@/lib/auth";
+import FormattedTextEditor from "@/components/editor/FormattedTextEditor";
 
 interface Course {
   id: string;
@@ -136,17 +137,6 @@ function LessonCard({ lesson, modules, courses, onEdit, onDelete }: LessonCardPr
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        {lesson.contentUrl && (
-          <a
-            href={lesson.contentUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center text-indigo-600 hover:text-indigo-500 text-xs font-medium"
-          >
-            <ExternalLink className="w-3 h-3 mr-1" />
-            {isTextOrPDF ? "Preview" : "Download"}
-          </a>
-        )}
         <div className="flex gap-2">
           <button
             onClick={onEdit}
@@ -277,18 +267,18 @@ onChange({ contentType: e.target.value as "video" | "pdf" | "text" });
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Content Body * 
-            {(form.contentType === "text" || form.contentType === "pdf") && "(Markdown supported)"}
-          </label>
-          <textarea
-            rows={5}
-            value={form.contentBody}
-            onChange={e => onChange({ contentBody: e.target.value })}
-            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-vertical"
-            required
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Content Body *</label>
+          <FormattedTextEditor
+            content={form.contentBody}
+            onChange={(content) => onChange({ contentBody: content })}
             placeholder="Enter lesson content..."
+            minHeight="300px"
+            showToolbar={true}
+            className="w-full"
           />
+          {(form.contentType === "text" || form.contentType === "pdf") && (
+            <p className="text-xs text-gray-500 mt-1">(Markdown supported)</p>
+          )}
         </div>
         {form.contentType !== "text" && (
           <div>

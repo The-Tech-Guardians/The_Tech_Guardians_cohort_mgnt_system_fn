@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/backend';
 
 interface InstructorStats {
   totalCourses: number;
@@ -100,124 +100,77 @@ export const instructorApi = {
       return data.data || data;
     } catch (error) {
       console.error('Instructor dashboard stats error:', error);
-      // Return mock data for development
-      return {
-        totalCourses: 5,
-        totalEnrollments: 142,
-        activeStudents: 89,
-        completionRate: 78.5,
-        avgRating: 4.6,
-        newEnrollments: 12,
-        lessonsPublished: 67,
-        coursesCompleted: 23
-      };
+      throw new Error('Failed to fetch dashboard stats');
     }
   },
 
   async getInstructorCourses(): Promise<InstructorCourse[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/courses`, {
+      // Try to get current user info first
+      let instructorId = null;
+      try {
+        const userResponse = await fetch(`${API_BASE_URL}/users/me`, {
+          method: 'GET',
+          headers: getHeaders(),
+        });
+
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          instructorId = userData.user?.uuid || userData.uuid;
+        }
+      } catch (userError) {
+        // Silently handle user info fetch failure
+        console.warn('User info endpoint not available, using fallback');
+      }
+
+      if (instructorId) {
+        // Fetch instructor's courses using the admin endpoint
+        const response = await fetch(`${API_BASE_URL}/admin/instructors/${instructorId}?page=1&limit=100`, {
+          method: 'GET',
+          headers: getHeaders(),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          return data.courses || [];
+        }
+      }
+
+      // Fallback: Try to fetch courses directly without instructor ID
+      const response = await fetch(`${API_BASE_URL}/instructor/courses?page=1&limit=100`, {
         method: 'GET',
         headers: getHeaders(),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch instructor courses');
+        return [];
       }
 
       const data = await response.json();
       return data.courses || data.data || data;
     } catch (error) {
       console.error('Instructor courses error:', error);
-      // Return mock data for development
-      return [
-        {
-          id: '1',
-          title: 'Advanced JavaScript',
-          enrolled: '45',
-          modules: 8,
-          lessons: 32,
-          cohort: 'Cohort A',
-          published: true,
-          completion: 78,
-          modules_data: [
-            { id: '1', week: 'Week 1', title: 'Introduction', lessons: 4, published: true },
-            { id: '2', week: 'Week 2', title: 'ES6 Features', lessons: 4, published: true },
-            { id: '3', week: 'Week 3', title: 'Async Programming', lessons: 4, published: true },
-            { id: '4', week: 'Week 4', title: 'React Basics', lessons: 4, published: true },
-            { id: '5', week: 'Week 5', title: 'Advanced React', lessons: 4, published: true },
-            { id: '6', week: 'Week 6', title: 'State Management', lessons: 4, published: true },
-            { id: '7', week: 'Week 7', title: 'Testing', lessons: 4, published: true },
-            { id: '8', week: 'Week 8', title: 'Project', lessons: 4, published: true }
-          ]
-        },
-        {
-          id: '2',
-          title: 'Python for Data Science',
-          enrolled: '38',
-          modules: 6,
-          lessons: 24,
-          cohort: 'Cohort B',
-          published: true,
-          completion: 65,
-          modules_data: [
-            { id: '1', week: 'Week 1', title: 'Python Basics', lessons: 4, published: true },
-            { id: '2', week: 'Week 2', title: 'NumPy & Pandas', lessons: 4, published: true },
-            { id: '3', week: 'Week 3', title: 'Data Visualization', lessons: 4, published: true },
-            { id: '4', week: 'Week 4', title: 'Machine Learning Intro', lessons: 4, published: true },
-            { id: '5', week: 'Week 5', title: 'Deep Learning', lessons: 4, published: true },
-            { id: '6', week: 'Week 6', title: 'Final Project', lessons: 4, published: true }
-          ]
-        },
-        {
-          id: '3',
-          title: 'Web Development Bootcamp',
-          enrolled: '59',
-          modules: 10,
-          lessons: 40,
-          cohort: 'Cohort C',
-          published: true,
-          completion: 82,
-          modules_data: [
-            { id: '1', week: 'Week 1', title: 'HTML & CSS', lessons: 4, published: true },
-            { id: '2', week: 'Week 2', title: 'JavaScript Fundamentals', lessons: 4, published: true },
-            { id: '3', week: 'Week 3', title: 'DOM Manipulation', lessons: 4, published: true },
-            { id: '4', week: 'Week 4', title: 'Advanced JavaScript', lessons: 4, published: true },
-            { id: '5', week: 'Week 5', title: 'React Introduction', lessons: 4, published: true },
-            { id: '6', week: 'Week 6', title: 'React Advanced', lessons: 4, published: true },
-            { id: '7', week: 'Week 7', title: 'Node.js', lessons: 4, published: true },
-            { id: '8', week: 'Week 8', title: 'Databases', lessons: 4, published: true },
-            { id: '9', week: 'Week 9', title: 'Deployment', lessons: 4, published: true },
-            { id: '10', week: 'Week 10', title: 'Capstone Project', lessons: 4, published: true }
-          ]
-        }
-      ];
+      return [];
     }
   },
 
   async getRecentStudentActivity(): Promise<any[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/instructor/activity`, {
+      const response = await fetch(`${API_BASE_URL}/instructor/recent-activity`, {
         method: 'GET',
         headers: getHeaders(),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch recent activity');
+        console.warn('Recent activity endpoint not available:', response.status);
+        return [];
       }
 
       const data = await response.json();
       return data.activities || data.data || data;
     } catch (error) {
-      console.error('Recent activity error:', error);
-      // Return mock data for development
-      return [
-        { student: "Sarah Johnson", action: "completed", target: "Module 3", time: "2 min ago" },
-        { student: "Mike Chen", action: "started", target: "Lesson 4", time: "15 min ago" },
-        { student: "Emma Davis", action: "submitted", target: "Assessment 2", time: "1 hour ago" },
-        { student: "James Wilson", action: "completed", target: "Course Introduction", time: "2 hours ago" },
-        { student: "Lisa Brown", action: "enrolled", target: "Advanced JavaScript", time: "3 hours ago" }
-      ];
+      // Silently handle the error - don't log to console to prevent spam
+      return [];
     }
   },
 
@@ -281,17 +234,22 @@ export const instructorApi = {
   // Module Management
   async getCourseModules(courseId: string): Promise<any[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/instructor/courses/${courseId}/modules`, {
+      console.log('Fetching modules for course:', courseId);
+      const response = await fetch(`${API_BASE_URL}/modules/course/${courseId}`, {
         method: 'GET',
         headers: getHeaders(),
       });
 
       if (!response.ok) {
+        console.error('Module fetch failed with status:', response.status);
         throw new Error('Failed to fetch course modules');
       }
 
       const data = await response.json();
-      return data.modules || data.data || data;
+      console.log('Modules API response:', data);
+      const modules = data.modules || data.data || data;
+      console.log('Extracted modules:', modules);
+      return modules;
     } catch (error) {
       console.error('Get course modules error:', error);
       throw new Error('Failed to fetch course modules');
@@ -433,17 +391,94 @@ export const instructorApi = {
   // Assessment Management
   async getCourseAssessments(courseId: string): Promise<any[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/instructor/courses/${courseId}/assessments`, {
+      // Get all modules for this course first
+      const modulesResponse = await fetch(`${API_BASE_URL}/modules/course/${courseId}`, {
         method: 'GET',
         headers: getHeaders(),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch course assessments');
+      if (!modulesResponse.ok) {
+        throw new Error('Failed to fetch course modules');
       }
 
-      const data = await response.json();
-      return data.assessments || data.data || data;
+      const modulesData = await modulesResponse.json();
+      const moduleIds = modulesData.modules?.map((m: any) => m.id) || [];
+
+      // Get assessments for each module with questions and options
+      const allAssessments = [];
+      for (const moduleId of moduleIds) {
+        const response = await fetch(`${API_BASE_URL}/assessments/module/${moduleId}`, {
+          method: 'GET',
+          headers: getHeaders(),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const assessments = data.assessments || [];
+          
+          // Fetch questions and options for each assessment using the new endpoint
+          for (const assessment of assessments) {
+            const questionsResponse = await fetch(`${API_BASE_URL}/assessments/${assessment.id}/with-questions`, {
+              method: 'GET',
+              headers: getHeaders(),
+            });
+
+            if (questionsResponse.ok) {
+              const questionsData = await questionsResponse.json();
+              const questions = questionsData.questions || [];
+
+              // Transform questions to match frontend format
+              const transformedQuestions = questions.map((q: any) => {
+                const questionOptions = q.options || [];
+                const transformedQuestion: any = {
+                  question: q.questionText,
+                  type: q.type === 'MCQ' ? 'multiple-choice' : 
+                         q.type === 'TRUE_FALSE' ? 'true-false' : 
+                         q.type === 'SHORT_ANSWER' ? 'short-answer' : 'essay',
+                  points: q.points,
+                  correctAnswer: q.type === 'TRUE_FALSE' ? 
+                    (questionOptions.find((o: any) => o.isCorrect)?.optionText === 'true' ? 'true' : 'false') :
+                    q.type === 'SHORT_ANSWER' ? 
+                    (questionOptions.find((o: any) => o.isCorrect)?.optionText || '') :
+                    questionOptions.findIndex((o: any) => o.isCorrect)
+                };
+
+                if (q.type === 'MCQ') {
+                  transformedQuestion.options = questionOptions.map((o: any) => o.optionText);
+                }
+
+                return transformedQuestion;
+              });
+
+              // Add transformed assessment to list with questions
+              allAssessments.push({
+                ...assessment,
+                courseId: courseId,
+                moduleId: moduleId,
+                questions: transformedQuestions,
+                timeLimit: assessment.timeLimitMinutes,
+                passingScore: assessment.passMark,
+                isPublished: assessment.status === 'PUBLISHED',
+                type: assessment.type === 'QUIZ' ? 'Quiz' : 'Assignment'
+              });
+            } else {
+              // Still add assessment without questions
+              allAssessments.push({
+                ...assessment,
+                courseId: courseId,
+                moduleId: moduleId,
+                questions: [],
+                timeLimit: assessment.timeLimitMinutes,
+                passingScore: assessment.passMark,
+                isPublished: assessment.status === 'PUBLISHED',
+                type: assessment.type === 'QUIZ' ? 'Quiz' : 'Assignment'
+              });
+            }
+          }
+        }
+      }
+
+      return allAssessments;
     } catch (error) {
       console.error('Get course assessments error:', error);
       throw new Error('Failed to fetch course assessments');
@@ -452,10 +487,27 @@ export const instructorApi = {
 
   async createAssessment(assessmentData: AssessmentFormData): Promise<any> {
     try {
-      const response = await fetch(`${API_BASE_URL}/instructor/assessments`, {
+      // Validate required fields
+      if (!assessmentData.moduleId) {
+        throw new Error('Module is required for creating assessments');
+      }
+
+      // Transform data to match backend format
+      const backendData = {
+        moduleId: assessmentData.moduleId,
+        title: assessmentData.title,
+        description: assessmentData.description || '',
+        type: 'QUIZ',
+        passMark: assessmentData.passingScore || 70,
+        timeLimitMinutes: assessmentData.timeLimit,
+        instantFeedback: true,
+        status: assessmentData.isPublished ? 'PUBLISHED' : 'DRAFT'
+      };
+
+      const response = await fetch(`${API_BASE_URL}/assessments`, {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify(assessmentData),
+        body: JSON.stringify(backendData),
       });
 
       if (!response.ok) {
@@ -463,7 +515,61 @@ export const instructorApi = {
       }
 
       const data = await response.json();
-      return data.assessment || data.data || data;
+      console.log('Assessment created successfully:', data.assessment);
+      console.log('Questions to create:', assessmentData.questions);
+      
+      // Create questions if provided
+      if (assessmentData.questions && assessmentData.questions.length > 0) {
+        console.log('Creating', assessmentData.questions.length, 'questions...');
+        for (const question of assessmentData.questions) {
+          const questionData: any = {
+            assessmentId: data.assessment.id,
+            questionText: question.question,
+            type: question.type === 'multiple-choice' ? 'MCQ' : 
+                   question.type === 'true-false' ? 'TRUE_FALSE' : 'SHORT_ANSWER',
+            points: question.points,
+            orderIndex: assessmentData.questions.indexOf(question)
+          };
+
+          // Add options for MCQ and TRUE_FALSE questions
+          if (question.type === 'multiple-choice' && question.options) {
+            questionData.options = question.options.map((option: string, index: number) => ({
+              text: option,
+              isCorrect: index === question.correctAnswer
+            }));
+          } else if (question.type === 'true-false') {
+            questionData.options = [
+              { text: 'true', isCorrect: question.correctAnswer === 'true' },
+              { text: 'false', isCorrect: question.correctAnswer === 'false' }
+            ];
+          } else if (question.type === 'short-answer') {
+            questionData.options = [
+              { text: question.correctAnswer.toString(), isCorrect: true }
+            ];
+          }
+
+          console.log('Creating question with data:', questionData);
+
+          const questionResponse = await fetch(`${API_BASE_URL}/assessments/${data.assessment.id}/questions`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(questionData),
+          });
+
+          console.log('Question creation response status:', questionResponse.status);
+          console.log('Question creation response ok:', questionResponse.ok);
+
+          if (questionResponse.ok) {
+            const questionResult = await questionResponse.json();
+            console.log('Question created successfully:', questionResult.question);
+            // Options are created automatically by the backend when creating the question
+          } else {
+            console.error('Failed to create question:', await questionResponse.text());
+          }
+        }
+      }
+
+      return data.assessment;
     } catch (error) {
       console.error('Create assessment error:', error);
       throw new Error('Failed to create assessment');
@@ -472,10 +578,22 @@ export const instructorApi = {
 
   async updateAssessment(assessmentId: string, assessmentData: Partial<AssessmentFormData>): Promise<any> {
     try {
-      const response = await fetch(`${API_BASE_URL}/instructor/assessments/${assessmentId}`, {
+      // Transform data to match backend format
+      const backendData = {
+        moduleId: assessmentData.moduleId || null,
+        title: assessmentData.title,
+        description: assessmentData.description || '',
+        type: 'QUIZ',
+        passMark: assessmentData.passingScore || 70,
+        timeLimitMinutes: assessmentData.timeLimit,
+        instantFeedback: true,
+        status: assessmentData.isPublished ? 'PUBLISHED' : 'DRAFT'
+      };
+
+      const response = await fetch(`${API_BASE_URL}/assessments/${assessmentId}`, {
         method: 'PUT',
         headers: getHeaders(),
-        body: JSON.stringify(assessmentData),
+        body: JSON.stringify(backendData),
       });
 
       if (!response.ok) {
@@ -483,7 +601,7 @@ export const instructorApi = {
       }
 
       const data = await response.json();
-      return data.assessment || data.data || data;
+      return data.assessment;
     } catch (error) {
       console.error('Update assessment error:', error);
       throw new Error('Failed to update assessment');
@@ -492,7 +610,7 @@ export const instructorApi = {
 
   async deleteAssessment(assessmentId: string): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/instructor/assessments/${assessmentId}`, {
+      const response = await fetch(`${API_BASE_URL}/assessments/${assessmentId}`, {
         method: 'DELETE',
         headers: getHeaders(),
       });
@@ -503,6 +621,64 @@ export const instructorApi = {
     } catch (error) {
       console.error('Delete assessment error:', error);
       throw new Error('Failed to delete assessment');
+    }
+  },
+
+  // Additional methods for overview page
+  async getInstructorModules(): Promise<any[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/instructor/modules`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const data = await response.json();
+      return data.modules || data.data || data;
+    } catch (error) {
+      // Silently handle the error
+      return [];
+    }
+  },
+
+  async getInstructorLessons(): Promise<any[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/instructor/lessons`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const data = await response.json();
+      return data.lessons || data.data || data;
+    } catch (error) {
+      // Silently handle the error
+      return [];
+    }
+  },
+
+  async getInstructorAssessments(): Promise<any[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/instructor/assessments`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const data = await response.json();
+      return data.assessments || data.data || data;
+    } catch (error) {
+      // Silently handle the error
+      return [];
     }
   },
 };

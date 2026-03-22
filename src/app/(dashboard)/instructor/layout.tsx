@@ -7,6 +7,8 @@ import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bel
 import Logo from "@/components/ui/navbar/Logo";
 import { tokenManager } from "@/lib/auth";
 import { notificationService, Notification } from "@/services/notificationService";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ToastProvider } from "@/contexts/ToastContext";
 
 
 function NavItem({ icon: Icon, label, active, onClick, collapsed }: { 
@@ -289,7 +291,9 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
   };
 
   return (
-    <div className="flex h-screen bg-[#f8f8f8] overflow-hidden">
+    <AuthProvider>
+      <ToastProvider>
+        <div className="flex h-screen bg-[#f8f8f8] overflow-hidden">
       {logoutPopupOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div 
@@ -458,6 +462,8 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
         </main>
       </div>
     </div>
+      </ToastProvider>
+    </AuthProvider>
   );
 }
 

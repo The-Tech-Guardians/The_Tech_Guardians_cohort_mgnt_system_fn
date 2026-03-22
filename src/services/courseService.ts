@@ -5,7 +5,7 @@ export type { Module } from './moduleService';
 import type { BackendLesson } from '@/types/lesson';
 export type Lesson = BackendLesson;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/backend';
 
 export interface PaginationInfo {
   page: number;
@@ -256,10 +256,29 @@ async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course
   },
 
   // Get courses for current instructor
-  async getInstructorCourses(instructorId: string): Promise<{ courses: BackendCourse[]; pagination: PaginationInfo }> {
+  async getInstructorCourses(): Promise<{ courses: BackendCourse[]; pagination: PaginationInfo }> {
     try {
       const token = getAuthToken();
       if (!token) throw new Error('No authentication token found');
+      
+      const userRes = await fetch(`${API_BASE_URL}/users/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!userRes.ok) {
+        throw new Error('Failed to get current user');
+      }
+      
+      const userData = await userRes.json();
+      console.log('User data from /users/me:', userData);
+      const instructorId = userData.user?.uuid;
+      
+      if (!instructorId) {
+        return { courses: [], pagination: { page: 1, limit: 100, total: 0, pages: 0 } };
+      }
       
       const response = await fetch(`${API_BASE_URL}/admin/instructors/${instructorId}?page=1&limit=100`, {
         method: 'GET',
@@ -274,10 +293,13 @@ async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course
         return { courses: [], pagination: { page: 1, limit: 100, total: 0, pages: 0 } };
       }
       
-      const data = await response.json();
+      const instructorData = await response.json();
+      console.log('Instructor data from /admin/instructors:', instructorData);
+      
+      const data = instructorData.instructor || {};
       return { 
-        courses: data.courses || [], 
-        pagination: { page: 1, limit: 100, total: data.courses?.length || 0, pages: 1 }
+        courses: data.courses || data.instructor?.courses || [], 
+        pagination: { page: 1, limit: 100, total: data.courses?.length || data.instructor?.courses?.length || 0, pages: 1 }
       };
     } catch (error) {
       console.warn('Instructor courses fetch failed:', error);
@@ -289,24 +311,30 @@ async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course
   async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: BackendCourse[]; pagination: PaginationInfo }> {
     try {
       const token = getAuthToken();
+      if (!token) throw new Error('No authentication token found');
+      
       const response = await fetch(`${API_BASE_URL}/courses?page=${page}&limit=${limit}`, {
         method: 'GET',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
         },
       });
+      
       if (!response.ok) {
-        console.warn('Courses API unavailable:', response.status);
+        console.error('Courses API unavailable:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
         return { courses: [], pagination: { page, limit, total: 0, pages: 0 } };
       }
+      
       const data = await response.json();
       return { 
         courses: data.courses || [], 
         pagination: data.pagination || { page, limit, total: 0, pages: 0 }
       };
     } catch (error) {
-      console.warn('Courses fetch failed:', error);
+      console.error('Courses fetch failed:', error);
       return { courses: [], pagination: { page, limit, total: 0, pages: 0 } };
     }
   },

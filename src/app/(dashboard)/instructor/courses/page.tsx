@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
+import FormattedTextEditor from "@/components/editor/FormattedTextEditor";
 import { Plus, Search, Edit, Trash2, Loader2, Eye, EyeOff, BookOpen, LayoutGrid, List } from "lucide-react";
 import {
   courseService,
@@ -11,19 +12,25 @@ import {
   formatCourseType,
 } from "@/services/courseService";
 import { cohortService, type Cohort } from "@/services/cohortService";
-import { authAPI, tokenManager } from "@/lib/auth";
+import type { User } from "@/types/user";
 
 const API_BASE_URL = "http://localhost:3000/api";
 
-const getCurrentUser = () => {
+const getCurrentUser = (): User | null => {
   if (typeof window === 'undefined') return null;
   
-  // Check different possible keys
-  const userData = localStorage.getItem('user_data');
-  const authData = localStorage.getItem('auth_data');
-  const user = localStorage.getItem('user');
+  // Prioritize standard user data
+  const userDataStr = localStorage.getItem('user_data') || localStorage.getItem('user') || localStorage.getItem('auth_data');
+  if (!userDataStr) return null;
   
-  return userData ? JSON.parse(userData) : authData ? JSON.parse(authData) : user ? JSON.parse(user) : null;
+  try {
+    const userData = JSON.parse(userDataStr);
+    // Ensure it has uuid for instructor check
+    return userData as User;
+  } catch (e) {
+    console.error('Failed to parse user data:', e);
+    return null;
+  }
 };
 
 const initialCourseForm = {
@@ -71,21 +78,17 @@ export default function InstructorCoursesPage() {
       setLoading(true);
       setError(null);
       
-      // Get courses for current instructor
-      const response = await courseService.getAllCourses(1, 100);
-      const instructorCourses = response.courses?.filter((course: BackendCourse) => 
-        course.instructorId === currentUser?.uuid
-      ) || [];
-      
-      setCourses(instructorCourses);
+      // Use instructor-specific endpoint
+      const result = await courseService.getInstructorCourses();
+      setCourses(result.courses || []);
     } catch (err: unknown) {
-      console.error('Failed to fetch courses:', err);
+      console.error('Failed to fetch instructor courses:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch courses');
       setCourses([]);
     } finally {
       setLoading(false);
     }
-  }, [currentUser?.uuid]);
+  }, []);
 
   const fetchCohorts = useCallback(async () => {
     try {
@@ -94,19 +97,7 @@ export default function InstructorCoursesPage() {
       setCohorts(validCohorts);
     } catch (err: unknown) {
       console.error('Failed to fetch cohorts:', err);
-      // If MongoDB fails, provide a fallback cohort for testing
-      const fallbackCohort: Cohort = {
-        id: 'fallback-cohort',
-        name: 'Default Cohort',
-        description: 'Fallback cohort for testing',
-        startDate: new Date().toISOString(),
-        endDate: new Date().toISOString(),
-        courseType: 'GENERAL',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      setCohorts([fallbackCohort]);
+      setCohorts([]);
     }
   }, []);
 
@@ -118,7 +109,7 @@ export default function InstructorCoursesPage() {
       console.error('Failed to fetch instructors:', err);
       setInstructors([]);
     }
-  }, []);
+  }, []); 
 
   useEffect(() => {
     fetchCourses();
@@ -249,38 +240,21 @@ export default function InstructorCoursesPage() {
     try {
       setFormLoading(true);
       
-      // Get the current course first to determine its status
-      const currentCourse = await courseService.getCourseById(courseId);
-      
-      if (!currentCourse) {
-        throw new Error('Course not found');
-      }
-      
-      // Check if current user is the instructor of this course
-      if (currentCourse && currentCourse.instructorId !== currentUser?.uuid) {
-        showToast('You can only publish your own courses', 'error');
-        return;
-      }
-      
-      // Toggle the publish status
-      const updatedCourse = await courseService.updateCourse(courseId, {
-        ...currentCourse.course,
-        isPublished: currentCourse?.course?.isPublished !== undefined ? !currentCourse.course.isPublished : false
-      });
-      
+      const updatedCourse = await courseService.togglePublish(courseId);
       if (updatedCourse) {
         // Immediately update local state for better UX
         setCourses(prevCourses => 
           prevCourses.map(course => 
             course.id === courseId 
-              ? { ...course, isPublished: updatedCourse.course.isPublished }
+              ? { ...course, isPublished: updatedCourse.isPublished }
               : course
           )
         );
-        showToast(`Course ${updatedCourse.course.isPublished ? 'published' : 'unpublished'} successfully!`);
+        showToast(`Course ${updatedCourse.isPublished ? 'published' : 'unpublished'} successfully!`);
       } else {
         // Fallback: refresh all courses
         fetchCourses();
+        showToast('Failed to toggle course status', 'error');
       }
     } catch (err: any) {
       showToast(err.message || 'Failed to update course status', 'error');
@@ -574,12 +548,13 @@ export default function InstructorCoursesPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Description
             </label>
-            <textarea
-              required
-              rows={3}
-              value={courseForm.description}
-              onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            <FormattedTextEditor
+              content={courseForm.description}
+              onChange={(content) => setCourseForm(prev => ({ ...prev, description: content }))}
+              placeholder="Enter course description..."
+              minHeight="150px"
+              showToolbar={true}
+              className="w-full"
             />
           </div>
 
@@ -606,25 +581,18 @@ export default function InstructorCoursesPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Cohort
             </label>
-            <select
+              <select
               required
               value={courseForm.cohortId}
-              onChange={(e) => {
-                console.log('Cohort selected:', e.target.value);
-                console.log('Available cohorts:', cohorts);
-                setCourseForm({ ...courseForm, cohortId: e.target.value });
-              }}
+              onChange={(e) => setCourseForm({ ...courseForm, cohortId: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">Select a cohort</option>
-              {cohorts.map((cohort) => {
-                console.log('Rendering cohort option:', cohort);
-                return (
-                  <option key={cohort.id} value={cohort.id}>
-                    {cohort.name}
-                  </option>
-                );
-              })}
+              {cohorts.map((cohort) => (
+                <option key={cohort.id} value={cohort.id}>
+                  {cohort.name}
+                </option>
+              ))}
             </select>
           </div>
 

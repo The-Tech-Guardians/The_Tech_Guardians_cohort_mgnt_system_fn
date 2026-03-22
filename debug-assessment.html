@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Assessment</title>
+</head>
+<body>
+    <h1>Assessment Debug Tools</h1>
+    
+    <h2>1. Check Database Questions</h2>
+    <button onclick="checkQuestions()">Check Questions in Database</button>
+    <pre id="questions-result"></pre>
+    
+    <h2>2. Add Sample Questions</h2>
+    <button onclick="addSampleQuestions()">Add Sample Questions</button>
+    <pre id="add-result"></pre>
+    
+    <script>
+        const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+        
+        async function checkQuestions() {
+            try {
+                const response = await fetch('http://localhost:3000/backend/debug/questions', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                document.getElementById('questions-result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('questions-result').textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        async function addSampleQuestions() {
+            try {
+                const response = await fetch('http://localhost:3000/backend/debug/add-sample-questions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                document.getElementById('add-result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('add-result').textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

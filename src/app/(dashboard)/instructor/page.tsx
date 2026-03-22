@@ -160,7 +160,6 @@ export default function InstructorDashboard() {
           value={stats?.newEnrollments || '0'}
           icon={Users}
           color="green"
-          trend={{ positive: true, value: "+12.5%" }}
         />
       </div>
 

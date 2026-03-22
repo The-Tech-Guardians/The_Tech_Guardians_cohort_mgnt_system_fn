@@ -123,17 +123,6 @@ function LessonCard({ lesson, modules, onEdit, onDelete }: LessonCardProps) {
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        {lesson.contentUrl && (
-          <a
-            href={lesson.contentUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center text-indigo-600 hover:text-indigo-500 text-xs font-medium"
-          >
-            <ExternalLink className="w-3 h-3 mr-1" />
-            {isTextOrPDF ? "Preview" : "Download"}
-          </a>
-        )}
         <div className="flex gap-2">
           <button
             onClick={onEdit}
