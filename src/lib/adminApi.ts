@@ -236,6 +236,41 @@ export const adminApi = {
       throw error;
     }
   },
+  
+  // Assessments - Get all assessments from all instructors
+  async getAllAssessments(): Promise<any[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/assessments`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        console.warn('Admin assessments endpoint not available:', response.status);
+        return [];
+      }
+
+      const data = await response.json();
+      return data.assessments || data.data || data;
+    } catch (error) {
+      console.error('Failed to fetch admin assessments:', error);
+      return [];
+    }
+  },
+
+  async deleteAssessment(assessmentId: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/assessments/${assessmentId}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Failed to delete assessment:', error);
+      return false;
+    }
+  },
 
   // Courses
   async listCourses(page: number = 1, limit: number = 10): Promise<PaginatedResponse<Course>> {
@@ -549,6 +584,127 @@ const data = await response.json() as ApiResponse<Lesson[]>;
     } catch (error) {
       console.error('Delete lesson error:', error);
       throw error;
+    }
+  },
+
+  // Invitation Management
+  async getInvitations(page: number = 1, limit: number = 10): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/invitations?page=${page}&limit=${limit}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch invitations');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Get invitations error:', error);
+      throw error;
+    }
+  },
+
+  async getInvitationStats(): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/invitations/stats`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch invitation stats');
+      }
+
+      const data = await response.json();
+      return data.stats || {};
+    } catch (error) {
+      console.error('Get invitation stats error:', error);
+      throw error;
+    }
+  },
+
+  async resendInvitation(invitationId: string): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/invitations/${invitationId}/resend`, {
+        method: 'POST',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to resend invitation');
+      }
+    } catch (error) {
+      console.error('Resend invitation error:', error);
+      throw error;
+    }
+  },
+
+  async cancelInvitation(invitationId: string): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/invitations/${invitationId}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel invitation');
+      }
+    } catch (error) {
+      console.error('Cancel invitation error:', error);
+      throw error;
+    }
+  },
+
+  // Email Management
+  async getAdminEmails(): Promise<string[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/admins/emails`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch admin emails');
+      }
+
+      const data = await response.json();
+      return data.emails || [];
+    } catch (error) {
+      console.error('Get admin emails error:', error);
+      return [];
+    }
+  },
+
+  async sendEmail(emailData: any): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/email/send`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(emailData),
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Send email error:', error);
+      return false;
+    }
+  },
+
+  async sendBulkEmail(emailData: any): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/email/send-bulk`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(emailData),
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Send bulk email error:', error);
+      return false;
     }
   },
 };

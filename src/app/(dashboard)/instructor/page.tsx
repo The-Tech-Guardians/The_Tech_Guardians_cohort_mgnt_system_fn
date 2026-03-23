@@ -252,29 +252,15 @@ export default function InstructorDashboard() {
 
       {/* Recent Activity */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Student Activity</h3>
-        <div className="space-y-3">
-          {recentActivity.map((activity, idx) => (
-            <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-all">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center">
-                  <span className="text-indigo-600 font-semibold text-xs">
-{activity.student.split(' ').map((n: string) => n[0]).join('')}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-700">
-                    <span className="font-semibold">{activity.student}</span> {activity.action} <span className="font-semibold text-indigo-600">{activity.target}</span>
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{activity.time}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 text-xs text-indigo-600 font-medium">
-                <Activity size={14} />
-                Live
-              </div>
-            </div>
-          ))}
+        <div className="text-center space-y-6">
+          <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+            <Activity className="w-8 h-8 text-gray-400" />
+          </div>
+          
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+            <p className="text-gray-600">Coming Soon</p>
+          </div>
         </div>
       </div>
     </div>

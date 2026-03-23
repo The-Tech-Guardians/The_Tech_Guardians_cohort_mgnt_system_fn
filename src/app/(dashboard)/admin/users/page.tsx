@@ -6,6 +6,7 @@ import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
 import RoleBadge from "@/components/admin/RoleBadge";
 import { adminApi } from '@/lib/adminApi';
+import { tokenManager } from '@/lib/auth';
 import type { User } from '@/lib/adminApi';
 
 export default function UsersPage() {
@@ -24,13 +25,22 @@ export default function UsersPage() {
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   
   // Form states
-  const [inviteForm, setInviteForm] = useState({ email: "", role: "INSTRUCTOR", cohort_id: "" });
+  const [inviteForm, setInviteForm] = useState({ email: "", role: "INSTRUCTOR" });
   const [editForm, setEditForm] = useState({ first_name: "", last_name: "", email: "", role: "" });
   const [formLoading, setFormLoading] = useState(false);
   
   // Toast
   const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
   const [viewMode, setViewMode] = useState<"card" | "list">("list");
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+
+  // Check current user role
+  useEffect(() => {
+    const role = tokenManager.getRoleFromToken();
+    setCurrentUserRole(role);
+  }, []);
+
+  const canInviteUsers = currentUserRole === 'ADMIN';
 
   const showToast = (message: string, type: "success" | "error" = "success") => {
     setToast({ show: true, message, type });
@@ -67,12 +77,19 @@ export default function UsersPage() {
 
   const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Double-check: only admins can invite users
+    if (!canInviteUsers) {
+      showToast("You don't have permission to invite users", "error");
+      return;
+    }
+    
     setFormLoading(true);
 
     try {
-      await adminApi.inviteUser(inviteForm.email, inviteForm.role, inviteForm.cohort_id || undefined);
+      await adminApi.inviteUser(inviteForm.email, inviteForm.role, undefined);
       showToast("User invited successfully!");
-      setInviteForm({ email: "", role: "INSTRUCTOR", cohort_id: "" });
+      setInviteForm({ email: "", role: "INSTRUCTOR" });
       setShowInviteModal(false);
       fetchUsers();
     } catch (err: any) {
@@ -202,6 +219,7 @@ export default function UsersPage() {
             </button>
           </div>
 
+          {canInviteUsers && (
           <button
             onClick={() => setShowInviteModal(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm"
@@ -209,6 +227,7 @@ export default function UsersPage() {
             <Plus className="w-4 h-4" />
             Invite User
           </button>
+        )}
         </div>
       </div>
 
@@ -379,17 +398,14 @@ export default function UsersPage() {
         <form onSubmit={handleInviteUser} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="email"
-                required
-                value={inviteForm.email}
-                onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                placeholder="user@example.com"
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
+            <input
+              type="email"
+              required
+              value={inviteForm.email}
+              onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+              placeholder="user@example.com"
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
@@ -397,39 +413,20 @@ export default function UsersPage() {
               required
               value={inviteForm.role}
               onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value })}
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
             >
               <option value="INSTRUCTOR">Instructor</option>
-              <option value="ADMIN">Admin</option>
               <option value="LEARNER">Learner</option>
+              <option value="ADMIN">Admin</option>
             </select>
           </div>
-          {inviteForm.role === "LEARNER" && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Cohort ID (Optional)</label>
-              <input
-                type="text"
-                value={inviteForm.cohort_id}
-                onChange={(e) => setInviteForm({ ...inviteForm, cohort_id: e.target.value })}
-                placeholder="Enter cohort ID"
-                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-          )}
-          <div className="flex gap-3 pt-4">
+          <div className="flex justify-end pt-4">
             <button
               type="submit"
               disabled={formLoading}
-              className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
+              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
             >
               {formLoading ? <RefreshCw className="w-5 h-5 animate-spin mx-auto" /> : "Send Invitation"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowInviteModal(false)}
-              className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all"
-            >
-              Cancel
             </button>
           </div>
         </form>

@@ -426,7 +426,7 @@ async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course
       const token = getAuthToken();
       if (!token) throw new Error('No authentication token found');
       
-      const courseRes = await fetch(`${API_BASE_URL}/courses/${id}`, {
+      const courseRes = await fetch(`${API_BASE_URL}/instructor/courses/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -437,8 +437,8 @@ async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course
       const targetStatus = !course.course?.isPublished;
       const endpoint = targetStatus ? 'publish' : 'unpublish';
       
-      const response = await fetch(`${API_BASE_URL}/courses/${id}/${endpoint}`, {
-        method: 'PUT', // Changed from PATCH to PUT to avoid CORS issues
+      const response = await fetch(`${API_BASE_URL}/instructor/courses/${id}/${endpoint}`, {
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

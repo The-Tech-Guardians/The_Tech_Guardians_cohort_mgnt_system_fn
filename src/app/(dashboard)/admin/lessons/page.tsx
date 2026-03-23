@@ -101,18 +101,13 @@ function LessonCard({ lesson, modules, onEdit, onDelete }: LessonCardProps) {
       )}
 
       {isVideo && lesson.contentBody && (
-        <div className="text-sm text-gray-600 leading-relaxed mb-3 [&_strong]:font-bold whitespace-pre-wrap line-clamp-3">
+        <div className="text-sm text-gray-600 leading-relaxed mb-3 whitespace-pre-wrap">
           {lesson.contentBody.substring(0, 150)}...
         </div>
       )}
       {(lesson.contentBody || "").trim() && (
-        <div className="text-sm text-gray-600 leading-relaxed mb-3 [&_strong]:font-bold [&_p]:mb-2 whitespace-pre-wrap max-h-24 overflow-y-auto">
-          {lesson.contentBody?.split('\n').map((line, i) => {
-            if (/^\d/.test(line.trim())) {
-              return <p key={i} className="font-medium">{line}</p>;
-            }
-            return <span key={i}>{line}</span>;
-          })}
+        <div className="text-sm text-gray-600 leading-relaxed mb-3 whitespace-pre-wrap max-h-24 overflow-y-auto">
+          {lesson.contentBody}
         </div>
       )}
 
@@ -242,19 +237,27 @@ function LessonFormModal({
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Content Body * 
-            {(form.contentType === "text" || form.contentType === "pdf") && "(Markdown supported)"}
-          </label>
-          <textarea
-            rows={5}
-            value={form.contentBody}
-            onChange={e => onChange({ contentBody: e.target.value })}
-            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-vertical"
-            required
-            placeholder="Enter lesson content..."
-          />
-        </div>
+            <label className="block text-sm text-gray-700 mb-1.5">
+              Content Body *
+            </label>
+            <input
+              type="text"
+              value={form.contentBody || ''}
+              onChange={e => {
+                console.log('=== INPUT CHANGE ===');
+                console.log('Input value:', e.target.value);
+                console.log('Current form.contentBody:', form.contentBody);
+                onChange({ contentBody: e.target.value });
+                console.log('Called onChange');
+                console.log('==================');
+              }}
+              onFocus={() => console.log('Input focused')}
+              onBlur={() => console.log('Input blurred')}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+              required
+              placeholder="textarea"
+            />
+          </div>
         {form.contentType !== "text" && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Upload File</label>
@@ -348,7 +351,16 @@ export default function AdminLessonsPage() {
   };
 
   const updateLessonForm = (updates: Partial<typeof initialLessonForm>) => {
-    setLessonForm(prev => ({ ...prev, ...updates }));
+    console.log('=== UPDATE LESSON FORM ===');
+    console.log('Updates:', updates);
+    console.log('Current form state:', lessonForm);
+    
+    setLessonForm(prev => {
+      const newForm = { ...prev, ...updates };
+      console.log('New form state:', newForm);
+      console.log('========================');
+      return newForm;
+    });
   };
 
   const onFileChange = (file: File | null) => {
@@ -499,16 +511,21 @@ export default function AdminLessonsPage() {
   };
 
   const openEditModal = (lesson: BackendLesson) => {
+    console.log('=== OPEN EDIT MODAL ===');
+    console.log('Lesson data:', lesson);
     setSelectedLesson(lesson);
-    setLessonForm({
+    const formData = {
       moduleId: lesson.moduleId,
       title: lesson.title,
       contentType: lesson.contentType,
       contentBody: lesson.contentBody || "",
       orderIndex: lesson.orderIndex || 0,
       file: null,
-    });
+    };
+    console.log('Setting form data:', formData);
+    setLessonForm(formData);
     setShowEditModal(true);
+    console.log('======================');
   };
 
   const openDeleteModal = (lesson: BackendLesson) => {

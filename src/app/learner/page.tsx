@@ -1,13 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSidebar } from "@/components/ui/SideBarContext";
-import { Users, BookMarked, GraduationCap, Calendar } from "lucide-react";
+import { Users, BookMarked, GraduationCap, Calendar, CheckCircle } from "lucide-react";
 import { authAPI, tokenManager } from "@/lib/auth";
 
 type User = {
   name: string;
   initials: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
 };
 
 type Course = {
@@ -28,6 +32,8 @@ type Cohort = {
 
 export default function LearnerDashboardPage() {
   const { collapsed } = useSidebar();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [user, setUser] = useState<User>({ name: "Loading...", initials: "L" });
   const [myCourses, setMyCourses] = useState<Course[]>([]);
@@ -35,6 +41,7 @@ export default function LearnerDashboardPage() {
   const [availableCohorts, setAvailableCohorts] = useState<Cohort[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState<string | null>(null);
+  const [showCongrats, setShowCongrats] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -43,10 +50,10 @@ export default function LearnerDashboardPage() {
 
         if (userData) {
           const name =
-            userData.firstName || userData.lastName
-              ? `${userData.firstName || ""} ${userData.lastName || ""}`.trim()
-              : userData.name ||
-                userData.email?.split("@")[0] ||
+            (userData as any).firstName || (userData as any).lastName
+              ? `${(userData as any).firstName || ""} ${(userData as any).lastName || ""}`.trim()
+              : (userData as any).name ||
+                (userData as any).email?.split("@")[0] ||
                 "User";
 
           const initials =
@@ -73,7 +80,7 @@ export default function LearnerDashboardPage() {
 
         const cohortRes = await authAPI.getLearnerCohort();
         console.log('Cohort API response:', cohortRes); // Debug
-        if (cohortRes?.success && cohortRes.data) {
+        if (cohortRes?.success && cohortRes.data !== null) {
           setCurrentCohort(cohortRes.data as Cohort);
         }
 
@@ -91,6 +98,26 @@ export default function LearnerDashboardPage() {
     fetchData();
   }, []);
 
+  // Check for approved parameter and show congratulations modal
+  useEffect(() => {
+    const approved = searchParams.get('approved');
+    if (approved === 'true') {
+      setShowCongrats(true);
+      // Hide the congrats message after 10 seconds or when user interacts
+      const timer = setTimeout(() => {
+        setShowCongrats(false);
+      }, 10000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
+
+  const handleContinueToDashboard = () => {
+    setShowCongrats(false);
+    // Clean up the URL
+    router.replace('/learner', { scroll: false });
+  };
+
   const handleEnrollCohort = async (cohortId: string) => {
     try {
       setEnrolling(cohortId);
@@ -99,8 +126,8 @@ export default function LearnerDashboardPage() {
 
       if (response?.success) {
         const cohortRes = await authAPI.getLearnerCohort();
-        if (cohortRes?.success) {
-          setCurrentCohort(cohortRes.data);
+        if (cohortRes?.success && cohortRes.data !== null) {
+          setCurrentCohort(cohortRes.data as Cohort);
         }
 
         const availableRes = await authAPI.getAvailableCohorts();
@@ -135,7 +162,34 @@ export default function LearnerDashboardPage() {
   }
 
   return (
-    <div className={`flex gap-5 min-h-full ${collapsed ? "p-4" : ""}`}>
+    <>
+      {/* Congratulations Modal */}
+      {showCongrats && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-8 text-center">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Congratulations!
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Your application for this cohort has been APPROVED. Welcome to the cohort!
+              </p>
+            </div>
+            
+            <button
+              onClick={handleContinueToDashboard}
+              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              Continue to Learner Dashboard
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className={`flex gap-5 min-h-full ${collapsed ? "p-4" : ""}`}>
       
       {/* LEFT SECTION */}
       <div className="flex-1 space-y-5">
@@ -235,5 +289,7 @@ export default function LearnerDashboardPage() {
         )}
       </div>
     </div>
+  
+</>
   );
 }

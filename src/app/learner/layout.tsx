@@ -1,5 +1,6 @@
 "use client";
 
-import FixedLearnerLayout from './FixedLayout';
+import FixedLearnerLayout, { useSidebar } from './FixedLayout';
 
+export { useSidebar };
 export default FixedLearnerLayout;

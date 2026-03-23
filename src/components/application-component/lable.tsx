@@ -1,4 +1,7 @@
-export function Label({ children, required }) {
+export function Label({ children, required }: {
+  children: React.ReactNode;
+  required?: boolean;
+}) {
   return (
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {children}

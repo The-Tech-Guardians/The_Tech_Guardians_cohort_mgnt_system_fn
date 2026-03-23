@@ -2,50 +2,108 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight, X, Layers } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight, X, Layers, TrendingUp, ChevronDown, Mail } from "lucide-react";
 import Logo from "@/components/ui/navbar/Logo";
 import { tokenManager } from "@/lib/auth";
 import { notificationService, Notification } from "@/services/notificationService";
 
-function NavItem({ icon: Icon, label, active, onClick, collapsed }: { 
+function NavItem({ 
+  icon: Icon, 
+  label, 
+  active, 
+  onClick, 
+  collapsed, 
+  isExpandable, 
+  children, 
+  expanded,
+  onToggleExpand,
+  router,
+  sidebarOpen,
+  setSidebarOpen,
+  currentReportPath
+}: { 
   icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>; 
   label: string; 
   active: boolean; 
   onClick: () => void;
   collapsed: boolean;
+  isExpandable?: boolean;
+  children?: any[];
+  expanded?: boolean;
+  onToggleExpand?: () => void;
+  router: any;
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  currentReportPath: string;
 }) {
   return (
-    <button
-      onClick={onClick}
-      className={`
-        w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium
-        transition-all duration-200 group relative overflow-hidden
-        ${active
-          ? "bg-indigo-600 text-white shadow-sm"
-          : "text-gray-400 hover:bg-indigo-300 hover:text-gray-800"
-        }
-        ${collapsed ? "justify-center" : ""}
-      `}
-    >
-      {active && !collapsed && (
-        <span className="absolute left-0 top-0 bottom-2 w-2.5 h-full bg-white rounded-l-2xl" />
+    <div>
+      <button
+        onClick={isExpandable ? onToggleExpand : onClick}
+        className={`
+          w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium
+          transition-all duration-200 group relative overflow-hidden
+          ${active
+            ? "bg-indigo-600 text-white shadow-sm"
+            : "text-gray-400 hover:bg-indigo-300 hover:text-gray-800"
+          }
+          ${collapsed ? "justify-center" : ""}
+        `}
+      >
+        {active && !collapsed && (
+          <span className="absolute left-0 top-0 bottom-2 w-2.5 h-full bg-white rounded-l-2xl" />
+        )}
+        <Icon
+          size={16}
+          strokeWidth={active ? 2 : 1.8}
+          className={`flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${
+            active ? "text-white" : "text-gray-400 group-hover:text-gray-700"
+          }`}
+        />
+        {!collapsed && (
+          <>
+            <span className="flex-1 text-left tracking-tight">{label}</span>
+            {isExpandable ? (
+              <ChevronDown 
+                size={13} 
+                className={`transition-transform duration-200 ${
+                  expanded ? 'rotate-180' : ''
+                } ${active ? "text-white" : "text-gray-400"}`}
+              />
+            ) : active ? (
+              <ChevronRight size={13} className="text-white/50" />
+            ) : null}
+          </>
+        )}
+      </button>
+      
+      {isExpandable && !collapsed && expanded && children && (
+        <div className="ml-4 mt-1 space-y-1">
+          {children.map((child) => (
+            <button
+              key={child.id}
+              onClick={() => {
+                router.push(child.href);
+                if (sidebarOpen) setSidebarOpen(false);
+              }}
+              className={`
+                w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium
+                transition-all duration-200 group
+                ${currentReportPath === child.id
+                  ? "bg-indigo-100 text-indigo-600"
+                  : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                }
+              `}
+            >
+              <div className={`w-2 h-2 rounded-full ${
+                currentReportPath === child.id ? "bg-indigo-600" : "bg-gray-300"
+              }`} />
+              <span className="flex-1 text-left">{child.label}</span>
+            </button>
+          ))}
+        </div>
       )}
-      <Icon
-        size={16}
-        strokeWidth={active ? 2 : 1.8}
-        className={`flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${
-          active ? "text-white" : "text-gray-400 group-hover:text-gray-700"
-        }`}
-      />
-      {!collapsed && (
-        <>
-          <span className="flex-1 text-left tracking-tight">{label}</span>
-          {active && (
-            <ChevronRight size={13} className="text-white/50" />
-          )}
-        </>
-      )}
-    </button>
+    </div>
   );
 }
 
@@ -64,6 +122,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [collapsed, setCollapsed] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [logoutPopupOpen, setLogoutPopupOpen] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [userName, setUserName] = useState('Admin User');
   const [userInitials, setUserInitials] = useState('AD');
   const [userRoleLabel, setUserRoleLabel] = useState('Admin');
@@ -80,14 +139,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setUnreadCount(response.unreadCount);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
-      // Fall back to sample notifications on error
-      setNotifications([
-        { id: '1', userId: '', title: "New user registered", message: "John Doe just signed up", type: 'system', isRead: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: '2', userId: '', title: "Course completed", message: "Sarah completed React Basics", type: 'course', isRead: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: '3', userId: '', title: "Ban request pending", message: "Review flagged content", type: 'system', isRead: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: '4', userId: '', title: "System update", message: "Platform updated to v2.1", type: 'system', isRead: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      ]);
-      setUnreadCount(3);
+      setNotifications([]);
     } finally {
       setNotificationsLoading(false);
     }
@@ -166,7 +218,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [router]);
 
-  const view = pathname === '/admin' ? 'dashboard' : pathname.split('/').pop() || 'dashboard';
+  const view = pathname === '/admin' ? 'dashboard' : 
+           pathname.startsWith('/admin/invitations') ? 'invitations' :
+           pathname.split('/').pop() || 'dashboard';
 
   // Helper.split('/').pop function to format notification time
   const formatNotificationTime = (createdAt: string) => {
@@ -184,20 +238,59 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return date.toLocaleDateString();
   };
 
+  // Check if current path is under reports
+  const isReportsPath = pathname.startsWith('/admin/reports');
+  const currentReportPath = isReportsPath ? pathname.split('/').pop() || 'reports' : 'dashboard';
+
+  // Toggle expandable menu
+  const toggleMenu = (menuId: string) => {
+    setExpandedMenus(prev => 
+      prev.includes(menuId) 
+        ? prev.filter(id => id !== menuId)
+        : [...prev, menuId]
+    );
+  };
+
+  // Auto-expand reports if we're on a reports subpage
+  useEffect(() => {
+    if (isReportsPath && !expandedMenus.includes('reports')) {
+      setExpandedMenus(['reports']);
+    }
+  }, [isReportsPath]);
+
   const nav = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
     { id: "users", label: "Users", icon: Users, href: "/admin/users" },
+    { id: "invitations", label: "Invitations", icon: Mail, href: "/admin/invitations" },
+    { id: "applications", label: "Applications", icon: Users, href: "/admin/applications" },
     { id: "cohorts", label: "Cohorts", icon: Calendar, href: "/admin/cohorts" },
     { id: "courses", label: "Courses", icon: BookOpen, href: "/admin/courses" },
     { id: "modules", label: "Modules", icon: Layers, href: "/admin/modules" },
     { id: "lessons", label: "Lessons", icon: FileText, href: "/admin/lessons" },
+    { id: "assessments", label: "Assessments", icon: FileText, href: "/admin/assessments" },
     { id: "moderation", label: "Moderation", icon: Shield, href: "/admin/moderation" },
     { id: "logs", label: "Audit Logs", icon: FileText, href: "/admin/logs" },
+    { 
+      id: "reports", 
+      label: "Reports", 
+      icon: TrendingUp, 
+      href: "/admin/reports",
+      isExpandable: true,
+      children: [
+        { id: "quiz", label: "Quiz Reports", href: "/admin/reports/quiz" },
+        { id: "assessment", label: "Assessment Reports", href: "/admin/reports/assessment" },
+        { id: "performance", label: "Performance Reports", href: "/admin/reports/performance" },
+        { id: "learner", label: "Learner Reports", href: "/admin/reports/learner" },
+        { id: "course", label: "Course Reports", href: "/admin/reports/course" },
+        { id: "engagement", label: "Engagement Reports", href: "/admin/reports/engagement" },
+      ]
+    },
   ];
 
   const titles: Record<string, string> = {
     dashboard: "Analytics Dashboard",
     users: "User Management",
+    invitations: "Invitation Management",
     cohorts: "Cohort Management",
     courses: "Course Management",
     modules: "Modules Management",
@@ -209,6 +302,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const subtitles: Record<string, string> = {
     dashboard: "Overview of platform metrics",
     users: "Manage platform users",
+    invitations: "Send and manage user invitations",
     cohorts: "Create and manage cohorts",
     courses: "Manage course content",
     modules: "View modules grouped by course",
@@ -247,8 +341,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             key={item.id}
             icon={item.icon}
             label={item.label}
-            active={view === item.id}
+            active={view === item.id || (item.isExpandable && isReportsPath ? true : false)}
             collapsed={collapsed}
+            isExpandable={item.isExpandable}
+            children={item.children}
+            expanded={item.isExpandable && expandedMenus.includes(item.id)}
+            onToggleExpand={() => item.isExpandable && toggleMenu(item.id)}
+            router={router}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+            currentReportPath={currentReportPath}
             onClick={() => {
               router.push(item.href);
               setSidebarOpen(false);

@@ -5,12 +5,8 @@ import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
 import FormattedTextEditor from "@/components/editor/FormattedTextEditor";
 import { Plus, Search, Edit, Trash2, Loader2, Eye, EyeOff, BookOpen, LayoutGrid, List } from "lucide-react";
-import {
-  courseService,
-  type BackendCourse,
-  type Instructor,
-  formatCourseType,
-} from "@/services/courseService";
+import { instructorApi } from "@/lib/instructorApi";
+import { courseService, formatCourseType, type BackendCourse, type Instructor } from "@/services/courseService";
 import { cohortService, type Cohort } from "@/services/cohortService";
 import type { User } from "@/types/user";
 
@@ -51,7 +47,7 @@ const COURSE_TYPE_OPTIONS = [
 ];
 
 export default function InstructorCoursesPage() {
-  const [courses, setCourses] = useState<BackendCourse[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,8 +57,8 @@ export default function InstructorCoursesPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const [selectedCourse, setSelectedCourse] = useState<BackendCourse | null>(null);
-  const [courseToDelete, setCourseToDelete] = useState<BackendCourse | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
+  const [courseToDelete, setCourseToDelete] = useState<any | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
@@ -79,8 +75,8 @@ export default function InstructorCoursesPage() {
       setError(null);
       
       // Use instructor-specific endpoint
-      const result = await courseService.getInstructorCourses();
-      setCourses(result.courses || []);
+      const courses = await instructorApi.getInstructorCourses();
+      setCourses(courses);
     } catch (err: unknown) {
       console.error('Failed to fetch instructor courses:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch courses');

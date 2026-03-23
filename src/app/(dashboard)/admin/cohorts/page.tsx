@@ -2,19 +2,29 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Search, Trash2, Loader2, Edit, User as UserIcon, LayoutGrid, List } from "lucide-react";
-<<<<<<< HEAD
-import { 
-  newCohortService as cohortService, 
-  type Cohort,
-} from "@/services/newCohortService";
-=======
-import { newCohortService as cohortService, type Cohort } from '@/services/newCohortService';
->>>>>>> 110aef6 (addming tailwind package)
+import { newCohortService as cohortService, type Cohort } from "@/services/newCohortService";
 import { userService, type User } from "@/services/userService";
-import type { ModalProps } from '@/components/admin/Modal';
+
+// Form data interface
+interface FormData {
+  name: string;
+  startDate: string;
+  endDate: string;
+  enrollmentOpenDate: string;
+  enrollmentCloseDate: string;
+  extensionDate: string;
+  courseType: string;
+  coordinatorId: string;
+  status: string;
+}
 
 // Inline Modal and Toast components (since file paths missing)
-function SimpleModal({ isOpen, onClose, title, children }: ModalProps & { children: React.ReactNode }) {
+function SimpleModal({ isOpen, onClose, title, children }: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  title: string; 
+  children: React.ReactNode 
+}) {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -37,10 +47,11 @@ function SimpleModal({ isOpen, onClose, title, children }: ModalProps & { childr
 
 function SimpleToast({ message, type, isVisible, onClose }: { message: string; type: 'success' | 'error'; isVisible: boolean; onClose: () => void }) {
   if (!isVisible) return null;
+  const bgColor = type === 'success' ? 'border-green-200 bg-green-50 text-green-800' : 'border-red-200 bg-red-50 text-red-800';
   return (
     <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-right-2 fade-in duration-300">
-      <div className={`bg-white shadow-xl rounded-2xl p-4 border ${type === 'success' ? 'border-green-200' : 'border-red-200'}`}>
-        <div className={`text-sm font-medium ${type === 'success' ? 'text-green-800' : 'text-red-800'}`}>
+      <div className={`bg-white shadow-xl rounded-2xl p-4 border ${bgColor}`}>
+        <div className={`text-sm font-medium ${bgColor}`}>
           {message}
         </div>
       </div>
@@ -58,6 +69,7 @@ const initialFormData = {
   extensionDate: "",
   courseType: "COMPUTER_PROGRAMMING",
   coordinatorId: "",
+  status: "upcoming",
 };
 
 const courseTypeOptions = [
@@ -181,6 +193,7 @@ export default function CohortsPage() {
       extensionDate: cohort.extensionDate?.split('T')[0] || "",
       courseType: cohort.courseType,
       coordinatorId: cohort.coordinatorId || "",
+      status: cohort.status || "upcoming",
     });
     setShowEditModal(true);
   };
@@ -216,20 +229,40 @@ export default function CohortsPage() {
     }
   };
 
-  // Update cohort (stubbed)
+  // Update cohort
   const handleUpdateCohort = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCohort) return;
 
     try {
       setLoading(true);
-      console.log('Update cohort:', selectedCohort.id, formData);
-      showToast("Update functionality stubbed - use backend API");
-      setShowEditModal(false);
-      fetchCohorts();
+      
+      const updateData = {
+        name: formData.name,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        enrollmentOpenDate: formData.enrollmentOpenDate,
+        enrollmentCloseDate: formData.enrollmentCloseDate,
+        extensionDate: formData.extensionDate,
+        courseType: formData.courseType,
+        coordinatorId: formData.coordinatorId || undefined,
+        status: formData.status,
+      };
+
+      console.log('🔥 Updating cohort with data:', updateData);
+      
+      const response = await cohortService.updateCohort(selectedCohort.id, updateData);
+
+      if (response.cohort) {
+        showToast("Cohort updated successfully!");
+        setFormData(initialFormData);
+        setShowEditModal(false);
+        setSelectedCohort(null);
+        fetchCohorts();
+      }
     } catch (err: any) {
       console.error('Cohort update error:', err);
-      showToast('Failed to update cohort', 'error');
+      showToast(err.message || 'Failed to update cohort', 'error');
     } finally {
       setLoading(false);
     }
@@ -450,7 +483,7 @@ export default function CohortsPage() {
             filteredCohorts.map((cohort) => (
               <div key={cohort.id} className="bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-md transition-all">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                  <div className="flex-1 min-w-0">
                     <h3 className="text-base font-semibold text-gray-900 truncate">{cohort.name}</h3>
                     <p className="text-xs text-gray-500 mt-1">{formatCourseType(cohort.courseType)}</p>
                   </div>
@@ -540,8 +573,8 @@ export default function CohortsPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Coordinator (Optional)</label>
             <select
-              value={formData.coordinatorId}
-              onChange={(e) => setFormData({ ...formData, coordinatorId: e.target.value })}
+              value={formData.coordinatorId || ''}
+              onChange={(e) => setFormData({ ...formData, coordinatorId: e.target.value || undefined })}
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               disabled={adminLoading}
             >
@@ -635,7 +668,118 @@ export default function CohortsPage() {
         title="Edit Cohort"
       >
         <form onSubmit={handleUpdateCohort} className="space-y-4">
-          {/* Same form as create, omitted for brevity */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Cohort Name</label>
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="e.g., Cohort 2026 Summer"
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Course Type</label>
+            <select
+              required
+              value={formData.courseType}
+              onChange={(e) => setFormData({ ...formData, courseType: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              {courseTypeOptions.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <select
+              value={formData.status || 'upcoming'}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="upcoming">Upcoming</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Coordinator (Optional)</label>
+            <select
+              value={formData.coordinatorId || ''}
+              onChange={(e) => setFormData({ ...formData, coordinatorId: e.target.value || undefined })}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              disabled={adminLoading}
+            >
+              <option value="">Select a coordinator</option>
+              {admins.map(admin => (
+                <option key={admin.uuid} value={admin.uuid}>
+                  {admin.firstName} {admin.lastName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+              <input
+                type="date"
+                required
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+              <input
+                type="date"
+                required
+                value={formData.endDate}
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Enrollment Opens</label>
+              <input
+                type="date"
+                value={formData.enrollmentOpenDate}
+                onChange={(e) => setFormData({ ...formData, enrollmentOpenDate: e.target.value })}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Enrollment Closes</label>
+              <input
+                type="date"
+                value={formData.enrollmentCloseDate}
+                onChange={(e) => setFormData({ ...formData, enrollmentCloseDate: e.target.value })}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Extension Date</label>
+            <input
+              type="date"
+              value={formData.extensionDate}
+              onChange={(e) => setFormData({ ...formData, extensionDate: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
@@ -685,4 +829,3 @@ export default function CohortsPage() {
     </div>
   );
 }
-

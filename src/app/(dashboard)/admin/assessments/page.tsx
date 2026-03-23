@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Search, Plus, Edit, Trash2, Eye, Filter, Download, Calendar, Users, Clock, TrendingUp, Loader2 } from "lucide-react";
-import { instructorApi } from "@/lib/instructorApi";
+import { adminApi } from "@/lib/adminApi";
 import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
+import Pagination from "@/components/shared/Pagination";
 
 interface Assessment {
   id: string;
@@ -37,6 +38,10 @@ export default function AdminAssessmentsPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchAssessments();
@@ -45,8 +50,8 @@ export default function AdminAssessmentsPage() {
   const fetchAssessments = async () => {
     try {
       setLoading(true);
-      // Use the instructor API to get assessments (admin can access all)
-      const assessmentsData = await instructorApi.getInstructorAssessments();
+      // Use admin API to get all assessments from all instructors
+      const assessmentsData = await adminApi.getAllAssessments();
       
       // Transform data to match Assessment interface
       const transformedAssessments: Assessment[] = assessmentsData.map((assessment: any) => ({
@@ -80,7 +85,7 @@ export default function AdminAssessmentsPage() {
     if (!selectedAssessment) return;
     
     try {
-      await instructorApi.deleteAssessment(selectedAssessment.id);
+      await adminApi.deleteAssessment(selectedAssessment.id);
       setAssessments(assessments.filter(a => a.id !== selectedAssessment.id));
       setShowDeleteModal(false);
       setSelectedAssessment(null);
@@ -103,6 +108,12 @@ export default function AdminAssessmentsPage() {
     const matchesType = filterType === 'all' || assessment.type === filterType;
     return matchesSearch && matchesStatus && matchesType;
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAssessments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedAssessments = filteredAssessments.slice(startIndex, endIndex);
 
   const getStatusColor = (status: string) => {
     return status === 'PUBLISHED' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
@@ -263,7 +274,7 @@ export default function AdminAssessmentsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredAssessments.length === 0 ? (
+              {paginatedAssessments.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="text-center p-8 text-gray-500">
                     <div className="flex flex-col items-center">
@@ -274,7 +285,7 @@ export default function AdminAssessmentsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredAssessments.map((assessment) => (
+                paginatedAssessments.map((assessment) => (
                   <tr key={assessment.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="p-4">
                       <div>
@@ -343,6 +354,19 @@ export default function AdminAssessmentsPage() {
           </table>
         </div>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-6">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={filteredAssessments.length}
+          />
+        </div>
+      )}
 
       {/* Delete Modal */}
       {showDeleteModal && selectedAssessment && (

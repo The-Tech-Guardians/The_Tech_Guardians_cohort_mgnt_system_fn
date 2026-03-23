@@ -80,40 +80,26 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
 
   // ALL HOOKS AT TOP LEVEL BEFORE ANY EARLY RETURNS
   useEffect(() => {
-    const checkProfile = async () => {
-      try {
-        const userId = tokenManager.getUserIdFromToken();
-        if (!userId) {
-          router.replace('/login');
-          return;
-        }
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profiles/user/${userId}`, {
-          headers: {
-            'Authorization': `Bearer ${tokenManager.getToken()}`,
-          },
-        });
-
-        if (!response.ok) {
-          router.replace('/application_process');
-          return;
-        }
-
-        const data = await response.json();
-        if (!data.profile) {
-          router.replace('/application_process');
-        } else {
-          setHasProfile(true);
-        }
-      } catch (error) {
-        console.error('Profile check failed:', error);
-        router.replace('/application_process');
-      } finally {
-        setCheckingProfile(false);
-      }
-    };
-
-    checkProfile();
+    // Simple authentication check - if user has token, allow access
+    const token = tokenManager.getToken();
+    if (!token) {
+      router.replace('/login');
+      return;
+    }
+    
+    // Set user data and mark as having profile for approved learners
+    const userData = tokenManager.getUser?.() || null;
+    if (userData) {
+      const name =
+        (userData.firstName || userData.lastName)
+          ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim()
+          : userData.name || userData.email?.split('@')[0] || 'User';
+      const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U';
+      setUser({ name, initials });
+    }
+    
+    setHasProfile(true);
+    setCheckingProfile(false);
   }, [router]);
 
   useEffect(() => {
