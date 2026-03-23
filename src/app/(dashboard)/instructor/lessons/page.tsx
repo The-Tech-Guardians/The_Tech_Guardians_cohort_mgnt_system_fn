@@ -14,11 +14,25 @@ import {
   ExternalLink,
   Play,
 } from "lucide-react";
-import { BackendLesson } from "@/types/lesson";
+import {
+  courseService,
+  type BackendCourse,
+} from "@/services/courseService";
+import { moduleService, type Module } from "@/services/moduleService";
 import { lessonService } from "@/services/lessonService";
-import { moduleService, Module } from "@/services/moduleService";
-import { courseService } from "@/services/courseService";
-import type { BackendCourse } from "@/types/course";
+import type { BackendLesson as Lesson } from "@/types/lesson";
+import { tokenManager } from "@/lib/auth";
+import FormattedTextEditor from "@/components/editor/FormattedTextEditor";
+
+interface Course {
+  id: string;
+  title: string;
+  description?: string;
+}
+
+const getCurrentUser = () => {
+  return tokenManager.getUser();
+};
 
 const CONTENT_TYPE_OPTIONS = [
   { value: "video", label: "Video" },
@@ -39,7 +53,7 @@ interface LessonFormProps {
   form: typeof initialLessonForm;
   onChange: (updates: Partial<typeof initialLessonForm>) => void;
   onFileChange: (file: File | null) => void;
-  courses: BackendCourse[];
+  courses: Course[];
   modules: Module[];
   selectedCourseId: string;
   selectedModuleId: string;
@@ -67,14 +81,14 @@ function getModuleName(moduleId: string, modules: Module[]): string {
   return modules.find(m => m.id === moduleId)?.title || "Unknown Module";
 }
 
-function getCourseName(courseId: string, courses: BackendCourse[]): string {
+function getCourseName(courseId: string, courses: Course[]): string {
   return courses.find(c => c.id === courseId)?.title || "Unknown Course";
 }
 
 interface LessonCardProps {
-  lesson: BackendLesson;
+  lesson: Lesson;
   modules: Module[];
-  courses: BackendCourse[];
+  courses: Course[];
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -95,7 +109,7 @@ function LessonCard({ lesson, modules, courses, onEdit, onDelete }: LessonCardPr
           <p className="text-xs text-gray-400">{courseName}</p>
         </div>
         <span className="px-2 py-1 text-xs font-semibold bg-indigo-100 text-indigo-800 rounded-full whitespace-nowrap">
-          {lesson.contentType.toUpperCase()}
+          {(lesson.contentType || 'text').toUpperCase()}
         </span>
       </div>
 
@@ -123,17 +137,6 @@ function LessonCard({ lesson, modules, courses, onEdit, onDelete }: LessonCardPr
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        {lesson.contentUrl && (
-          <a
-            href={lesson.contentUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center text-indigo-600 hover:text-indigo-500 text-xs font-medium"
-          >
-            <ExternalLink className="w-3 h-3 mr-1" />
-            {isTextOrPDF ? "Preview" : "Download"}
-          </a>
-        )}
         <div className="flex gap-2">
           <button
             onClick={onEdit}
@@ -156,9 +159,9 @@ function LessonCard({ lesson, modules, courses, onEdit, onDelete }: LessonCardPr
 }
 
 interface LessonRowProps {
-  lesson: BackendLesson;
+  lesson: Lesson;
   modules: Module[];
-  courses: BackendCourse[];
+  courses: Course[];
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -175,7 +178,7 @@ function LessonRow({ lesson, modules, courses, onEdit, onDelete }: LessonRowProp
       </td>
       <td className="px-6 py-4">
         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">
-          {lesson.contentType.toUpperCase()}
+          {(lesson.contentType || 'text').toUpperCase()}
         </span>
       </td>
       <td className="px-6 py-4 text-sm text-gray-500">{moduleName}</td>
@@ -264,25 +267,25 @@ onChange({ contentType: e.target.value as "video" | "pdf" | "text" });
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Content Body * 
-            {(form.contentType === "text" || form.contentType === "pdf") && "(Markdown supported)"}
-          </label>
-          <textarea
-            rows={5}
-            value={form.contentBody}
-            onChange={e => onChange({ contentBody: e.target.value })}
-            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-vertical"
-            required
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Content Body *</label>
+          <FormattedTextEditor
+            content={form.contentBody}
+            onChange={(content) => onChange({ contentBody: content })}
             placeholder="Enter lesson content..."
+            minHeight="300px"
+            showToolbar={true}
+            className="w-full"
           />
+          {(form.contentType === "text" || form.contentType === "pdf") && (
+            <p className="text-xs text-gray-500 mt-1">(Markdown supported)</p>
+          )}
         </div>
         {form.contentType !== "text" && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Upload File</label>
             <input
               type="file"
-              accept={form.contentType === "video" ? ".mp4,.avi,.mov" : ".pdf"}
+              accept={form.contentType === "video" ? ".mp4,.avi,.mov,.webm,.mpeg" : ".pdf,.doc,.docx,.jpg,.jpeg,.png"}
               onChange={e => onFileChange(e.target.files?.[0] || null)}
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
             />
@@ -314,7 +317,7 @@ onChange({ contentType: e.target.value as "video" | "pdf" | "text" });
 }
 
 function DeleteLessonModal({ lesson, onClose, onDelete, loading }: {
-  lesson: BackendLesson;
+  lesson: Lesson;
   onClose: () => void;
   onDelete: () => void;
   loading: boolean;
@@ -347,9 +350,10 @@ function DeleteLessonModal({ lesson, onClose, onDelete, loading }: {
 
 export default function InstructorLessonsPage() {
   // States
-  const [courses, setCourses] = useState<BackendCourse[]>([]);
+  const [currentUser, setCurrentUser] = useState(getCurrentUser());
+  const [courses, setCourses] = useState<Course[]>([]);
   const [modules, setModules] = useState<Module[]>([]);
-  const [lessons, setLessons] = useState<BackendLesson[]>([]);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
 
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedModule, setSelectedModule] = useState("");
@@ -363,8 +367,8 @@ export default function InstructorLessonsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const [selectedLesson, setSelectedLesson] = useState<BackendLesson | null>(null);
-  const [lessonToDelete, setLessonToDelete] = useState<BackendLesson | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [lessonToDelete, setLessonToDelete] = useState<Lesson | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" }>({ show: false, message: "", type: "success" });
@@ -391,7 +395,28 @@ export default function InstructorLessonsPage() {
     try {
       setLoading(true);
       setError(null);
-      const { courses } = await courseService.getAllCourses(1, 50);
+      
+      // Get user ID from token for more reliable authentication
+      const userId = currentUser?.uuid || tokenManager.getUserIdFromToken();
+      
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Get all courses and filter by instructor ID (using existing API)
+      const response = await courseService.getAllCourses(1, 100);
+      const allCourses = response.courses || [];
+      const instructorCourses = allCourses.filter((course: BackendCourse) => 
+        course.instructorId === userId
+      );
+      
+      // Transform to Course interface
+      const courses: Course[] = instructorCourses.map(course => ({
+        id: course.id,
+        title: course.title,
+        description: course.description
+      }));
+      
       setCourses(courses);
       if (courses.length > 0) setSelectedCourse(courses[0].id);
     } catch (err: any) {
@@ -400,7 +425,7 @@ export default function InstructorLessonsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUser?.uuid]);
 
   const fetchModules = useCallback(async () => {
     if (!selectedCourse) {
@@ -446,15 +471,49 @@ export default function InstructorLessonsPage() {
   }, [selectedModule]);
 
   // Effects
+  useEffect(() => {
+    // Update currentUser on mount and when localStorage changes
+    const updateUser = () => {
+      setCurrentUser(getCurrentUser());
+    };
+    
+    updateUser();
+    
+    // Listen for storage changes (in case user logs in/out in another tab)
+    const handleStorageChange = () => {
+      updateUser();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   useEffect(() => { fetchCourses(); }, [fetchCourses]);
-  useEffect(() => { fetchModules(); }, [fetchModules]);
-  useEffect(() => { fetchLessons(); }, [fetchLessons]);
+  useEffect(() => { 
+    if (selectedCourse) {
+      fetchModules(); 
+    } else {
+      setModules([]);
+      setSelectedModule("");
+      setLessons([]);
+    }
+  }, [selectedCourse, fetchModules]);
+  useEffect(() => { 
+    if (selectedModule) {
+      fetchLessons(); 
+    } else {
+      setLessons([]);
+    }
+  }, [selectedModule, fetchLessons]);
 
   const filteredLessons = useMemo(() => {
     const q = searchTerm.toLowerCase().trim();
     return lessons.filter(l => 
       l.title.toLowerCase().includes(q) || 
-      l.contentType.toLowerCase().includes(q) ||
+      (l.contentType || 'text').toLowerCase().includes(q) ||
       getModuleName(l.moduleId, modules).toLowerCase().includes(q)
     );
   }, [lessons, searchTerm, modules]);
@@ -468,12 +527,16 @@ export default function InstructorLessonsPage() {
     }
     try {
       setFormLoading(true);
-      const formData = new FormData();
-      Object.entries(lessonForm).forEach(([key, val]) => {
-        if (key === "file" && val instanceof File) formData.append("file", val);
-        else if (val !== null && val !== "") formData.append(key, String(val));
-      });
-      await lessonService.createLesson(formData);
+      const lessonData = new FormData();
+      lessonData.append('moduleId', lessonForm.moduleId);
+      lessonData.append('title', lessonForm.title);
+      lessonData.append('contentType', lessonForm.contentType);
+      lessonData.append('contentBody', lessonForm.contentBody || '');
+      lessonData.append('orderIndex', lessonForm.orderIndex.toString());
+      if (lessonForm.file) {
+        lessonData.append('file', lessonForm.file);
+      }
+      await lessonService.createLesson(lessonData);
       showToast("Lesson created successfully!");
       setShowCreateModal(false);
       setLessonForm(initialLessonForm);
@@ -490,12 +553,16 @@ export default function InstructorLessonsPage() {
     if (!selectedLesson || !lessonForm.title.trim() || !lessonForm.contentBody?.trim()) return;
     try {
       setFormLoading(true);
-      const formData = new FormData();
-      Object.entries(lessonForm).forEach(([key, val]) => {
-        if (key === "file" && val instanceof File) formData.append("file", val);
-        else if (val !== null && val !== "") formData.append(key, String(val));
-      });
-      await lessonService.updateLesson(selectedLesson.id, formData);
+      const lessonData = new FormData();
+      lessonData.append('moduleId', lessonForm.moduleId);
+      lessonData.append('title', lessonForm.title);
+      lessonData.append('contentType', lessonForm.contentType);
+      lessonData.append('contentBody', lessonForm.contentBody || '');
+      lessonData.append('orderIndex', lessonForm.orderIndex.toString());
+      if (lessonForm.file) {
+        lessonData.append('file', lessonForm.file);
+      }
+      await lessonService.updateLesson(selectedLesson.id, lessonData);
       showToast("Lesson updated successfully!");
       setShowEditModal(false);
       setSelectedLesson(null);
@@ -524,18 +591,30 @@ export default function InstructorLessonsPage() {
     }
   };
 
-  const openCreateModal = () => {
-    if (!selectedModule) return showToast("Please select a module first", "error");
+  const openCreateModal = async () => {
+    // Ensure courses are loaded
+    if (courses.length === 0) {
+      await fetchCourses();
+    }
+    
+    if (!selectedCourse && courses.length > 0) {
+      setSelectedCourse(courses[0].id);
+    }
+    
+    if (!selectedModule) {
+      return showToast("Please select a module first", "error");
+    }
+    
     setLessonForm({ ...initialLessonForm, moduleId: selectedModule, orderIndex: lessons.length });
     setShowCreateModal(true);
   };
 
-  const openEditModal = (lesson: BackendLesson) => {
+  const openEditModal = (lesson: Lesson) => {
     setSelectedLesson(lesson);
     setLessonForm({
       moduleId: lesson.moduleId,
       title: lesson.title,
-      contentType: lesson.contentType,
+      contentType: lesson.contentType || 'text',
       contentBody: lesson.contentBody || "",
       orderIndex: lesson.orderIndex || 0,
       file: null,
@@ -543,7 +622,7 @@ export default function InstructorLessonsPage() {
     setShowEditModal(true);
   };
 
-  const openDeleteModal = (lesson: BackendLesson) => {
+  const openDeleteModal = (lesson: Lesson) => {
     setLessonToDelete(lesson);
     setShowDeleteModal(true);
   };

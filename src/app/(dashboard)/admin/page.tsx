@@ -198,28 +198,15 @@ export default function AdminDashboard() {
 
       {/* Recent Activity */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h3>
-        <div className="space-y-3">
-          {[
-            { user: "John Doe", action: "enrolled in", target: "Web Development Cohort", time: "2 minutes ago" },
-            { user: "Jane Smith", action: "completed", target: "JavaScript Fundamentals", time: "15 minutes ago" },
-            { user: "Admin", action: "created", target: "New Python Course", time: "1 hour ago" },
-            { user: "Mike Johnson", action: "submitted", target: "Final Project Assignment", time: "2 hours ago" },
-          ].map((activity, idx) => (
-            <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-all">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-xs font-bold">
-                  {activity.user.split(' ').map(n => n[0]).join('')}
-                </div>
-                <div>
-                  <p className="text-sm text-gray-700">
-                    <span className="font-semibold text-gray-900">{activity.user}</span> {activity.action} <span className="font-semibold text-blue-600">{activity.target}</span>
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{activity.time}</p>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="text-center space-y-6">
+          <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+            <Activity className="w-8 h-8 text-gray-400" />
+          </div>
+          
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+            <p className="text-gray-600">No activity available now</p>
+          </div>
         </div>
       </div>
     </div>

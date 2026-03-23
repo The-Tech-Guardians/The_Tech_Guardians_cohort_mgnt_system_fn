@@ -19,8 +19,8 @@ export function ApplicationForm({ cohortId }: Props) {
     age: '',
     education: "",
     timeCommitment: "",
-    teamwork: "",
-    technicalTeamship: "",
+    teamworkFeelings: "",
+    skillsTeamworkThoughts: "",
     communityProblem: "",
   });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'submitted' | 'pending' | 'approved' | 'rejected'>('idle');
@@ -75,6 +75,12 @@ export function ApplicationForm({ cohortId }: Props) {
     setError('');
 
     const formData = new FormData(e.currentTarget as HTMLFormElement);
+    
+    // Debug: Log all form data
+    console.log('🔥 Form data being submitted:');
+    for (let [key, value] of formData.entries()) {
+      console.log(`  ${key}: ${value}`);
+    }
     
     try {
       await applicationService.submitApplication(cohortId, formData);
@@ -177,26 +183,27 @@ export function ApplicationForm({ cohortId }: Props) {
               id="name"
               type="text"
               value="Auto-filled from profile"
+              readOnly
               className="bg-gray-50 text-sm cursor-not-allowed"
             />
           </div>
           <div>
-            <Label required>Age</Label>
+            <Label>Age</Label>
             <Input
               id="age"
+              name="age"
               type="number"
               placeholder="e.g. 21"
               value={form.age}
               onChange={setField("age")}
               required
-              min="13"
-              max="100"
             />
           </div>
           <div>
             <Label required>Education Level</Label>
             <select
-              id="education"
+              id="educationLevel"
+              name="educationLevel"
               value={form.education}
               onChange={setField("education")}
               required
@@ -222,6 +229,7 @@ export function ApplicationForm({ cohortId }: Props) {
           </p>
           <Textarea
             id="timeCommitment"
+            name="timeCommitment"
             placeholder="e.g. 'I can commit 10-15 hours per week, mostly evenings and weekends...'"
             value={form.timeCommitment}
             onChange={setField("timeCommitment")}
@@ -238,10 +246,11 @@ export function ApplicationForm({ cohortId }: Props) {
             Tell us about a time you collaborated, or how you generally approach group work.
           </p>
           <Textarea
-            id="teamwork"
+            id="teamworkFeelings"
+            name="teamworkFeelings"
             placeholder="e.g. 'I'm excited about group work because I learn from different perspectives...'"
-            value={form.teamwork}
-            onChange={setField("teamwork")}
+            value={form.teamworkFeelings}
+            onChange={setField("teamworkFeelings")}
             required
             rows={4}
           />
@@ -255,10 +264,11 @@ export function ApplicationForm({ cohortId }: Props) {
             Share your own perspective — no textbook answer expected here.
           </p>
           <Textarea
-            id="technicalTeamship"
-            placeholder="e.g. 'Technical skills let us build solutions, teamwork brings diverse ideas...'"
-            value={form.technicalTeamship}
-            onChange={setField("technicalTeamship")}
+            id="skillsTeamworkThoughts"
+            name="skillsTeamworkThoughts"
+            placeholder="e.g. 'Technical skills help build the product, but teamwork helps sell it...'"
+            value={form.skillsTeamworkThoughts}
+            onChange={setField("skillsTeamworkThoughts")}
             required
             rows={4}
           />
@@ -273,7 +283,8 @@ export function ApplicationForm({ cohortId }: Props) {
           </p>
           <Textarea
             id="communityProblem"
-            placeholder="e.g. 'In my community, students struggle with internet access for online learning...'"
+            name="communityProblem"
+            placeholder="e.g. 'In my neighborhood, many young people struggle with access to computers...'"
             value={form.communityProblem}
             onChange={setField("communityProblem")}
             required

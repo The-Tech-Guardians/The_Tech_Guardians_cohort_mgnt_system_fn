@@ -28,9 +28,9 @@ export default function LearnerMyCoursesPage() {
           setCohort({ ...raw, id: raw.id || raw.cohortId || "" } as Cohort);
         }
 
-        const cohortCoursesRes = await courseService.getLearnerCohortCourses();
-        const cohortCourses = cohortCoursesRes.courses || [];
-        const cohortCourseType = cohortCoursesRes.cohortCourseType || "";
+        const cohortCoursesRes = await authAPI.getLearnerCohortCourses();
+        const cohortCourses = cohortCoursesRes.success ? (cohortCoursesRes.data || []) : [];
+        const cohortCourseType = (cohortCoursesRes as any).cohortCourseType || "";
 
         const colors = [
           "bg-gradient-to-r from-blue-600 to-cyan-500",

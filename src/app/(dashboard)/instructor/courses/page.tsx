@@ -1,264 +1,673 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ChevronDown, Eye, Edit, Plus, Play, FileText, BookOpen } from "lucide-react";
-const Button = ({ className, children, variant = "default", size = "md", ...props }: any) => (
-  <button className={`px-4 py-2 rounded-lg font-medium transition-all ${
-    variant === "ghost" ? "text-gray-700 hover:bg-gray-100" :
-    variant === "outline" ? "border border-gray-300 text-gray-700 hover:bg-gray-50" :
-    "bg-blue-600 text-white hover:bg-blue-700"
-  } ${size === "sm" ? "px-3 py-1.5 text-sm" : "px-4 py-2"} ${className || ""}`} {...props}>
-    {children}
-  </button>
-);
-const Badge = ({ variant = "default", children }: { variant?: string; children: React.ReactNode }) => (
-  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-    variant === "secondary" ? "bg-gray-100 text-gray-800" : "bg-emerald-100 text-emerald-800"
-  }`}>
-    {children}
-  </span>
-);
-import { authAPI, tokenManager } from "@/lib/auth";
+import { useState, useEffect, useCallback } from "react";
+import Modal from "@/components/admin/Modal";
+import Toast from "@/components/admin/Toast";
+import FormattedTextEditor from "@/components/editor/FormattedTextEditor";
+import { Plus, Search, Edit, Trash2, Loader2, Eye, EyeOff, BookOpen, LayoutGrid, List } from "lucide-react";
+import { instructorApi } from "@/lib/instructorApi";
+import { courseService, formatCourseType, type BackendCourse, type Instructor } from "@/services/courseService";
+import { cohortService, type Cohort } from "@/services/cohortService";
+import type { User } from "@/types/user";
 
-interface Course {
-  id: string;
-  title: string;
-  enrolled: string;
-  modules: number;
-  lessons: number;
-  cohort: string;
-  published: boolean;
-  completion: number;
-  modules_data: Array<{
-    id: string;
-    week: string;
-    title: string;
-    lessons: number;
-    published: boolean;
-  }>;
-}
+const API_BASE_URL = "http://localhost:3000/api";
 
-interface InstructorCourse {
-  _id: string;
-  title: string;
-  enrolledCount: number;
-  moduleCount: number;
-  lessonCount: number;
-  cohortName: string;
-  isPublished: boolean;
-  completionRate: number;
-  modules: any[]; // Backend structure
-}
+const getCurrentUser = (): User | null => {
+  if (typeof window === 'undefined') return null;
+  
+  // Prioritize standard user data
+  const userDataStr = localStorage.getItem('user_data') || localStorage.getItem('user') || localStorage.getItem('auth_data');
+  if (!userDataStr) return null;
+  
+  try {
+    const userData = JSON.parse(userDataStr);
+    // Ensure it has uuid for instructor check
+    return userData as User;
+  } catch (e) {
+    console.error('Failed to parse user data:', e);
+    return null;
+  }
+};
+
+const initialCourseForm = {
+  title: "",
+  courseType: "",
+  description: "",
+  cohortId: "",
+  instructorId: "",
+  isPublished: false,
+};
+
+const COURSE_TYPE_OPTIONS = [
+  { value: "SOCIAL_MEDIA_BRANDING", label: "Social Media Branding" },
+  { value: "COMPUTER_PROGRAMMING", label: "Computer Programming" },
+  { value: "ENTREPRENEURSHIP", label: "Entrepreneurship" },
+  { value: "TEAM_MANAGEMENT", label: "Team Management" },
+  { value: "SRHR", label: "SRHR" },
+];
 
 export default function InstructorCoursesPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [open, setOpen] = useState<string | null>(null);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadInstructorCourses();
-  }, []);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const loadInstructorCourses = async () => {
+  const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
+  const [courseToDelete, setCourseToDelete] = useState<any | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
+  const [courseForm, setCourseForm] = useState(initialCourseForm);
+  const [formLoading, setFormLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<"card" | "list">("card");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const currentUser = getCurrentUser();
+
+  const fetchCourses = useCallback(async () => {
     try {
-      const token = tokenManager.getToken();
-      if (!token) {
-        console.error('No token found');
-        return;
-      }
-
-      // Use existing backend endpoint or new /instructor/courses
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/instructor/courses`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Transform backend data to UI format
-        const uiCourses: Course[] = (data.data || data.courses || data).map((course: InstructorCourse) => ({
-          id: course._id,
-          title: course.title,
-          enrolled: course.enrolledCount.toString(),
-          modules: course.moduleCount,
-          lessons: course.lessonCount,
-          cohort: course.cohortName,
-          published: course.isPublished,
-          completion: course.completionRate || 0,
-          modules_data: course.modules?.map((m: any) => ({
-            id: m._id,
-            week: m.week || 'W1',
-            title: m.title,
-            lessons: m.lessonCount || 0,
-            published: m.isPublished || false,
-          })) || [],
-        }));
-        setCourses(uiCourses);
-      }
-    } catch (error) {
-      console.error('Failed to load courses:', error);
-      // Fallback demo data
-      setCourses([
-        {
-          id: "1",
-          title: "React Advanced",
-          enrolled: "245",
-          modules: 12,
-          lessons: 89,
-          cohort: "COHORT-2025-A",
-          published: true,
-          completion: 67,
-          modules_data: [
-            { id: "1", week: "W1", title: "React Hooks", lessons: 8, published: true },
-            { id: "2", week: "W2", title: "State Management", lessons: 7, published: true },
-            { id: "3", week: "W3", title: "Performance", lessons: 6, published: false }
-          ]
-        },
-        {
-          id: "2",
-          title: "TypeScript Deep Dive",
-          enrolled: "156",
-          modules: 10,
-          lessons: 67,
-          cohort: "COHORT-2025-B",
-          published: false,
-          completion: 34,
-          modules_data: [
-            { id: "1", week: "W1", title: "Basics", lessons: 5, published: true },
-            { id: "2", week: "W2", title: "Advanced Types", lessons: 8, published: false }
-          ]
-        }
-      ]);
+      setLoading(true);
+      setError(null);
+      
+      // Use instructor-specific endpoint
+      const courses = await instructorApi.getInstructorCourses();
+      setCourses(courses);
+    } catch (err: unknown) {
+      console.error('Failed to fetch instructor courses:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch courses');
+      setCourses([]);
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const fetchCohorts = useCallback(async () => {
+    try {
+      const result = await cohortService.getAllCohorts(1, 100);
+      const rawCohorts = result.cohorts;
+      const validCohorts = rawCohorts.filter((cohort: Cohort) => cohort.id && cohort.name);
+      setCohorts(validCohorts);
+    } catch (err: unknown) {
+      console.error('Failed to fetch cohorts:', err);
+      setCohorts([]);
+    }
+  }, []); 
+
+  const fetchInstructors = useCallback(async () => {
+    try {
+      const result = await courseService.getInstructors(1, 100);
+      setInstructors(result.instructors || []);
+    } catch (err) {
+      console.error('Failed to fetch instructors:', err);
+      setInstructors([]);
+    }
+  }, []); 
+
+  useEffect(() => {
+    fetchCourses();
+    fetchCohorts();
+    fetchInstructors();
+  }, [fetchCourses, fetchCohorts, fetchInstructors]);
+
+  const handleCreateCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate cohort exists in loaded cohorts
+    const selectedCohort = cohorts.find(c => c.id === courseForm.cohortId);
+    
+    if (!courseForm.cohortId) {
+      showToast('Please select a cohort', 'error');
+      return;
+    }
+
+    if (!currentUser?.uuid) {
+      showToast('User not authenticated', 'error');
+      return;
+    }
+
+    if (!courseForm.title.trim() || !courseForm.description.trim()) {
+      showToast('Please fill in all required fields', 'error');
+      return;
+    }
+
+    if (!courseForm.courseType) {
+      showToast('Please select a course type', 'error');
+      return;
+    }
+
+    try {
+      setFormLoading(true);
+      
+      const courseData = {
+        title: courseForm.title.trim(),
+        description: courseForm.description.trim(),
+        instructorId: currentUser.uuid,
+        cohortId: courseForm.cohortId,
+        courseType: courseForm.courseType,
+        isPublished: courseForm.isPublished,
+      };
+      
+      const response = await courseService.createCourse(courseData);
+      
+      if (response && response.course) {
+showToast("Course created successfully!", "success");
+        setCourseForm(initialCourseForm);
+        setShowCreateModal(false);
+        
+        // Add the new course directly to state for immediate display
+        setCourses(prevCourses => [...prevCourses, response.course]);
+        
+        // Also refresh from server to ensure consistency
+        fetchCourses();
+      } else {
+        showToast('Course creation failed - no response data', 'error');
+      }
+    } catch (err: any) {
+      console.error('Course creation error:', err);
+      showToast(err.message || 'Failed to create course', 'error');
+    } finally {
+      setFormLoading(false);
+    }
   };
 
+  const handleUpdateCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCourse) return;
+
+    const selectedCohort = cohorts.find(c => c.id === courseForm.cohortId);
+    if (!courseForm.cohortId || !selectedCohort) {
+      showToast('Please select a valid cohort', 'error');
+      return;
+    }
+
+    try {
+      setFormLoading(true);
+      const updated = await courseService.updateCourse(selectedCourse.id, {
+        title: courseForm.title,
+        description: courseForm.description,
+        courseType: courseForm.courseType,
+        cohortId: courseForm.cohortId,
+        instructorId: currentUser?.uuid || ""
+      });
+
+      if (updated) {
+        setCourses(prevCourses => 
+          prevCourses.map(course => 
+            course.id === selectedCourse.id 
+              ? { ...course, ...updated.course }
+              : course
+          )
+        );
+        showToast("Course updated successfully!", "success");
+        setCourseForm(initialCourseForm);
+        setShowEditModal(false);
+        setSelectedCourse(null);
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update course', 'error');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleDeleteCourse = async () => {
+    if (!courseToDelete) return;
+
+    try {
+      setFormLoading(true);
+      await courseService.deleteCourse(courseToDelete.id);
+      
+      showToast("Course deleted successfully!", "success");
+      setShowDeleteModal(false);
+      setCourseToDelete(null);
+      fetchCourses();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete course', 'error');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handlePublishCourse = async (courseId: string) => {
+    try {
+      setFormLoading(true);
+      
+      const updatedCourse = await courseService.togglePublish(courseId);
+      if (updatedCourse) {
+        // Immediately update local state for better UX
+        setCourses(prevCourses => 
+          prevCourses.map(course => 
+            course.id === courseId 
+              ? { ...course, isPublished: Boolean(updatedCourse.isPublished) }
+              : course
+          )
+        );
+        showToast(`Course ${updatedCourse.isPublished ? 'published' : 'unpublished'} successfully!`, 'success');
+      } else {
+        // Fallback: refresh all courses
+        fetchCourses();
+        showToast('Failed to toggle course status', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update course status', 'error');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
+  };
+
+  const filteredCourses = courses.filter(course =>
+    course.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (loading) {
-    return <div className="p-8 text-center">Loading your courses...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex justify-end">
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-          <Plus className="w-4 h-4 mr-2" />
-          New Course
-        </Button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">My Courses</h1>
+          <p className="text-gray-600 mt-1">Manage your courses and content</p>
+        </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Create Course
+        </button>
       </div>
-      {courses.map((c) => (
-        <div key={c.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="flex items-center gap-4 p-5 border-b border-gray-100 flex-wrap">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white flex items-center justify-center text-xl font-black flex-shrink-0">
-              {c.title[0].toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <h3 className="font-black text-gray-900" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
-                  {c.title}
-                </h3>
-                <Badge variant={c.published ? "default" : "secondary"}>
-                  {c.published ? "● Published" : "Draft"}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
-                <span>{c.enrolled} learners</span>
-                <span className="hidden sm:inline">·</span>
-                <span className="hidden sm:inline">{c.modules}M · {c.lessons}L</span>
-                <Badge variant="secondary">{c.cohort}</Badge>
-              </div>
-              <div className="mt-2 flex items-center gap-3">
-                <div className="flex-1 bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-gradient-to-r from-blue-600 to-cyan-500 h-2 rounded-full transition-all duration-300" 
-                    style={{ width: `${c.completion}%` }}
-                  />
-                </div>
-                <span className="text-xs font-semibold text-gray-500 flex-shrink-0">{c.completion}%</span>
-              </div>
-            </div>
-            <div className="flex gap-2 flex-shrink-0 flex-wrap">
-              <Button variant="outline" size="sm" className="h-8 px-3">
-                <Eye className="w-4 h-4 mr-1" />
-                Preview
-              </Button>
-              <Button variant="ghost" size="sm" className="h-8 px-3">
-                <Edit className="w-4 h-4 mr-1" />
-                Edit
-              </Button>
-            </div>
-          </div>
-          <div className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Course Structure</span>
-              <Button variant="ghost" size="sm" className="h-8 px-3 text-xs">
-                <Plus className="w-4 h-4 mr-1" />
-                Add Module
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {c.modules_data.map((m) => {
-                const k = `${c.id}-${m.id}`;
-                const isOpen = open === k;
-                return (
-                  <div key={m.id} className="border border-gray-200 rounded-xl overflow-hidden">
-                    <div 
-                      className="flex items-center gap-3 px-4 py-3 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => setOpen(isOpen ? null : k)}
-                    >
-                      <span className="text-xs font-mono bg-white border border-gray-200 text-gray-600 px-2 py-0.5 rounded-lg">
-                        {m.week}
-                      </span>
-                      <span className="text-sm font-semibold text-gray-800 flex-1">{m.title}</span>
-                      <span className="text-xs text-gray-400 hidden sm:block">{m.lessons} lessons</span>
-                      <Badge variant={m.published ? "default" : "secondary"}>
-                        {m.published ? "Live" : "Draft"}
-                      </Badge>
-                      <ChevronDown 
-                        className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                      />
-                    </div>
-                    {isOpen && (
-                      <div className="p-3 space-y-1.5 border-t border-gray-100">
-                        {Array.from({ length: m.lessons }, (_, i) => (
-                          <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group">
-                            <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                              {i % 3 === 0 ? (
-                                <Play className="w-3.5 h-3.5 text-gray-600" />
-                              ) : i % 3 === 1 ? (
-                                <FileText className="w-3.5 h-3.5 text-gray-600" />
-                              ) : (
-                                <BookOpen className="w-3.5 h-3.5 text-gray-600" />
-                              )}
-                            </div>
-                            <span className="text-sm text-gray-600 flex-1">
-                              Lesson {i + 1}: {["Intro", "Core Concepts", "Deep Dive", "Practice", "Review", "Project"][i % 6]}
-                            </span>
-                            <div className="hidden group-hover:flex items-center gap-2">
-                              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                                Edit
-                              </Button>
-                              <span className="text-gray-200">|</span>
-                              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                                Preview
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                        <Button variant="ghost" size="sm" className="h-8 px-3 text-xs justify-start w-full">
-                          <Plus className="w-4 h-4 mr-1" />
-                          Add Lesson
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+
+      {/* Search and View Toggle */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search courses..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
           </div>
         </div>
-      ))}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setViewMode("card")}
+            className={`p-2 rounded-lg ${viewMode === "card" ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-600"}`}
+          >
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setViewMode("list")}
+            className={`p-2 rounded-lg ${viewMode === "list" ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-600"}`}
+          >
+            <List className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-600">{error}</p>
+          <button
+            onClick={fetchCourses}
+            className="mt-2 text-red-600 underline text-sm"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
+      {/* Courses Grid/List */}
+      {filteredCourses.length === 0 ? (
+        <div className="text-center py-12">
+          <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No courses found</h3>
+          <p className="text-gray-600 mb-4">
+            {searchTerm ? "Try adjusting your search" : "Get started by creating your first course"}
+          </p>
+          {!searchTerm && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create Course
+            </button>
+          )}
+        </div>
+      ) : viewMode === "card" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCourses.map((course) => (
+            <div key={course.id} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{course.title}</h3>
+                  <p className="text-gray-600 text-sm mb-3">{course.description}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                      {formatCourseType(course.courseType)}
+                    </span>
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      course.isPublished ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                    }`}>
+                      {course.isPublished ? "Published" : "Draft"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setSelectedCourse(course);
+                      setCourseForm({
+                        title: course.title,
+                        description: course.description,
+                        courseType: course.courseType,
+                        cohortId: course.cohortId,
+                        instructorId: course.instructorId,
+                        isPublished: course.isPublished,
+                      });
+                      setShowEditModal(true);
+                    }}
+                    className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCourseToDelete(course);
+                      setShowDeleteModal(true);
+                    }}
+                    className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handlePublishCourse(course.id)}
+                    className={`p-2 rounded-lg transition-colors ${
+                      course.isPublished 
+                        ? "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50" 
+                        : "text-green-600 hover:text-green-700 hover:bg-green-50"
+                    }`}
+                    title={course.isPublished ? "Unpublish course" : "Publish course"}
+                  >
+                    {course.isPublished ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Course
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredCourses.map((course) => (
+                <tr key={course.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{course.title}</div>
+                      <div className="text-sm text-gray-500">{course.description}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                      {formatCourseType(course.courseType)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      course.isPublished ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                    }`}>
+                      {course.isPublished ? "Published" : "Draft"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedCourse(course);
+                          setCourseForm({
+                            title: course.title,
+                            description: course.description,
+                            courseType: course.courseType,
+                            cohortId: course.cohortId,
+                            instructorId: course.instructorId,
+                            isPublished: course.isPublished,
+                          });
+                          setShowEditModal(true);
+                        }}
+                        className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCourseToDelete(course);
+                          setShowDeleteModal(true);
+                        }}
+                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handlePublishCourse(course.id)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          course.isPublished 
+                            ? "text-gray-600 hover:text-yellow-600 hover:bg-yellow-50" 
+                            : "text-green-600 hover:text-green-700 hover:bg-green-50"
+                        }`}
+                        title={course.isPublished ? "Unpublish course" : "Publish course"}
+                      >
+                        {course.isPublished ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Create/Edit Modal */}
+      <Modal
+        isOpen={showCreateModal || showEditModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          setShowEditModal(false);
+          setSelectedCourse(null);
+          setCourseForm(initialCourseForm);
+        }}
+        title={showCreateModal ? "Create New Course" : "Edit Course"}
+      >
+        <form onSubmit={showCreateModal ? handleCreateCourse : handleUpdateCourse} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Course Title
+            </label>
+            <input
+              type="text"
+              required
+              value={courseForm.title}
+              onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description
+            </label>
+            <FormattedTextEditor
+              content={courseForm.description}
+              onChange={(content) => setCourseForm(prev => ({ ...prev, description: content }))}
+              placeholder="Enter course description..."
+              minHeight="150px"
+              showToolbar={true}
+              className="w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Course Type
+            </label>
+            <select
+              required
+              value={courseForm.courseType}
+              onChange={(e) => setCourseForm({ ...courseForm, courseType: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">Select a type</option>
+              {COURSE_TYPE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Cohort
+            </label>
+              <select
+              required
+              value={courseForm.cohortId}
+              onChange={(e) => setCourseForm({ ...courseForm, cohortId: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">Select a cohort</option>
+              {cohorts.map((cohort) => (
+                <option key={cohort.id} value={cohort.id}>
+                  {cohort.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={() => {
+                setShowCreateModal(false);
+                setShowEditModal(false);
+                setSelectedCourse(null);
+                setCourseForm(initialCourseForm);
+              }}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={formLoading}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            >
+              {formLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                showCreateModal ? "Create Course" : "Update Course"
+              )}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setCourseToDelete(null);
+        }}
+        title="Delete Course"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Are you sure you want to delete "{courseToDelete?.title}"? This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => {
+                setShowDeleteModal(false);
+                setCourseToDelete(null);
+              }}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteCourse}
+              disabled={formLoading}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+            >
+              {formLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Delete Course"
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Toast */}
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.show}
+          onClose={() => setToast({ show: false, message: "", type: "success" })}
+        />
+      )}
     </div>
   );
 }

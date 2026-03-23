@@ -2,52 +2,112 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight, X, Layers, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight, X, Layers, TrendingUp, ChevronDown } from "lucide-react";
 
 import Logo from "@/components/ui/navbar/Logo";
 import { tokenManager } from "@/lib/auth";
 import { notificationService, Notification } from "@/services/notificationService";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ToastProvider } from "@/contexts/ToastContext";
 
 
-function NavItem({ icon: Icon, label, active, onClick, collapsed }: { 
+function NavItem({ 
+  icon: Icon, 
+  label, 
+  active, 
+  onClick, 
+  collapsed, 
+  isExpandable, 
+  children, 
+  expanded,
+  onToggleExpand,
+  router,
+  sidebarOpen,
+  setSidebarOpen,
+  currentReportPath
+}: { 
   icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>; 
   label: string; 
   active: boolean; 
   onClick: () => void;
   collapsed: boolean;
+  isExpandable?: boolean;
+  children?: any[];
+  expanded?: boolean;
+  onToggleExpand?: () => void;
+  router: any;
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  currentReportPath: string;
 }) {
   return (
-    <button
-      onClick={onClick}
-      className={`
-        w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium
-        transition-all duration-200 group relative overflow-hidden
-        ${active
-          ? "bg-indigo-600 text-white shadow-sm"
-          : "text-gray-400 hover:bg-indigo-300 hover:text-gray-800"
-        }
-        ${collapsed ? "justify-center" : ""}
-      `}
-    >
-      {active && !collapsed && (
-        <span className="absolute left-0 top-0 bottom-2 w-2.5 h-full bg-white rounded-l-2xl" />
+    <div>
+      <button
+        onClick={isExpandable ? onToggleExpand : onClick}
+        className={`
+          w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium
+          transition-all duration-200 group relative overflow-hidden
+          ${active
+            ? "bg-indigo-600 text-white shadow-sm"
+            : "text-gray-400 hover:bg-indigo-300 hover:text-gray-800"
+          }
+          ${collapsed ? "justify-center" : ""}
+        `}
+      >
+        {active && !collapsed && (
+          <span className="absolute left-0 top-0 bottom-2 w-2.5 h-full bg-white rounded-l-2xl" />
+        )}
+        <Icon
+          size={16}
+          strokeWidth={active ? 2 : 1.8}
+          className={`flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${
+            active ? "text-white" : "text-gray-400 group-hover:text-gray-700"
+          }`}
+        />
+        {!collapsed && (
+          <>
+            <span className="flex-1 text-left tracking-tight">{label}</span>
+            {isExpandable ? (
+              <ChevronDown 
+                size={13} 
+                className={`transition-transform duration-200 ${
+                  expanded ? 'rotate-180' : ''
+                } ${active ? "text-white" : "text-gray-400"}`}
+              />
+            ) : active ? (
+              <ChevronRight size={13} className="text-white/50" />
+            ) : null}
+          </>
+        )}
+      </button>
+      
+      {isExpandable && !collapsed && expanded && children && (
+        <div className="ml-4 mt-1 space-y-1">
+          {children.map((child) => (
+            <button
+              key={child.id}
+              onClick={() => {
+                router.push(child.href);
+                if (sidebarOpen) setSidebarOpen(false);
+              }}
+              className={`
+                w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium
+                transition-all duration-200 group
+                ${currentReportPath === child.id
+                  ? "bg-indigo-100 text-indigo-600"
+                  : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                }
+              `}
+            >
+              <div className={`w-2 h-2 rounded-full ${
+                currentReportPath === child.id ? "bg-indigo-600" : "bg-gray-300"
+              }`} />
+              <span className="flex-1 text-left">{child.label}</span>
+            </button>
+          ))}
+        </div>
       )}
-      <Icon
-        size={16}
-        strokeWidth={active ? 2 : 1.8}
-        className={`flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${
-          active ? "text-white" : "text-gray-400 group-hover:text-gray-700"
-        }`}
-      />
-      {!collapsed && (
-        <>
-          <span className="flex-1 text-left tracking-tight">{label}</span>
-          {active && (
-            <ChevronRight size={13} className="text-white/50" />
-          )}
-        </>
-      )}
-    </button>
+    </div>
   );
 }
 
@@ -66,6 +126,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
   const [collapsed, setCollapsed] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [logoutPopupOpen, setLogoutPopupOpen] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [userName, setUserName] = useState('Instructor');
   const [userInitials, setUserInitials] = useState('IN');
   const [userRoleLabel, setUserRoleLabel] = useState('Instructor');
@@ -163,13 +224,48 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
 
   const view = pathname === '/instructor' ? 'overview' : pathname.split('/').pop() || 'overview';
 
+  // Check if current path is under reports
+  const isReportsPath = pathname.startsWith('/instructor/reports');
+  const currentReportPath = isReportsPath ? pathname.split('/').pop() || 'reports' : 'overview';
+
+  // Toggle expandable menu
+  const toggleMenu = (menuId: string) => {
+    setExpandedMenus(prev => 
+      prev.includes(menuId) 
+        ? prev.filter(id => id !== menuId)
+        : [...prev, menuId]
+    );
+  };
+
+  // Auto-expand reports if we're on a reports subpage
+  useEffect(() => {
+    if (isReportsPath && !expandedMenus.includes('reports')) {
+      setExpandedMenus(['reports']);
+    }
+  }, [isReportsPath]);
+
   const nav = [
     { id: "overview", label: "Dashboard", icon: LayoutDashboard, href: "/instructor" },
     { id: "courses", label: "My Courses", icon: BookOpen, href: "/instructor/courses" },
     { id: "learners", label: "Learners", icon: Users, href: "/instructor/learners" },
     { id: "modules", label: "Modules", icon: Layers, href: "/instructor/modules" },
     { id: "lessons", label: "Lessons", icon: FileText, href: "/instructor/lessons" },
-    { id: "analytics", label: "Analytics", icon: TrendingUp, href: "/instructor/analytics" },
+    { id: "assessments", label: "Assessments", icon: Shield, href: "/instructor/assessments" },
+    { 
+      id: "reports", 
+      label: "Reports", 
+      icon: TrendingUp, 
+      href: "/instructor/reports",
+      isExpandable: true,
+      children: [
+        { id: "quiz", label: "Quiz Reports", href: "/instructor/reports/quiz" },
+        { id: "assessment", label: "Assessment Reports", href: "/instructor/reports/assessment" },
+        { id: "performance", label: "Performance Reports", href: "/instructor/reports/performance" },
+        { id: "learner", label: "Learner Reports", href: "/instructor/reports/learner" },
+        { id: "course", label: "Course Reports", href: "/instructor/reports/course" },
+        { id: "engagement", label: "Engagement Reports", href: "/instructor/reports/engagement" },
+      ]
+    },
   ];
 
   const titles: Record<string, string> = {
@@ -178,16 +274,30 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
     learners: "Learner Management",
     modules: "Module Management",
     lessons: "Lesson Management",
-    analytics: "Analytics & Reports",
+    assessments: "Assessment Management",
+    reports: "Reports & Analytics",
+    quiz: "Quiz Reports",
+    assessment: "Assessment Reports",
+    performance: "Performance Reports",
+    learner: "Learner Reports",
+    course: "Course Reports",
+    engagement: "Engagement Reports",
   };
 
   const subtitles: Record<string, string> = {
-    overview: "Overview of your teaching metrics",
-    courses: "Manage your courses and cohorts",
-    learners: "View enrolled learners and progress",
+    overview: "Welcome back! Here's what's happening with your courses",
+    courses: "Manage and organize your course content",
+    learners: "Track learner progress and performance",
     modules: "Organize course content by modules",
     lessons: "Create and edit lesson content",
-    analytics: "Track performance and engagement",
+    assessments: "Create and manage assessments",
+    reports: "Generate comprehensive reports and insights",
+    quiz: "Quiz performance and analytics",
+    assessment: "Assessment results and analysis",
+    performance: "Overall performance metrics and trends",
+    learner: "Individual learner progress and analytics",
+    course: "Course completion and engagement metrics",
+    engagement: "User engagement and activity analytics",
   };
 
   const formatNotificationTime = (createdAt: string) => {
@@ -228,8 +338,16 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
             key={item.id}
             icon={item.icon}
             label={item.label}
-            active={view === item.id}
+            active={view === item.id || (item.isExpandable && isReportsPath ? true : false)}
             collapsed={collapsed}
+            isExpandable={item.isExpandable}
+            children={item.children}
+            expanded={item.isExpandable && expandedMenus.includes(item.id)}
+            onToggleExpand={() => item.isExpandable && toggleMenu(item.id)}
+            router={router}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+            currentReportPath={currentReportPath}
             onClick={() => {
               router.push(item.href);
               setSidebarOpen(false);
@@ -286,7 +404,9 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
   };
 
   return (
-    <div className="flex h-screen bg-[#f8f8f8] overflow-hidden">
+    <AuthProvider>
+      <ToastProvider>
+        <div className="flex h-screen bg-[#f8f8f8] overflow-hidden">
       {logoutPopupOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div 
@@ -455,6 +575,8 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
         </main>
       </div>
     </div>
+      </ToastProvider>
+    </AuthProvider>
   );
 }
 

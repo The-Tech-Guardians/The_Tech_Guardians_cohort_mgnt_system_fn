@@ -4,7 +4,7 @@ const nextConfig = {
     return [
       {
         source: '/backend/:path*',
-        destination: 'http://localhost:5000/api/:path*', // your Express backend
+        destination: 'http://localhost:3000/api/:path*', // your Express backend
       },
     ];
   },

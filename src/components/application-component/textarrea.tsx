@@ -1,7 +1,8 @@
-export function Textarea({ id, placeholder, value, onChange, required, rows = 4 }) {
+export function Textarea({ id, name, placeholder, value, onChange, required, rows = 4 }) {
   return (
     <textarea
       id={id}
+      name={name}
       placeholder={placeholder}
       value={value}
       onChange={onChange}

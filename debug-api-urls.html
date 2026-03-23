@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug API URLs</title>
+</head>
+<body>
+    <h1>API URL Debug Tool</h1>
+    
+    <h2>1. Test Course Service URL</h2>
+    <button onclick="testCourseService()">Test Course Service</button>
+    <pre id="course-result"></pre>
+    
+    <h2>2. Test Assessment Service URL</h2>
+    <button onclick="testAssessmentService()">Test Assessment Service</button>
+    <pre id="assessment-result"></pre>
+    
+    <h2>3. Test Backend Direct</h2>
+    <button onclick="testBackendDirect()">Test Backend Direct</button>
+    <pre id="backend-result"></pre>
+    
+    <h2>4. Check Environment Variables</h2>
+    <button onclick="checkEnvVars()">Check Environment Variables</button>
+    <pre id="env-result"></pre>
+    
+    <script>
+        const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+        
+        function logResult(elementId, message) {
+            document.getElementById(elementId).textContent = message;
+        }
+        
+        async function testCourseService() {
+            try {
+                // This simulates what courseService.getAllCourses does
+                const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/backend';
+                const url = `${API_BASE_URL}/courses?page=1&limit=100`;
+                
+                logResult('course-result', `Testing URL: ${url}\n\n`);
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                logResult('course-result', `URL: ${url}\nStatus: ${response.status}\nData: ${JSON.stringify(data, null, 2).substring(0, 500)}...`);
+            } catch (error) {
+                logResult('course-result', `Error: ${error.message}`);
+            }
+        }
+        
+        async function testAssessmentService() {
+            try {
+                const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/backend';
+                const url = `${API_BASE_URL}/assessments`;
+                
+                logResult('assessment-result', `Testing URL: ${url}\n\n`);
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                logResult('assessment-result', `URL: ${url}\nStatus: ${response.status}\nData: ${JSON.stringify(data, null, 2).substring(0, 500)}...`);
+            } catch (error) {
+                logResult('assessment-result', `Error: ${error.message}`);
+            }
+        }
+        
+        async function testBackendDirect() {
+            try {
+                const url = 'http://localhost:5000/api/courses?page=1&limit=100';
+                
+                logResult('backend-result', `Testing URL: ${url}\n\n`);
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                logResult('backend-result', `URL: ${url}\nStatus: ${response.status}\nData: ${JSON.stringify(data, null, 2).substring(0, 500)}...`);
+            } catch (error) {
+                logResult('backend-result', `Error: ${error.message}`);
+            }
+        }
+        
+        function checkEnvVars() {
+            // This won't work in browser for server-side env vars, but let's check
+            const envInfo = {
+                NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'Not set (using default)',
+                nodeEnv: process.env.NODE_ENV || 'Unknown'
+            };
+            
+            logResult('env-result', JSON.stringify(envInfo, null, 2));
+        }
+    </script>
+</body>
+</html>

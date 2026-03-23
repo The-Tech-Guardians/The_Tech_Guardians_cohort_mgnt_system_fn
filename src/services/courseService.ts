@@ -5,7 +5,7 @@ export type { Module } from './moduleService';
 import type { BackendLesson } from '@/types/lesson';
 export type Lesson = BackendLesson;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/backend';
 
 export interface PaginationInfo {
   page: number;
@@ -23,16 +23,11 @@ export interface QuestionOption {
   orderIndex: number;
 }
 
-export interface Assessment {
-  id: string;
-  courseId: string;
-  title: string;
-  description?: string;
+import type { Assessment } from '@/types/assessment';
+
+export interface CourseAssessment extends Omit<Assessment, 'questions'> {
   totalQuestions: number;
-  timeLimit?: number;
   orderIndex: number;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface Instructor {
@@ -260,28 +255,86 @@ async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course
     }
   },
 
+  // Get courses for current instructor
+  async getInstructorCourses(): Promise<{ courses: BackendCourse[]; pagination: PaginationInfo }> {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('No authentication token found');
+      
+      const userRes = await fetch(`${API_BASE_URL}/users/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!userRes.ok) {
+        throw new Error('Failed to get current user');
+      }
+      
+      const userData = await userRes.json();
+      console.log('User data from /users/me:', userData);
+      const instructorId = userData.user?.uuid;
+      
+      if (!instructorId) {
+        return { courses: [], pagination: { page: 1, limit: 100, total: 0, pages: 0 } };
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/admin/instructors/${instructorId}?page=1&limit=100`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        console.warn('Instructor courses API unavailable:', response.status);
+        return { courses: [], pagination: { page: 1, limit: 100, total: 0, pages: 0 } };
+      }
+      
+      const instructorData = await response.json();
+      console.log('Instructor data from /admin/instructors:', instructorData);
+      
+      const data = instructorData.instructor || {};
+      return { 
+        courses: data.courses || data.instructor?.courses || [], 
+        pagination: { page: 1, limit: 100, total: data.courses?.length || data.instructor?.courses?.length || 0, pages: 1 }
+      };
+    } catch (error) {
+      console.warn('Instructor courses fetch failed:', error);
+      return { courses: [], pagination: { page: 1, limit: 100, total: 0, pages: 0 } };
+    }
+  },
+
   // Get all courses (admin/instructor view)
   async getAllCourses(page: number = 1, limit: number = 10): Promise<{ courses: BackendCourse[]; pagination: PaginationInfo }> {
     try {
       const token = getAuthToken();
+      if (!token) throw new Error('No authentication token found');
+      
       const response = await fetch(`${API_BASE_URL}/courses?page=${page}&limit=${limit}`, {
         method: 'GET',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
         },
       });
+      
       if (!response.ok) {
-        console.warn('Courses API unavailable:', response.status);
+        console.error('Courses API unavailable:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
         return { courses: [], pagination: { page, limit, total: 0, pages: 0 } };
       }
+      
       const data = await response.json();
       return { 
         courses: data.courses || [], 
         pagination: data.pagination || { page, limit, total: 0, pages: 0 }
       };
     } catch (error) {
-      console.warn('Courses fetch failed:', error);
+      console.error('Courses fetch failed:', error);
       return { courses: [], pagination: { page, limit, total: 0, pages: 0 } };
     }
   },
@@ -350,7 +403,7 @@ async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course
     }
     try {
       const response = await fetch(`${API_BASE_URL}/courses/${id}/publish`, {
-        method: 'PATCH',
+        method: 'PUT', // Changed from PATCH to PUT to avoid CORS issues
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -373,7 +426,7 @@ async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course
       const token = getAuthToken();
       if (!token) throw new Error('No authentication token found');
       
-      const courseRes = await fetch(`${API_BASE_URL}/courses/${id}`, {
+      const courseRes = await fetch(`${API_BASE_URL}/instructor/courses/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -384,8 +437,8 @@ async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course
       const targetStatus = !course.course?.isPublished;
       const endpoint = targetStatus ? 'publish' : 'unpublish';
       
-      const response = await fetch(`${API_BASE_URL}/courses/${id}/${endpoint}`, {
-        method: 'PATCH',
+      const response = await fetch(`${API_BASE_URL}/instructor/courses/${id}/${endpoint}`, {
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
