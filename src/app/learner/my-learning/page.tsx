@@ -10,6 +10,7 @@ import { courseService, type Course, type Module, type Lesson } from "@/services
 export default function MyLearningPage() {
   const searchParams = useSearchParams();
   const courseId = searchParams.get("courseId");
+  console.log('MyLearning courseId from URL:', courseId);
   const [course, setCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -34,8 +35,12 @@ export default function MyLearningPage() {
         setModules(data.modules.sort((a, b) => a.orderIndex - b.orderIndex));
         setLessons(data.lessons.sort((a, b) => a.orderIndex - b.orderIndex));
       } catch (err: any) {
-        console.error("Error fetching course details:", err);
-        setError(err.message || "Failed to load course");
+        if (err.message?.includes('404') || err.message?.includes('Course not found')) {
+          setError("Course not found. Please check My Courses or Cohorts.");
+        } else {
+          console.error("Error fetching course details:", err);
+          setError(err.message || "Failed to load course");
+        }
       } finally {
         setLoading(false);
       }

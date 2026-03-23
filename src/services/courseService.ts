@@ -5,7 +5,7 @@ export type { Module } from './moduleService';
 import type { BackendLesson } from '@/types/lesson';
 export type Lesson = BackendLesson;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/backend';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export interface PaginationInfo {
   page: number;
@@ -54,8 +54,6 @@ const getAuthToken = () => {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('auth_token');
 };
-
-
 
 const handleResponse = async (response: Response) => {
   if (!response.ok) {
@@ -219,9 +217,9 @@ async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course
         }),
       ]);
 
-      if (!courseRes.ok) {
+if (!courseRes.ok) {
         const errorData = await courseRes.json().catch(() => ({}));
-        throw new Error(`Failed to fetch course: ${courseRes.status}`);
+        throw new Error(errorData.error || errorData.message || `Failed to fetch course: ${courseRes.status}`);
       }
 
       const courseData = await courseRes.json();
@@ -250,8 +248,7 @@ async getCourseWithModulesAndLessons(courseId: string): Promise<{ course: Course
         lessons: allLessons,
       };
     } catch (error) {
-      const err = error as Error;
-      throw new Error(err.message || 'Failed to fetch course details');
+      throw error;
     }
   },
 
@@ -558,5 +555,4 @@ export const formatCourseTypeDisplay = (courseType: string | undefined | null): 
 export const formatCourseTypeForAPI = (displayType: string): string => {
   return displayType.toUpperCase().replace(/ /g, '_');
 };
-
 
