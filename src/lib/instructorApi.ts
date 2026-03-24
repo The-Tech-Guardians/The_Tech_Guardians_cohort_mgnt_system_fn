@@ -20,7 +20,11 @@ interface CourseFormData {  title: string;
 
   description: string;
 
-  cohortName?: string;  isPublished?: boolean;
+  cohortId?: string;
+  cohortName?: string;
+  courseType?: string;
+  instructorId?: string;
+  isPublished?: boolean;
 
 }
 
@@ -444,34 +448,55 @@ export const instructorApi = {  async getDashboardStats(): Promise<InstructorSta
 
     try {
 
-      const response = await fetch(`${API_BASE_URL}/instructor/courses`, {
+      const parseApiError = async (response: Response): Promise<string> => {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const errorData = await response.json().catch(() => ({}));
+          return errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+        }
+        const text = await response.text().catch(() => '');
+        return text || `HTTP ${response.status}: ${response.statusText}`;
+      };
 
-        method: 'POST',
+      const endpoints = [
+        `${API_BASE_URL}/instructor/courses`,
+        `${API_BASE_URL}/courses`,
+      ];
 
-        headers: getHeaders(),
+      let lastErrorMessage = 'Failed to create course';
 
-        body: JSON.stringify(courseData),
+      for (let i = 0; i < endpoints.length; i++) {
+        const endpoint = endpoints[i];
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(courseData),
+        });
 
-      });
+        if (response.ok) {
+          const data = await response.json().catch(() => ({}));
+          return data.course || data.data || data;
+        }
 
+        const errorMessage = await parseApiError(response);
+        lastErrorMessage = errorMessage;
 
-
-      if (!response.ok) {
-
-        throw new Error('Failed to create course');
-
+        const isInstructorEndpoint = i === 0;
+        const shouldTryFallback = isInstructorEndpoint && (response.status === 404 || response.status === 405);
+        if (!shouldTryFallback) {
+          break;
+        }
       }
 
-
-
-      const data = await response.json();
-
-      return data.course || data.data || data;
+      throw new Error(lastErrorMessage);
 
     } catch (error) {
 
       console.error('Create course error:', error);
 
+      if (error instanceof Error) {
+        throw error;
+      }
       throw new Error('Failed to create course');
 
     }
@@ -484,34 +509,55 @@ export const instructorApi = {  async getDashboardStats(): Promise<InstructorSta
 
     try {
 
-      const response = await fetch(`${API_BASE_URL}/instructor/courses/${courseId}`, {
+      const parseApiError = async (response: Response): Promise<string> => {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const errorData = await response.json().catch(() => ({}));
+          return errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+        }
+        const text = await response.text().catch(() => '');
+        return text || `HTTP ${response.status}: ${response.statusText}`;
+      };
 
-        method: 'PUT',
+      const endpoints = [
+        `${API_BASE_URL}/instructor/courses/${courseId}`,
+        `${API_BASE_URL}/courses/${courseId}`,
+      ];
 
-        headers: getHeaders(),
+      let lastErrorMessage = 'Failed to update course';
 
-        body: JSON.stringify(courseData),
+      for (let i = 0; i < endpoints.length; i++) {
+        const endpoint = endpoints[i];
+        const response = await fetch(endpoint, {
+          method: 'PUT',
+          headers: getHeaders(),
+          body: JSON.stringify(courseData),
+        });
 
-      });
+        if (response.ok) {
+          const data = await response.json().catch(() => ({}));
+          return data.course || data.data || data;
+        }
 
+        const errorMessage = await parseApiError(response);
+        lastErrorMessage = errorMessage;
 
-
-      if (!response.ok) {
-
-        throw new Error('Failed to update course');
-
+        const isInstructorEndpoint = i === 0;
+        const shouldTryFallback = isInstructorEndpoint && (response.status === 404 || response.status === 405);
+        if (!shouldTryFallback) {
+          break;
+        }
       }
 
-
-
-      const data = await response.json();
-
-      return data.course || data.data || data;
+      throw new Error(lastErrorMessage);
 
     } catch (error) {
 
       console.error('Update course error:', error);
 
+      if (error instanceof Error) {
+        throw error;
+      }
       throw new Error('Failed to update course');
 
     }

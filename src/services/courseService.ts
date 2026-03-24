@@ -5,7 +5,7 @@ export type { Module } from './moduleService';
 import type { BackendLesson } from '@/types/lesson';
 export type Lesson = BackendLesson;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 export interface PaginationInfo {
   page: number;
@@ -249,6 +249,40 @@ if (!courseRes.ok) {
       };
     } catch (error) {
       throw error;
+    }
+  },
+
+  async getLearnerCourseDetails(courseId: string): Promise<{ course: Course; modules: Module[]; lessons: Lesson[] }> {
+    const token = getAuthToken();
+
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/learner/courses/${courseId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error || `Course not found: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      return {
+        course: data.course,
+        modules: data.modules || [],
+        lessons: data.lessons || [],
+      };
+    } catch (error) {
+      const err = error as Error;
+      throw new Error(err.message || 'Failed to fetch learner course details');
     }
   },
 

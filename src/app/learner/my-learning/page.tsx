@@ -5,15 +5,18 @@ import { useState, useEffect } from "react";
 import CourseSidebar from "@/components/learner/my-course/CourseSidebar";
 import VideoPlayer from "@/components/learner/my-course/VideoPlayer";
 import LessonContent from "@/components/learner/my-course/LessonContent";
-import { courseService, type Course, type Module, type Lesson } from "@/services/courseService";
+import { courseService } from "@/services/courseService";
+import type { Course, Module, Lesson } from "@/types/course";
+import type { Module as ModuleType } from "@/services/moduleService";
+import type { Lesson as LessonType } from "@/types/lesson";
 
 export default function MyLearningPage() {
   const searchParams = useSearchParams();
   const courseId = searchParams.get("courseId");
   console.log('MyLearning courseId from URL:', courseId);
   const [course, setCourse] = useState<Course | null>(null);
-  const [modules, setModules] = useState<Module[]>([]);
-  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [modules, setModules] = useState<ModuleType[]>([]);
+  const [lessons, setLessons] = useState<LessonType[]>([]);
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,12 +33,13 @@ export default function MyLearningPage() {
       try {
         setLoading(true);
         setError(null);
-        const data = await courseService.getCourseWithModulesAndLessons(courseId as string);
+        const data = await courseService.getLearnerCourseDetails(courseId!);
         setCourse(data.course);
-        setModules(data.modules.sort((a, b) => a.orderIndex - b.orderIndex));
-        setLessons(data.lessons.sort((a, b) => a.orderIndex - b.orderIndex));
-      } catch (err: any) {
-        if (err.message?.includes('404') || err.message?.includes('Course not found')) {
+        setModules(data.modules.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)));
+        setLessons(data.lessons.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)));
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        if (errorMessage.includes('404') || errorMessage.includes('Course not found')) {
           setError("Course not found. Please check My Courses or Cohorts.");
         } else {
           console.error("Error fetching course details:", err);

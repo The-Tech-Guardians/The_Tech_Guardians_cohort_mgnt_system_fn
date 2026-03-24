@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import {
   courseService,
-  type BackendCourse,
 } from "@/services/courseService";
 import { moduleService, type Module } from "@/services/moduleService";
 import { lessonService } from "@/services/lessonService";
@@ -395,22 +394,15 @@ export default function InstructorLessonsPage() {
     try {
       setLoading(true);
       setError(null);
-      
-      // Get user ID from token for more reliable authentication
+
       const userId = currentUser?.uuid || tokenManager.getUserIdFromToken();
-      
       if (!userId) {
         throw new Error('User not authenticated');
       }
-      
-      // Get all courses and filter by instructor ID (using existing API)
-      const response = await courseService.getAllCourses(1, 100);
-      const allCourses = response.courses || [];
-      const instructorCourses = allCourses.filter((course: BackendCourse) => 
-        course.instructorId === userId
-      );
-      
-      // Transform to Course interface
+
+      const response = await courseService.getInstructorCourses();
+      const instructorCourses = response.courses || [];
+
       const courses: Course[] = instructorCourses.map(course => ({
         id: course.id,
         title: course.title,
