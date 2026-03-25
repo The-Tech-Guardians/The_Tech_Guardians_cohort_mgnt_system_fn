@@ -3,14 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
-import FormattedTextEditor from "@/components/editor/FormattedTextEditor";
 import { Plus, Search, Edit, Trash2, Loader2, Eye, EyeOff, BookOpen, LayoutGrid, List } from "lucide-react";
 import { instructorApi } from "@/lib/instructorApi";
-import { courseService, formatCourseType, type BackendCourse, type Instructor } from "@/services/courseService";
+import { courseService, formatCourseType, type Instructor } from "@/services/courseService";
 import { cohortService, type Cohort } from "@/services/cohortService";
 import type { User } from "@/types/user";
-
-const API_BASE_URL = "http://localhost:3000/api";
 
 const getCurrentUser = (): User | null => {
   if (typeof window === 'undefined') return null;
@@ -73,14 +70,20 @@ export default function InstructorCoursesPage() {
     try {
       setLoading(true);
       setError(null);
-      
-      // Use instructor-specific endpoint
-      const courses = await instructorApi.getInstructorCourses();
-      setCourses(courses);
+
+      const instructorCourses = await instructorApi.getInstructorCourses();
+
+      if (Array.isArray(instructorCourses) && instructorCourses.length > 0) {
+        setCourses(instructorCourses);
+        return;
+      }
+
+      const fallbackResponse = await courseService.getInstructorCourses();
+      setCourses(fallbackResponse.courses || []);
     } catch (err: unknown) {
       console.error('Failed to fetch instructor courses:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch courses');
-      setCourses([]);
+      // Keep the existing list if refresh fails, so the UI doesn't look empty after create.
     } finally {
       setLoading(false);
     }
@@ -151,19 +154,24 @@ export default function InstructorCoursesPage() {
         courseType: courseForm.courseType,
         isPublished: courseForm.isPublished,
       };
-      
-      const response = await courseService.createCourse(courseData);
-      
-      if (response && response.course) {
+
+      const createdCourse = await instructorApi.createCourse(courseData);
+
+      if (createdCourse) {
 showToast("Course created successfully!", "success");
         setCourseForm(initialCourseForm);
         setShowCreateModal(false);
-        
+
         // Add the new course directly to state for immediate display
-        setCourses(prevCourses => [...prevCourses, response.course]);
-        
-        // Also refresh from server to ensure consistency
-        fetchCourses();
+        setCourses(prevCourses => {
+          const exists = prevCourses.some((course) => course.id === createdCourse.id);
+          if (exists) {
+            return prevCourses.map((course) =>
+              course.id === createdCourse.id ? { ...course, ...createdCourse } : course
+            );
+          }
+          return [createdCourse, ...prevCourses];
+        });
       } else {
         showToast('Course creation failed - no response data', 'error');
       }
@@ -187,19 +195,18 @@ showToast("Course created successfully!", "success");
 
     try {
       setFormLoading(true);
-      const updated = await courseService.updateCourse(selectedCourse.id, {
-        title: courseForm.title,
-        description: courseForm.description,
+      const updated = await instructorApi.updateCourse(selectedCourse.id, {
+        title: courseForm.title.trim(),
+        description: courseForm.description.trim(),
         courseType: courseForm.courseType,
-        cohortId: courseForm.cohortId,
-        instructorId: currentUser?.uuid || ""
+        cohortId: courseForm.cohortId
       });
 
       if (updated) {
         setCourses(prevCourses => 
           prevCourses.map(course => 
             course.id === selectedCourse.id 
-              ? { ...course, ...updated.course }
+              ? { ...course, ...updated }
               : course
           )
         );
@@ -220,7 +227,7 @@ showToast("Course created successfully!", "success");
 
     try {
       setFormLoading(true);
-      await courseService.deleteCourse(courseToDelete.id);
+      await instructorApi.deleteCourse(courseToDelete.id);
       
       showToast("Course deleted successfully!", "success");
       setShowDeleteModal(false);
@@ -527,73 +534,88 @@ showToast("Course created successfully!", "success");
         }}
         title={showCreateModal ? "Create New Course" : "Edit Course"}
       >
-        <form onSubmit={showCreateModal ? handleCreateCourse : handleUpdateCourse} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Course Title
-            </label>
-            <input
-              type="text"
-              required
-              value={courseForm.title}
-              onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
+        <form onSubmit={showCreateModal ? handleCreateCourse : handleUpdateCourse} className="space-y-5">
+          <div className="rounded-2xl bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 p-4 text-white">
+            <p className="text-xs uppercase tracking-[0.14em] text-indigo-100">Instructor Workspace</p>
+            <h3 className="mt-1 text-lg font-semibold">
+              {showCreateModal ? "Build A New Course" : "Update Course Details"}
+            </h3>
+            <p className="mt-1 text-sm text-indigo-100">
+              Add your title, content focus, and cohort to keep course delivery organized.
+            </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <FormattedTextEditor
-              content={courseForm.description}
-              onChange={(content) => setCourseForm(prev => ({ ...prev, description: content }))}
-              placeholder="Enter course description..."
-              minHeight="150px"
-              showToolbar={true}
-              className="w-full"
-            />
+          <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+                  Course Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={courseForm.title}
+                  onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-300 bg-white rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="e.g. Fundamentals of Social Media Strategy"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+                  Course Type
+                </label>
+                <select
+                  required
+                  value={courseForm.courseType}
+                  onChange={(e) => setCourseForm({ ...courseForm, courseType: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-300 bg-white rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">Select course type</option>
+                  {COURSE_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+                  Cohort
+                </label>
+                <select
+                  required
+                  value={courseForm.cohortId}
+                  onChange={(e) => setCourseForm({ ...courseForm, cohortId: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-300 bg-white rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">Select a cohort</option>
+                  {cohorts.map((cohort) => (
+                    <option key={cohort.id} value={cohort.id}>
+                      {cohort.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+                Description
+              </label>
+              <textarea
+                required
+                rows={7}
+                value={courseForm.description}
+                onChange={(e) => setCourseForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Describe what learners will achieve in this course..."
+                className="w-full px-4 py-3 border border-gray-300 bg-white rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Course Type
-            </label>
-            <select
-              required
-              value={courseForm.courseType}
-              onChange={(e) => setCourseForm({ ...courseForm, courseType: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">Select a type</option>
-              {COURSE_TYPE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cohort
-            </label>
-              <select
-              required
-              value={courseForm.cohortId}
-              onChange={(e) => setCourseForm({ ...courseForm, cohortId: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">Select a cohort</option>
-              {cohorts.map((cohort) => (
-                <option key={cohort.id} value={cohort.id}>
-                  {cohort.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={() => {
@@ -602,14 +624,14 @@ showToast("Course created successfully!", "success");
                 setSelectedCourse(null);
                 setCourseForm(initialCourseForm);
               }}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="px-5 py-2.5 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={formLoading}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 inline-flex items-center gap-2 font-medium"
             >
               {formLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

@@ -3,8 +3,16 @@
 import { useState, useEffect } from "react";
 import { authAPI } from "@/lib/auth";
 
+type LearnerCourseProgress = {
+  id: string;
+  title?: string;
+  lessons?: number;
+  progress?: number;
+  averageScore?: number;
+};
+
 const CourseProgress = () => {
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState<LearnerCourseProgress[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,7 +55,7 @@ const CourseProgress = () => {
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Course Progress</h2>
         {courses.length > 0 ? (
           <div className="space-y-6">
-            {courses.map((course: any) => (
+            {courses.map((course) => (
               <div key={course.id}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex-1">

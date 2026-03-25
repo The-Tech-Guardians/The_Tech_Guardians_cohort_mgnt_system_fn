@@ -5,7 +5,7 @@ import Modal from "@/components/admin/Modal";
 import Toast from "@/components/admin/Toast";
 import { Plus, Search, Edit, Trash2, BookOpen, LayoutGrid, List, Loader2, Layers, RefreshCw } from "lucide-react";
 import { moduleService, type Module } from "@/services/moduleService";
-import { courseService, type BackendCourse } from "@/services/courseService";
+import { courseService } from "@/services/courseService";
 import { cohortService, type Cohort } from "@/services/cohortService";
 import { tokenManager } from "@/lib/auth";
 
@@ -307,32 +307,15 @@ export default function InstructorModulesPage() {
     try {
       setLoading(true);
       setError(null);
-      
-      // Debug: Log authentication state
-      console.log('Fetching courses - Current user:', currentUser);
-      console.log('Token exists:', !!tokenManager.getToken());
-      console.log('User from token:', tokenManager.getUser());
-      
-      // Get user ID from token for more reliable authentication
+
       const userId = currentUser?.uuid || tokenManager.getUserIdFromToken();
-      
       if (!userId) {
-        console.error('No user ID found - currentUser:', currentUser, 'tokenUserId:', tokenManager.getUserIdFromToken());
         throw new Error('User not authenticated');
       }
-      
-      console.log('Using user ID:', userId);
-      
-      // Get all courses and filter by instructor ID (using existing API)
-      const response = await courseService.getAllCourses(1, 100);
-      const allCourses = response.courses || [];
-      const instructorCourses = allCourses.filter((course: BackendCourse) => 
-        course.instructorId === userId
-      );
-      
-      console.log('Found courses:', instructorCourses.length);
-      
-      // Transform to Course interface
+
+      const response = await courseService.getInstructorCourses();
+      const instructorCourses = response.courses || [];
+
       const courses: Course[] = instructorCourses.map(course => ({
         id: course.id,
         title: course.title,
@@ -342,7 +325,6 @@ export default function InstructorModulesPage() {
       setCourses(courses);
       if (courses.length > 0) setSelectedCourse(courses[0].id);
     } catch (err: any) {
-      console.error('Error fetching courses:', err);
       setError(err.message || "Failed to load courses");
       showToast(err.message || "Failed to load courses", "error");
     } finally {

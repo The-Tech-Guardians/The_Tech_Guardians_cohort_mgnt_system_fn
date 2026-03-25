@@ -1,8 +1,12 @@
 import { User } from '@/types/user';
 import { TwoFAMethod } from '@/components/banner/auth/two-fa/types';
 import { cohortService } from '@/services/cohortService';
+import { courseService } from '@/services/courseService';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/backend';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+
+const getNormalizedCourseId = (course: { courseId?: string; id?: string; _id?: string }) =>
+  course.courseId || course.id || course._id || '';
 
 export interface LoginData {
   email: string;
@@ -351,27 +355,78 @@ async verify2FA(userId: string, method: TwoFAMethod, code: string, tempSecret?: 
 async getLearnerCohortCourses(): Promise<AuthResponse> {
     const token = tokenManager.getToken();
     if (!token) return { success: false, message: 'No token' };
-    const response = await fetch(`${API_BASE_URL}/learner/cohort-courses`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-    return response.json();
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/learner/cohort-courses`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        return { success: false, message: `Server error: ${response.status}` };
+      }
+
+      return response.json();
+    } catch {
+      return { success: false, message: 'Network error: could not reach the API server.' };
+    }
   },
 
 
 
-async getLearnerCohort(): Promise<AuthResponse> {
+  async getLearnerCohort(): Promise<AuthResponse> {
     const token = tokenManager.getToken();
     if (!token) return { success: false, message: 'No token' };
-    const response = await fetch(`${API_BASE_URL}/learner/cohort`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-    return response.json();
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/learner/cohort`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        return { success: false, message: `Server error: ${response.status}` };
+      }
+
+      return response.json();
+    } catch {
+      return { success: false, message: 'Network error: could not reach the API server.' };
+    }
+  },
+
+  async getLearnerCourses(): Promise<{ success: boolean; data?: unknown[]; message?: string }> {
+    try {
+      const [enrolledCoursesRes, cohortCoursesRes] = await Promise.allSettled([
+        courseService.getLearnerEnrolledCourses(1, 100),
+        courseService.getLearnerCohortCourses(1, 100),
+      ]);
+
+      const enrolledCourses =
+        enrolledCoursesRes.status === 'fulfilled' ? enrolledCoursesRes.value.courses || [] : [];
+      const cohortCourses =
+        cohortCoursesRes.status === 'fulfilled' ? cohortCoursesRes.value.courses || [] : [];
+
+      const mergedCourses = new Map<string, unknown>();
+      [...enrolledCourses, ...cohortCourses].forEach((course) => {
+        const courseId = getNormalizedCourseId(course as { courseId?: string; id?: string; _id?: string });
+        if (!courseId) return;
+        mergedCourses.set(courseId, { ...mergedCourses.get(courseId) as object, ...course });
+      });
+
+      return {
+        success: true,
+        data: Array.from(mergedCourses.values()),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to fetch learner courses',
+      };
+    }
   },
 
   async getAvailableCohorts(): Promise<any> {

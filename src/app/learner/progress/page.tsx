@@ -5,6 +5,14 @@ import { BookOpen, CheckCircle, Clock, Award } from "lucide-react";
 import { useSidebar } from "../layout";
 import { authAPI } from "@/lib/auth";
 
+type LearnerProgressCourse = {
+  totalLessons?: number;
+  lessons?: number;
+  progress?: number;
+  hoursSpent?: number;
+  averageScore?: number;
+};
+
 export default function ProgressPage() {
   const { collapsed } = useSidebar();
   const [stats, setStats] = useState({
@@ -30,9 +38,10 @@ export default function ProgressPage() {
           let totalScore = 0;
           let courseCount = 0;
 
-          response.data.forEach((course: any) => {
-            totalLessons += course.totalLessons || 0;
-            completedLessons += Math.floor((course.progress || 0) * (course.totalLessons || 0) / 100);
+          (response.data as LearnerProgressCourse[]).forEach((course) => {
+            const lessonCount = course.totalLessons || course.lessons || 0;
+            totalLessons += lessonCount;
+            completedLessons += Math.floor((course.progress || 0) * lessonCount / 100);
             totalHours += course.hoursSpent || 0;
             if (course.averageScore) {
               totalScore += course.averageScore;

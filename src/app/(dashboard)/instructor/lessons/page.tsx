@@ -16,10 +16,10 @@ import {
 } from "lucide-react";
 import {
   courseService,
-  type BackendCourse,
 } from "@/services/courseService";
 import { moduleService, type Module } from "@/services/moduleService";
 import { lessonService } from "@/services/lessonService";
+import { instructorApi } from "@/lib/instructorApi";
 import type { BackendLesson as Lesson } from "@/types/lesson";
 import { tokenManager } from "@/lib/auth";
 import FormattedTextEditor from "@/components/editor/FormattedTextEditor";
@@ -395,22 +395,20 @@ export default function InstructorLessonsPage() {
     try {
       setLoading(true);
       setError(null);
-      
-      // Get user ID from token for more reliable authentication
+
       const userId = currentUser?.uuid || tokenManager.getUserIdFromToken();
-      
       if (!userId) {
         throw new Error('User not authenticated');
       }
-      
-      // Get all courses and filter by instructor ID (using existing API)
-      const response = await courseService.getAllCourses(1, 100);
-      const allCourses = response.courses || [];
-      const instructorCourses = allCourses.filter((course: BackendCourse) => 
-        course.instructorId === userId
-      );
-      
-      // Transform to Course interface
+
+      const directInstructorCourses = await instructorApi.getInstructorCourses();
+      let instructorCourses = Array.isArray(directInstructorCourses) ? directInstructorCourses : [];
+
+      if (!instructorCourses.length) {
+        const response = await courseService.getInstructorCourses();
+        instructorCourses = response.courses || [];
+      }
+
       const courses: Course[] = instructorCourses.map(course => ({
         id: course.id,
         title: course.title,
@@ -459,7 +457,7 @@ export default function InstructorLessonsPage() {
     try {
       setLessonsLoading(true);
       setError(null);
-      const data = await lessonService.getLessonsByModule(selectedModule);
+      const data = await lessonService.getInstructorLessonsByModule(selectedModule);
       setLessons(data);
     } catch (err: any) {
       setLessons([]);
