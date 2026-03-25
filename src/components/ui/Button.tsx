@@ -4,7 +4,8 @@
 import { ButtonHTMLAttributes } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "outline" | "ghost";
+  variant?: "primary" | "outline" | "ghost" | "default";
+  size?: "sm" | "md" | "lg";
   loading?: boolean;
   loadingText?: string;
 }
@@ -25,6 +26,7 @@ function Spinner() {
 
 export default function Button({
   variant = "primary",
+  size = "md",
   loading = false,
   loadingText,
   children,
@@ -32,8 +34,13 @@ export default function Button({
   className = "",
   ...rest
 }: ButtonProps) {
-  const base =
-    "w-full flex items-center justify-center gap-2 font-bold text-sm py-3.5 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed";
+  const base = "flex items-center justify-center gap-2 font-bold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed";
+  
+  const sizes = {
+    sm: "px-3 py-2 text-xs",
+    md: "px-4 py-3.5 text-sm w-full",
+    lg: "px-6 py-4 text-base w-full"
+  };
 
   const variants = {
     primary:
@@ -42,17 +49,18 @@ export default function Button({
       "border-2 border-[#4F46E5] text-[#4F46E5] hover:bg-indigo-50 bg-transparent",
     ghost:
       "text-gray-500 hover:text-[#4F46E5] bg-transparent border-none shadow-none",
+    default:
+      "bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300"
   };
 
   return (
     <button
       disabled={disabled || loading}
-      className={`${base} ${variants[variant]} ${className}`}
+      className={`${base} ${sizes[size]} ${variants[variant]} ${className}`}
       {...rest}
     >
       {loading ? (
         <>
-          <Spinner />
           {loadingText ?? children}
         </>
       ) : (
@@ -61,3 +69,5 @@ export default function Button({
     </button>
   );
 }
+
+export { Button };

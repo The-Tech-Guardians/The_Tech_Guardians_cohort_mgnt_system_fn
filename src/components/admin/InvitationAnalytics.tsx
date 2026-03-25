@@ -370,7 +370,7 @@ export default function InvitationAnalytics() {
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Cohort Performance</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={cohortDistribution.slice(0, 5)}>
+            <BarChart data={cohortDistribution.filter(item => item.cohort !== 'Unassigned').slice(0, 5)}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="cohort" />
               <YAxis />

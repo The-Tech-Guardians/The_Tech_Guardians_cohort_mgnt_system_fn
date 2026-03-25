@@ -68,13 +68,7 @@ export default function EditLessonForm({ lesson, isOpen, onClose, onUpdate }: Ed
   }, [lesson, isOpen]);
 
   const handleChange = (updates: Partial<typeof form>) => {
-    console.log('Form changing:', updates); // Debug
-    setForm(prev => {
-      console.log('Previous form:', prev); // Debug
-      const newForm = { ...prev, ...updates };
-      console.log('New form:', newForm); // Debug
-      return newForm;
-    });
+    setForm(prev => ({ ...prev, ...updates }));
   };
 
   const handleFileChange = (file: File | null) => {

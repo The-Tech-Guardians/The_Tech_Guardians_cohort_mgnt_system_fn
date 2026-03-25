@@ -79,6 +79,22 @@ export default function InvitationManagement({ onError, onSuccess }: InvitationM
     }
   };
 
+  const handleRenewInvitation = async (invitationId: string) => {
+    if (!canManageInvitations) {
+      onError?.('You don\'t have permission to renew invitations');
+      return;
+    }
+
+    try {
+      await invitationService.renewInvitation(invitationId);
+      onSuccess?.('Invitation renewed successfully');
+      loadInvitations();
+      loadStats();
+    } catch (error) {
+      onError?.('Failed to renew invitation');
+    }
+  };
+
   const handleResendInvitation = async (invitationId: string) => {
     try {
       await invitationService.resendInvitation(invitationId);
@@ -126,42 +142,28 @@ export default function InvitationManagement({ onError, onSuccess }: InvitationM
   };
 
   return (
-    <div className="p-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="text-sm font-medium text-gray-500">Total Invitations</h3>
-          <p className="text-2xl font-bold text-gray-900">{stats.totalInvitations}</p>
+    <div className="space-y-6">
+      {/* Header with Send Button */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Invitation Management</h1>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="text-sm font-medium text-gray-500">Pending</h3>
-          <p className="text-2xl font-bold text-yellow-600">{stats.pendingInvitations}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="text-sm font-medium text-gray-500">Accepted</h3>
-          <p className="text-2xl font-bold text-green-600">{stats.acceptedInvitations}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="text-sm font-medium text-gray-500">Expired</h3>
-          <p className="text-2xl font-bold text-red-600">{stats.expiredInvitations}</p>
-        </div>
-      </div>
-
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Invitation Management</h2>
         {canManageInvitations && (
-          <Button
+          <button
             onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm"
           >
-            Send New Invitation
-          </Button>
+            Send Invitation
+          </button>
         )}
       </div>
 
       {/* Invitations Table */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Invitations</h2>
+          <p className="text-sm text-gray-600">View and manage all user invitations</p>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -246,6 +248,15 @@ export default function InvitationManagement({ onError, onSuccess }: InvitationM
                               Cancel
                             </Button>
                           </>
+                        )}
+                        {invitation.status === 'EXPIRED' && (
+                          <Button
+                            onClick={() => handleRenewInvitation(invitation.id)}
+                            variant="outline"
+                            className="px-3 py-1 text-xs text-green-600 border-green-600 hover:bg-green-50"
+                          >
+                            Renew
+                          </Button>
                         )}
                         <Button
                           onClick={() => setSelectedInvitation(invitation)}

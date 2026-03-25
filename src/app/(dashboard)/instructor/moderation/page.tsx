@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import ModerationDashboard from "@/components/admin/ModerationDashboard";
+import InstructorModerationDashboard from "@/components/admin/InstructorModerationDashboard";
 
-export default function ModerationPage() {
+export default function InstructorModerationPage() {
   const [toast, setToast] = useState<{
     show: boolean;
     message: string;
@@ -17,7 +17,7 @@ export default function ModerationPage() {
 
   return (
     <div className="space-y-6">
-      <ModerationDashboard 
+      <InstructorModerationDashboard 
         onError={(message) => showToast(message, 'error')}
         onSuccess={(message) => showToast(message, 'success')}
       />

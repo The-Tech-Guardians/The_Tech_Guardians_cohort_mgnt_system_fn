@@ -120,7 +120,7 @@ class EmailService {
   templates: EmailTemplate = {
     invitation: (data: InvitationTemplateData): EmailData => ({
       to: data.invitationLink.includes('localhost') ? 'test@example.com' : data.invitationLink, // Parse email from link or use test
-      subject: `Invitation to join as ${data.role}`,
+      subject: data.subject || `Invitation to join as ${data.role}`,
       html: this.generateInvitationHTML(data),
       text: this.generateInvitationText(data),
     }),
