@@ -5,10 +5,37 @@ import { useState, useEffect } from "react";
 import CourseSidebar from "@/components/learner/my-course/CourseSidebar";
 import VideoPlayer from "@/components/learner/my-course/VideoPlayer";
 import LessonContent from "@/components/learner/my-course/LessonContent";
+import { authAPI } from "@/lib/auth";
 import { courseService } from "@/services/courseService";
-import type { Course, Module, Lesson } from "@/types/course";
+import { assessmentService, type AssessmentQuestion } from "@/services/assessmentService";
+import type { Course } from "@/types/course";
+import type { Assessment } from "@/types/assessment";
 import type { Module as ModuleType } from "@/services/moduleService";
 import type { Lesson as LessonType } from "@/types/lesson";
+
+const LEARNER_COURSE_CACHE_KEY = "learner_course_cache";
+
+const getCachedCourse = (courseId: string): Course | null => {
+  if (typeof window === "undefined") return null;
+
+  const raw = sessionStorage.getItem(LEARNER_COURSE_CACHE_KEY);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as Record<string, Course>;
+    return parsed[courseId] || null;
+  } catch {
+    return null;
+  }
+};
+
+const getNormalizedCourseId = (course: { courseId?: string; id?: string; _id?: string }) =>
+  course.courseId || course.id || course._id || "";
+
+type QuizWithQuestions = {
+  assessment: Assessment;
+  questions: AssessmentQuestion[];
+};
 
 export default function MyLearningPage() {
   const searchParams = useSearchParams();
@@ -19,6 +46,8 @@ export default function MyLearningPage() {
   const [lessons, setLessons] = useState<LessonType[]>([]);
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [quizDetails, setQuizDetails] = useState<QuizWithQuestions[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,20 +59,118 @@ export default function MyLearningPage() {
         return;
       }
 
+      let effectiveCourseId = courseId;
+      let resolvedCourseMeta: { courseId?: string; id?: string; _id?: string; title?: string; courseType?: string } | null = null;
+
       try {
         setLoading(true);
         setError(null);
-        const data = await courseService.getLearnerCourseDetails(courseId!);
+        const learnerCourses = await authAPI.getLearnerCohortCourses();
+        const cohortCourses = learnerCourses.success && Array.isArray(learnerCourses.data)
+          ? learnerCourses.data as Array<{ courseId?: string; id?: string; _id?: string; title?: string; courseType?: string }>
+          : [];
+
+        resolvedCourseMeta = cohortCourses.find(
+          (course) => getNormalizedCourseId(course) === courseId
+        ) || null;
+
+        if (!resolvedCourseMeta) {
+          const cachedCourse = getCachedCourse(courseId);
+          if (cachedCourse) {
+            const matchedByTitle = cohortCourses.find(
+              (course) =>
+                course.title?.trim().toLowerCase() === cachedCourse.title?.trim().toLowerCase()
+            );
+            if (matchedByTitle) {
+              resolvedCourseMeta = matchedByTitle;
+              effectiveCourseId = getNormalizedCourseId(matchedByTitle);
+            }
+          }
+        }
+
+        let data;
+        try {
+          data = await courseService.getLearnerCourseDetails(effectiveCourseId);
+        } catch {
+          const allowedCourseIds = cohortCourses
+            .map((course) => getNormalizedCourseId(course))
+            .filter(Boolean);
+
+          if (allowedCourseIds.length > 0 && !allowedCourseIds.includes(effectiveCourseId)) {
+            throw new Error("This course is not assigned to your cohort.");
+          }
+
+          data = await courseService.getCourseWithModulesAndLessons(effectiveCourseId);
+        }
+
+        if (effectiveCourseId !== courseId) {
+          window.history.replaceState(
+            window.history.state,
+            "",
+            `/learner/my-learning?courseId=${effectiveCourseId}`
+          );
+        }
+
+        const sortedModules = data.modules.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+        const sortedLessons = data.lessons.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+        const initialModuleId = sortedModules[0]?.id || null;
+        const initialLessonId =
+          sortedLessons.find((lesson) => lesson.moduleId === initialModuleId)?.id ||
+          sortedLessons[0]?.id ||
+          null;
         setCourse(data.course);
-        setModules(data.modules.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)));
-        setLessons(data.lessons.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)));
+        setModules(sortedModules);
+        setLessons(sortedLessons);
+        setSelectedModuleId(initialModuleId);
+        setSelectedLessonId(initialLessonId);
       } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        if (errorMessage.includes('404') || errorMessage.includes('Course not found')) {
-          setError("Course not found. Please check My Courses or Cohorts.");
-        } else {
-          console.error("Error fetching course details:", err);
-          setError(err.message || "Failed to load course");
+        try {
+          const cachedCourse = getCachedCourse(effectiveCourseId);
+          const fallbackCourse =
+            cachedCourse ||
+            (resolvedCourseMeta
+              ? ({
+                  id: getNormalizedCourseId(resolvedCourseMeta),
+                  title: resolvedCourseMeta.title || "Untitled Course",
+                  description: "",
+                  instructorId: "",
+                  cohortId: "",
+                  courseType: resolvedCourseMeta.courseType || "",
+                  isPublished: true,
+                } as Course)
+              : null);
+
+          if (!fallbackCourse) {
+            throw err;
+          }
+
+          const modules = await courseService.getModulesByCourse(effectiveCourseId);
+          const lessonsByModule = await Promise.all(
+            modules.map((module) => courseService.getLessonsByModule(module.id))
+          );
+          const lessons = lessonsByModule
+            .flat()
+            .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+          const sortedModules = modules.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+          const initialModuleId = sortedModules[0]?.id || null;
+          const initialLessonId =
+            lessons.find((lesson) => lesson.moduleId === initialModuleId)?.id ||
+            lessons[0]?.id ||
+            null;
+
+          setCourse(fallbackCourse);
+          setModules(sortedModules);
+          setLessons(lessons);
+          setSelectedModuleId(initialModuleId);
+          setSelectedLessonId(initialLessonId);
+        } catch (fallbackError: unknown) {
+          const errorMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
+          if (errorMessage.includes('404') || errorMessage.includes('Course not found')) {
+            setError("Course not found. Please check My Courses or Cohorts.");
+          } else {
+            console.error("Error fetching course details:", fallbackError);
+            setError(fallbackError instanceof Error ? fallbackError.message : "Failed to load course");
+          }
         }
       } finally {
         setLoading(false);
@@ -52,6 +179,66 @@ export default function MyLearningPage() {
 
     fetchCourseDetails();
   }, [courseId]);
+
+  useEffect(() => {
+    if (!selectedModuleId || lessons.length === 0) {
+      return;
+    }
+
+    const currentLessonBelongsToModule = lessons.some(
+      (lesson) => lesson.id === selectedLessonId && lesson.moduleId === selectedModuleId
+    );
+
+    if (!currentLessonBelongsToModule) {
+      const firstLessonInModule = lessons
+        .filter((lesson) => lesson.moduleId === selectedModuleId)
+        .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))[0];
+
+      setSelectedLessonId(firstLessonInModule?.id || null);
+    }
+  }, [selectedLessonId, selectedModuleId, lessons]);
+
+  useEffect(() => {
+    const fetchModuleAssessments = async () => {
+      if (!selectedModuleId) {
+        setAssessments([]);
+        setQuizDetails([]);
+        return;
+      }
+
+      try {
+        const moduleAssessments = await assessmentService.getAssessmentsByModule(selectedModuleId);
+        setAssessments(moduleAssessments);
+
+        const quizzes = moduleAssessments.filter((assessment) => assessment.type === "QUIZ");
+        const quizResponses = await Promise.all(
+          quizzes.map(async (quiz) => {
+            try {
+              const details = await assessmentService.getAssessmentById(quiz.id);
+              return {
+                assessment: details.assessment,
+                questions: details.questions,
+              };
+            } catch {
+              return {
+                assessment: quiz,
+                questions: [],
+              };
+            }
+          })
+        );
+
+        setQuizDetails(quizResponses);
+      } catch {
+        setAssessments([]);
+        setQuizDetails([]);
+      }
+    };
+
+    fetchModuleAssessments();
+  }, [selectedModuleId]);
+
+  const selectedLesson = lessons.find((lesson) => lesson.id === selectedLessonId) || null;
 
   if (loading) {
     return (
@@ -105,13 +292,15 @@ export default function MyLearningPage() {
       </div>
 
       <main className="flex-1 overflow-y-auto bg-[#F3F4F6] scrollbar-hide">
-      <VideoPlayer />
+      <VideoPlayer lesson={selectedLesson} />
       <LessonContent 
         course={course}
         modules={modules}
         lessons={lessons}
         selectedModuleId={selectedModuleId}
         selectedLessonId={selectedLessonId}
+        assessments={assessments}
+        quizDetails={quizDetails}
       />
 
       </main>

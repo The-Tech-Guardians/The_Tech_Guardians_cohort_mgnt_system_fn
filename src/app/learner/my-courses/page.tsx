@@ -9,6 +9,78 @@ import { Cohort } from "@/types/cohort";
 import { authAPI } from "@/lib/auth";
 import { GraduationCap, BookOpen, Users } from "lucide-react";
 
+const LEARNER_COURSE_CACHE_KEY = "learner_course_cache";
+
+type CohortCourseResponse = {
+  success?: boolean;
+  data?: unknown;
+  cohortCourseType?: string;
+};
+
+type RawCourse = {
+  id?: string;
+  courseId?: string;
+  _id?: string;
+  title?: string;
+  description?: string;
+  instructor?: string;
+  instructorName?: string;
+  instructorId?: string;
+  cohortId?: string;
+  courseType?: string;
+  isPublished?: boolean;
+  modules?: number | unknown[];
+  lessons?: number | unknown[];
+  progress?: number;
+};
+
+const asCourseArray = (value: unknown): RawCourse[] => {
+  return Array.isArray(value) ? (value as RawCourse[]) : [];
+};
+
+const getCourseId = (course: RawCourse) => course.courseId || course.id || course._id || "";
+
+const getItemCount = (value: number | unknown[] | undefined) => {
+  if (typeof value === "number") return value;
+  if (Array.isArray(value)) return value.length;
+  return 0;
+};
+
+const toExtendedCourse = (
+  course: RawCourse,
+  index: number,
+  cohortId: string,
+  cohortCourseType: string,
+): ExtendedCourse | null => {
+  const id = getCourseId(course);
+  if (!id) return null;
+
+  const colors = [
+    "bg-gradient-to-r from-blue-600 to-cyan-500",
+    "bg-gradient-to-r from-indigo-600 to-purple-500",
+    "bg-gradient-to-r from-emerald-600 to-teal-500",
+    "bg-gradient-to-r from-amber-500 to-orange-500",
+  ];
+
+  return {
+    id,
+    title: course.title || "Untitled Course",
+    description: course.description || "",
+    instructor: course.instructor || course.instructorName || "Tech Guardians Team",
+    instructorId: course.instructorId || "",
+    cohortId: course.cohortId || cohortId,
+    courseType: course.courseType || cohortCourseType || "",
+    isPublished: course.isPublished ?? true,
+    progress: Number(course.progress ?? 0),
+    modules: getItemCount(course.modules),
+    lessons: getItemCount(course.lessons),
+    nextLesson: "Getting Started",
+    status: "not-started",
+    thumbnail: course.title?.charAt(0).toUpperCase() || "C",
+    color: colors[index % colors.length],
+  };
+};
+
 export default function LearnerMyCoursesPage() {
   const [filter, setFilter] = useState<"all" | "in-progress" | "not-started">(
     "all",
@@ -22,42 +94,49 @@ export default function LearnerMyCoursesPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        let currentCohortId = "";
+        let currentCohortType = "";
+
         const cohortRes = await authAPI.getLearnerCohort();
         if (cohortRes.success && cohortRes.data) {
           const raw = cohortRes.data as Cohort & { cohortId?: string };
-          setCohort({ ...raw, id: raw.id || raw.cohortId || "" } as Cohort);
+          const normalizedCohort = { ...raw, id: raw.id || raw.cohortId || "" } as Cohort;
+          currentCohortId = normalizedCohort.id;
+          currentCohortType = normalizedCohort.courseType || "";
+          setCohort(normalizedCohort);
         }
 
-        const cohortCoursesRes = await authAPI.getLearnerCohortCourses();
-        const cohortCourses = cohortCoursesRes.success ? (cohortCoursesRes.data || []) : [];
-        const cohortCourseType = (cohortCoursesRes as any).cohortCourseType || "";
+        const [cohortCoursesRes, allCoursesRes] = await Promise.all([
+          authAPI.getLearnerCohortCourses() as Promise<CohortCourseResponse>,
+          courseService.getAllCourses(1, 100),
+        ]);
 
-        const colors = [
-          "bg-gradient-to-r from-blue-600 to-cyan-500",
-          "bg-gradient-to-r from-indigo-600 to-purple-500",
-          "bg-gradient-to-r from-emerald-600 to-teal-500",
-          "bg-gradient-to-r from-amber-500 to-orange-500",
-        ];
+        const cohortCourses = cohortCoursesRes.success
+          ? asCourseArray(cohortCoursesRes.data)
+          : [];
+        const cohortCourseType = cohortCoursesRes.cohortCourseType || currentCohortType;
 
-        const transformedCourses: ExtendedCourse[] = cohortCourses.map(
-          (course: any, idx: number) => ({
-            id: course.id || course._id || "",
-            title: course.title || "Untitled Course",
-            description: course.description || "",
-            instructor: "Tech Guardians Team",
-            instructorId: "",
-            cohortId: cohort?.id || "",
-            courseType: cohortCourseType || "",
-            isPublished: true,
-            progress: 0,
-            modules: course.modules || 0,
-            lessons: course.lessons || 0,
-            nextLesson: "Getting Started",
-            status: "not-started",
-            thumbnail: course.title?.charAt(0).toUpperCase() || "C",
-            color: colors[idx % colors.length],
-          }),
-        );
+        const fallbackCourses = allCoursesRes.courses.filter((course) => {
+          if (course.isPublished === false) return false;
+          if (currentCohortId) {
+            return course.cohortId === currentCohortId;
+          }
+          if (cohortCourses.length === 0 && cohortCourseType) {
+            return course.courseType === cohortCourseType;
+          }
+          return false;
+        });
+
+        const mergedCourses = new Map<string, RawCourse>();
+        [...cohortCourses, ...fallbackCourses].forEach((course) => {
+          const courseId = getCourseId(course);
+          if (!courseId) return;
+          mergedCourses.set(courseId, { ...mergedCourses.get(courseId), ...course });
+        });
+
+        const transformedCourses = Array.from(mergedCourses.values())
+          .map((course, idx) => toExtendedCourse(course, idx, currentCohortId, cohortCourseType))
+          .filter((course): course is ExtendedCourse => Boolean(course));
 
         setCourses(transformedCourses);
       } catch (err: unknown) {
@@ -242,6 +321,13 @@ export default function LearnerMyCoursesPage() {
             <Link
               key={course.id}
               href={`/learner/my-learning?courseId=${course.id}`}
+              onClick={() => {
+                if (typeof window === "undefined") return;
+                const cached = sessionStorage.getItem(LEARNER_COURSE_CACHE_KEY);
+                const parsed = cached ? (JSON.parse(cached) as Record<string, ExtendedCourse>) : {};
+                parsed[course.id] = course;
+                sessionStorage.setItem(LEARNER_COURSE_CACHE_KEY, JSON.stringify(parsed));
+              }}
               className="group bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden h-full"
             >
               <div className="relative h-48 bg-gradient-to-r from-blue-600 to-cyan-500">
