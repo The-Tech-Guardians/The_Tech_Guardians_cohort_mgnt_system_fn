@@ -2,7 +2,7 @@ import { User } from '@/types/user';
 import { TwoFAMethod } from '@/components/banner/auth/two-fa/types';
 import { cohortService } from '@/services/cohortService';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/backend';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 export interface LoginData {
   email: string;
@@ -351,7 +351,7 @@ async verify2FA(userId: string, method: TwoFAMethod, code: string, tempSecret?: 
 async getLearnerCohortCourses(): Promise<AuthResponse> {
     const token = tokenManager.getToken();
     if (!token) return { success: false, message: 'No token' };
-    const response = await fetch(`${API_BASE_URL}/learner/cohort-courses`, {
+const response = await fetch(`${API_BASE_URL}/learner/cohort-courses`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -365,7 +365,7 @@ async getLearnerCohortCourses(): Promise<AuthResponse> {
 async getLearnerCohort(): Promise<AuthResponse> {
     const token = tokenManager.getToken();
     if (!token) return { success: false, message: 'No token' };
-    const response = await fetch(`${API_BASE_URL}/learner/cohort`, {
+const response = await fetch(`${API_BASE_URL}/learner/cohort`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

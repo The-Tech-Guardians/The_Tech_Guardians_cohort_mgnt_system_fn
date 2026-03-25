@@ -1,6 +1,6 @@
 // Module Service - API interactions for Module Management
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/backend';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 export interface Module {
   id: string;
@@ -50,15 +50,30 @@ export const moduleService = {
       const token = getAuthToken();
       if (!token) throw new Error('Authentication required');
 
-      const response = await fetch(`${API_BASE_URL}/modules/course/${courseId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await handleResponse(response);
-      return data.modules || [];
+      const endpoints = [
+        `${API_BASE_URL}/modules/course/${courseId}`,
+        `${API_BASE_URL}/courses/${courseId}/modules`,
+      ];
+
+      for (const endpoint of endpoints) {
+        const response = await fetch(endpoint, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 404) {
+          continue;
+        }
+
+        const data = await handleResponse(response);
+        return data.modules || data.data || [];
+      }
+
+      // Some backends return 404 when no modules exist for a course.
+      return [];
     } catch (error) {
       console.error('Failed to fetch modules:', error);
       throw error;
