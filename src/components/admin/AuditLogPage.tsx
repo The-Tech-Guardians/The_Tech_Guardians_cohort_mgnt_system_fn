@@ -87,7 +87,12 @@ export default function AuditLogPage() {
   };
 
   const clearFilters = () => {
-    setFilters({ entityType: '', action: '', severity: '', actorId: '' });
+    setFilters({ 
+      entityType: '', 
+      action: '', 
+      severity: '', 
+      actorId: '' 
+    });
     setCurrentPage(1);
   };
 
@@ -145,7 +150,10 @@ export default function AuditLogPage() {
       if (filters.entityType) queryParams.append('entityType', filters.entityType);
       if (filters.action) queryParams.append('action', filters.action);
       if (filters.severity) queryParams.append('severity', filters.severity);
-      if (filters.actorId) queryParams.append('actorId', filters.actorId);
+      // Only send actorId if it's explicitly set by the user (not empty string)
+      if (filters.actorId && filters.actorId.trim() !== '') {
+        queryParams.append('actorId', filters.actorId);
+      }
 
       const response = await fetch(`${API_URL}/audit-logs/logs?${queryParams}`, {
         headers: {
@@ -282,8 +290,13 @@ return (
                 >
                   <Filter className="w-4 h-4" />
                   Filters
+                  {(filters.entityType || filters.action || filters.severity || (filters.actorId && filters.actorId.trim() !== '')) && (
+                    <span className="ml-1 px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full">
+                      Active
+                    </span>
+                  )}
                 </button>
-                {(filters.entityType || filters.action || filters.severity || filters.actorId) && (
+                {(filters.entityType || filters.action || filters.severity || (filters.actorId && filters.actorId.trim() !== '')) && (
                   <button
                     onClick={clearFilters}
                     className="text-sm text-red-600 hover:text-red-700"
@@ -291,6 +304,15 @@ return (
                     Clear filters
                   </button>
                 )}
+                <button
+                  onClick={() => {
+                    clearFilters();
+                    loadLogs();
+                  }}
+                  className="text-sm text-green-600 hover:text-green-700 font-medium"
+                >
+                  Show All Logs
+                </button>
               </div>
               <button
                 onClick={() => {
