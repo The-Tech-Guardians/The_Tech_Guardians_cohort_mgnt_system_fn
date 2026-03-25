@@ -8,6 +8,7 @@ import LessonContent from "@/components/learner/my-course/LessonContent";
 import { authAPI } from "@/lib/auth";
 import { courseService } from "@/services/courseService";
 import { assessmentService, type AssessmentQuestion } from "@/services/assessmentService";
+import { progressService } from "@/services/progressService";
 import type { Course } from "@/types/course";
 import type { Assessment } from "@/types/assessment";
 import type { Module as ModuleType } from "@/services/moduleService";
@@ -237,6 +238,16 @@ export default function MyLearningPage() {
 
     fetchModuleAssessments();
   }, [selectedModuleId]);
+
+  useEffect(() => {
+    if (!course?.id || !selectedLessonId) {
+      return;
+    }
+
+    progressService.trackProgress(selectedLessonId, 0, false).catch(() => {
+      // Keep the learner flow uninterrupted if progress tracking is unavailable.
+    });
+  }, [course?.id, selectedLessonId]);
 
   const selectedLesson = lessons.find((lesson) => lesson.id === selectedLessonId) || null;
 

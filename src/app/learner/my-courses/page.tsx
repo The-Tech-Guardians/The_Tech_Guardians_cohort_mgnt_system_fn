@@ -7,6 +7,7 @@ import { courseService } from "@/services/courseService";
 import type { ExtendedCourse } from "@/types/course";
 import { Cohort } from "@/types/cohort";
 import { authAPI } from "@/lib/auth";
+import { progressService } from "@/services/progressService";
 import { GraduationCap, BookOpen, Users } from "lucide-react";
 
 const LEARNER_COURSE_CACHE_KEY = "learner_course_cache";
@@ -34,6 +35,13 @@ type RawCourse = {
   progress?: number;
 };
 
+type InstructorDirectoryItem = {
+  uuid: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+};
+
 const asCourseArray = (value: unknown): RawCourse[] => {
   return Array.isArray(value) ? (value as RawCourse[]) : [];
 };
@@ -46,11 +54,26 @@ const getItemCount = (value: number | unknown[] | undefined) => {
   return 0;
 };
 
+const getInstructorDisplayName = (
+  course: RawCourse,
+  instructorsById: Map<string, string>,
+) => {
+  const directName = course.instructor || course.instructorName;
+  if (directName?.trim()) return directName.trim();
+
+  if (course.instructorId && instructorsById.has(course.instructorId)) {
+    return instructorsById.get(course.instructorId) || "Tech Guardians Team";
+  }
+
+  return "Tech Guardians Team";
+};
+
 const toExtendedCourse = (
   course: RawCourse,
   index: number,
   cohortId: string,
   cohortCourseType: string,
+  instructorsById: Map<string, string>,
 ): ExtendedCourse | null => {
   const id = getCourseId(course);
   if (!id) return null;
@@ -66,7 +89,7 @@ const toExtendedCourse = (
     id,
     title: course.title || "Untitled Course",
     description: course.description || "",
-    instructor: course.instructor || course.instructorName || "Tech Guardians Team",
+    instructor: getInstructorDisplayName(course, instructorsById),
     instructorId: course.instructorId || "",
     cohortId: course.cohortId || cohortId,
     courseType: course.courseType || cohortCourseType || "",
@@ -106,9 +129,10 @@ export default function LearnerMyCoursesPage() {
           setCohort(normalizedCohort);
         }
 
-        const [cohortCoursesRes, allCoursesRes] = await Promise.all([
+        const [cohortCoursesRes, allCoursesRes, instructorsRes] = await Promise.all([
           authAPI.getLearnerCohortCourses() as Promise<CohortCourseResponse>,
           courseService.getAllCourses(1, 100),
+          courseService.getInstructors(1, 100),
         ]);
 
         const cohortCourses = cohortCoursesRes.success
@@ -134,11 +158,67 @@ export default function LearnerMyCoursesPage() {
           mergedCourses.set(courseId, { ...mergedCourses.get(courseId), ...course });
         });
 
-        const transformedCourses = Array.from(mergedCourses.values())
-          .map((course, idx) => toExtendedCourse(course, idx, currentCohortId, cohortCourseType))
+        const instructorsById = new Map<string, string>();
+        (instructorsRes.instructors as InstructorDirectoryItem[]).forEach((instructor) => {
+          const fullName = `${instructor.firstName || ""} ${instructor.lastName || ""}`.trim();
+          if (instructor.uuid) {
+            instructorsById.set(instructor.uuid, fullName || instructor.email || "Tech Guardians Team");
+          }
+        });
+
+        const baseCourses = Array.from(mergedCourses.values())
+          .map((course, idx) => toExtendedCourse(course, idx, currentCohortId, cohortCourseType, instructorsById))
           .filter((course): course is ExtendedCourse => Boolean(course));
 
-        setCourses(transformedCourses);
+        const enrichedCourses = await Promise.all(
+          baseCourses.map(async (course) => {
+            try {
+              const [courseDetails, progressDetails] = await Promise.all([
+                courseService
+                  .getLearnerCourseDetails(course.id)
+                  .catch(() => courseService.getCourseWithModulesAndLessons(course.id)),
+                progressService.getLearnerCourseProgress(course.id),
+              ]);
+
+              const moduleCount = courseDetails.modules.length;
+              const lessonCount = courseDetails.lessons.length;
+              const startedLessons = progressDetails.summary.totalLessons;
+              const completedLessons = progressDetails.summary.completedLessons;
+              const computedProgress =
+                lessonCount > 0
+                  ? Math.round((completedLessons / lessonCount) * 100)
+                  : Number(course.progress || 0);
+              const hasStarted = startedLessons > 0 || Number(course.progress || 0) > 0;
+
+              return {
+                ...course,
+                title: courseDetails.course.title || course.title,
+                description: courseDetails.course.description || course.description,
+                instructor:
+                  getInstructorDisplayName(
+                    {
+                      instructor: courseDetails.course.instructor,
+                      instructorId: courseDetails.course.instructorId,
+                    },
+                    instructorsById,
+                  ) || course.instructor,
+                instructorId: courseDetails.course.instructorId || course.instructorId,
+                modules: moduleCount,
+                lessons: lessonCount,
+                progress: hasStarted ? Math.max(computedProgress, 1) : computedProgress,
+                status: hasStarted ? "in-progress" : "not-started",
+                nextLesson:
+                  courseDetails.lessons
+                    .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))[0]
+                    ?.title || "Getting Started",
+              } as ExtendedCourse;
+            } catch {
+              return course;
+            }
+          }),
+        );
+
+        setCourses(enrichedCourses);
       } catch (err: unknown) {
         console.error("Error fetching data:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch data");
@@ -390,15 +470,15 @@ export default function LearnerMyCoursesPage() {
                       Next up
                     </div>
                     <div className="text-sm font-semibold text-gray-900">
-                      Module 1: Getting Started
+                      {course.nextLesson || "Getting Started"}
                     </div>
                   </div>
                 )}
 
                 <div className="flex gap-2 pt-2">
                   <button className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold py-3 px-4 rounded-xl transition-all shadow-lg hover:shadow-xl group-hover:scale-[1.02]">
-                    {course.progress && course.progress > 0
-                      ? "Continue Course"
+                    {course.status === "in-progress" || (course.progress && course.progress > 0)
+                      ? "Continue Learning"
                       : "Start Learning"}
                   </button>
                   <button className="p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors group-hover:bg-gray-50">

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSidebar } from "../FixedLayout";
 import { cohortService, type Cohort } from "@/services/cohortService";
+import { authAPI } from "@/lib/auth";
 import { Users, Calendar, BookOpen, Loader2, ChevronDown, LogOut } from "lucide-react";
 
 export default function LearnerCohortsPage() {
@@ -14,8 +15,6 @@ export default function LearnerCohortsPage() {
   const [unenrolling, setUnenrolling] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const { collapsed } = useSidebar();
-
-  const API_BASE_URL = 'http://localhost:3000/api';
 
   useEffect(() => {
     fetchCohorts();
@@ -38,25 +37,16 @@ export default function LearnerCohortsPage() {
 
   const checkEnrolledCohort = async () => {
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-      if (!token) return;
-
-      const response = await fetch(`${API_BASE_URL}/learner/cohort`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.data?.cohortId) {
-          setEnrolledCohortId(data.data.cohortId);
+      const response = await authAPI.getLearnerCohort();
+      if (response.success && response.data) {
+        const cohortData = response.data as Cohort & { cohortId?: string; id?: string };
+        const normalizedCohortId = cohortData.id || cohortData.cohortId || null;
+        if (normalizedCohortId) {
+          setEnrolledCohortId(normalizedCohortId);
         }
       }
-    } catch (err) {
-      console.error('Error checking enrolled cohort:', err);
+    } catch {
+      // Auth API already returns a safe error shape for network/server failures.
     }
   };
 

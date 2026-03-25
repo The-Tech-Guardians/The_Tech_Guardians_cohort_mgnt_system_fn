@@ -13,6 +13,9 @@ import {
   List,
   ExternalLink,
   Play,
+  BookOpen,
+  FileText,
+  Hash,
 } from "lucide-react";
 import {
   courseService,
@@ -85,6 +88,23 @@ function getCourseName(courseId: string, courses: Course[]): string {
   return courses.find(c => c.id === courseId)?.title || "Unknown Course";
 }
 
+function getLessonPreview(content?: string, maxLength: number = 150): string {
+  if (!content) return "";
+
+  const plainText = content
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return plainText.length > maxLength ? `${plainText.substring(0, maxLength)}...` : plainText;
+}
+
 interface LessonCardProps {
   lesson: Lesson;
   modules: Module[];
@@ -127,7 +147,7 @@ function LessonCard({ lesson, modules, courses, onEdit, onDelete }: LessonCardPr
 
       {lesson.contentBody && (
         <div className="text-sm text-gray-600 leading-relaxed mb-3 [&_strong]:font-bold whitespace-pre-wrap line-clamp-3 max-h-24 overflow-hidden">
-          {lesson.contentBody.substring(0, 150)}...
+          {getLessonPreview(lesson.contentBody)}
         </div>
       )}
 
@@ -212,102 +232,229 @@ function LessonFormModal({
   loading, 
   title 
 }: LessonFormProps) {
+  const selectedCourse = courses.find((course) => course.id === selectedCourseId);
+  const selectedModule = modules.find((module) => module.id === form.moduleId);
+  const contentTypeLabel =
+    contentTypeOptions.find((option) => option.value === form.contentType)?.label || "Text";
+
   return (
     <Modal isOpen onClose={onClose} title={title} size="lg">
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Course *</label>
-            <select
-              value={selectedCourseId}
-              disabled
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            >
-              <option>{courses.find(c => c.id === selectedCourseId)?.title || "Select Course"}</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Module *</label>
-            <select
-              value={form.moduleId}
-              onChange={e => onChange({ moduleId: e.target.value })}
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-              required
-            >
-              <option value="">Select Module</option>
-              {modules.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
-            </select>
+      <form onSubmit={onSubmit} className="space-y-6">
+        <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-cyan-50 p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">
+                <BookOpen className="h-3.5 w-3.5" />
+                Lesson Editor
+              </div>
+              <h3 className="mt-3 text-2xl font-black tracking-tight text-slate-900">
+                {form.title || "Untitled Lesson"}
+              </h3>
+              <p className="mt-1 text-sm text-slate-600">
+                Update the lesson details, content, and attached learning resource.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                {contentTypeLabel}
+              </span>
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                Order {form.orderIndex}
+              </span>
+              {selectedModule && (
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                  {selectedModule.title}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Title *</label>
-          <input
-            type="text"
-            value={form.title}
-            onChange={e => onChange({ title: e.target.value })}
-            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            required
-            maxLength={200}
-          />
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="space-y-6">
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-indigo-600" />
+                <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
+                  Lesson Details
+                </h4>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Course *</label>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800">
+                    {selectedCourse?.title || "Select Course"}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Module *</label>
+                  <select
+                    value={form.moduleId}
+                    onChange={(e) => onChange({ moduleId: e.target.value })}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
+                    required
+                  >
+                    <option value="">Select Module</option>
+                    {modules.map((module) => (
+                      <option key={module.id} value={module.id}>
+                        {module.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Title *</label>
+                <input
+                  type="text"
+                  value={form.title}
+                  onChange={(e) => onChange({ title: e.target.value })}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
+                  required
+                  maxLength={200}
+                  placeholder="e.g., History of Java"
+                />
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <Play className="h-4 w-4 text-cyan-600" />
+                <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
+                  Lesson Content
+                </h4>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Content Type *</label>
+                <select
+                  value={form.contentType}
+                  onChange={(e) => {
+                    onChange({ contentType: e.target.value as "video" | "pdf" | "text" });
+                    onFileChange(null);
+                  }}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
+                  required
+                >
+                  {contentTypeOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mt-4">
+                <div className="mb-1.5 flex items-center justify-between gap-3">
+                  <label className="block text-sm font-semibold text-slate-700">Content Body *</label>
+                  {(form.contentType === "text" || form.contentType === "pdf") && (
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                      Markdown supported
+                    </span>
+                  )}
+                </div>
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                  <FormattedTextEditor
+                    content={form.contentBody}
+                    onChange={(content) => onChange({ contentBody: content })}
+                    placeholder="Enter lesson content..."
+                    minHeight="320px"
+                    showToolbar={true}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div className="space-y-6">
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <Hash className="h-4 w-4 text-amber-600" />
+                <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
+                  Publishing
+                </h4>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Order Index</label>
+                <input
+                  type="number"
+                  value={form.orderIndex}
+                  onChange={(e) => onChange({ orderIndex: parseInt(e.target.value) || 0 })}
+                  min={0}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
+                />
+              </div>
+            </section>
+
+            {form.contentType !== "text" && (
+              <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-emerald-600" />
+                  <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
+                    Resource Upload
+                  </h4>
+                </div>
+
+                <label className="mb-2 block text-sm font-semibold text-slate-700">Upload File</label>
+                <input
+                  type="file"
+                  accept={form.contentType === "video" ? ".mp4,.avi,.mov,.webm,.mpeg" : ".pdf,.doc,.docx,.jpg,.jpeg,.png"}
+                  onChange={(e) => onFileChange(e.target.files?.[0] || null)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 file:mr-4 file:rounded-xl file:border-0 file:bg-indigo-50 file:px-4 file:py-2.5 file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100"
+                />
+
+                <div className="mt-3 rounded-2xl bg-slate-50 p-3 text-sm text-slate-600">
+                  {form.file ? (
+                    <span>Selected file: <span className="font-semibold text-slate-800">{form.file.name}</span></span>
+                  ) : (
+                    <span>No new file selected. The existing lesson resource will stay unchanged.</span>
+                  )}
+                </div>
+              </section>
+            )}
+
+            <section className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+              <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
+                Quick Summary
+              </h4>
+              <dl className="mt-4 space-y-3 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-slate-500">Course</dt>
+                  <dd className="font-semibold text-slate-800">{selectedCourse?.title || "Not selected"}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-slate-500">Module</dt>
+                  <dd className="font-semibold text-slate-800">{selectedModule?.title || "Not selected"}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-slate-500">Type</dt>
+                  <dd className="font-semibold text-slate-800">{contentTypeLabel}</dd>
+                </div>
+              </dl>
+            </section>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Content Type *</label>
-          <select
-            value={form.contentType}
-            onChange={e => {
-onChange({ contentType: e.target.value as "video" | "pdf" | "text" });
-              onFileChange(null);
-            }}
-            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-            required
+
+        <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
           >
-            {contentTypeOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Content Body *</label>
-          <FormattedTextEditor
-            content={form.contentBody}
-            onChange={(content) => onChange({ contentBody: content })}
-            placeholder="Enter lesson content..."
-            minHeight="300px"
-            showToolbar={true}
-            className="w-full"
-          />
-          {(form.contentType === "text" || form.contentType === "pdf") && (
-            <p className="text-xs text-gray-500 mt-1">(Markdown supported)</p>
-          )}
-        </div>
-        {form.contentType !== "text" && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Upload File</label>
-            <input
-              type="file"
-              accept={form.contentType === "video" ? ".mp4,.avi,.mov,.webm,.mpeg" : ".pdf,.doc,.docx,.jpg,.jpeg,.png"}
-              onChange={e => onFileChange(e.target.files?.[0] || null)}
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-            />
-            {form.file && <p className="mt-1 text-sm text-gray-500">Selected: {form.file.name}</p>}
-          </div>
-        )}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Order Index</label>
-          <input
-            type="number"
-            value={form.orderIndex}
-            onChange={e => onChange({ orderIndex: parseInt(e.target.value) || 0 })}
-            min={0}
-            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-        <div className="flex justify-end gap-3 pt-4">
-          <button type="button" onClick={onClose} className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium">
             Cancel
           </button>
-          <button type="submit" disabled={loading} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl flex items-center gap-2 disabled:opacity-50">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+          <button
+            type="submit"
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:from-blue-700 hover:to-cyan-600 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             {title.includes("Create") ? "Create Lesson" : "Update Lesson"}
           </button>
         </div>
@@ -327,7 +474,7 @@ function DeleteLessonModal({ lesson, onClose, onDelete, loading }: {
       <div className="space-y-4">
         <div className="text-center">
           <Trash2 className="mx-auto h-12 w-12 text-red-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Delete "{lesson.title}"?</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Delete &quot;{lesson.title}&quot;?</h3>
           <p className="text-sm text-gray-500">This action cannot be undone.</p>
         </div>
         <div className="flex justify-end gap-3 pt-4">
