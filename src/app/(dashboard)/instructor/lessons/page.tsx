@@ -19,6 +19,7 @@ import {
 } from "@/services/courseService";
 import { moduleService, type Module } from "@/services/moduleService";
 import { lessonService } from "@/services/lessonService";
+import { instructorApi } from "@/lib/instructorApi";
 import type { BackendLesson as Lesson } from "@/types/lesson";
 import { tokenManager } from "@/lib/auth";
 import FormattedTextEditor from "@/components/editor/FormattedTextEditor";
@@ -400,8 +401,13 @@ export default function InstructorLessonsPage() {
         throw new Error('User not authenticated');
       }
 
-      const response = await courseService.getInstructorCourses();
-      const instructorCourses = response.courses || [];
+      const directInstructorCourses = await instructorApi.getInstructorCourses();
+      let instructorCourses = Array.isArray(directInstructorCourses) ? directInstructorCourses : [];
+
+      if (!instructorCourses.length) {
+        const response = await courseService.getInstructorCourses();
+        instructorCourses = response.courses || [];
+      }
 
       const courses: Course[] = instructorCourses.map(course => ({
         id: course.id,
@@ -451,7 +457,7 @@ export default function InstructorLessonsPage() {
     try {
       setLessonsLoading(true);
       setError(null);
-      const data = await lessonService.getLessonsByModule(selectedModule);
+      const data = await lessonService.getInstructorLessonsByModule(selectedModule);
       setLessons(data);
     } catch (err: any) {
       setLessons([]);

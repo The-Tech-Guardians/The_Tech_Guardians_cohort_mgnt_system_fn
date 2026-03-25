@@ -73,6 +73,43 @@ export const lessonService = {
     }
   },
 
+  // Get instructor-scoped lessons for a module (fallback to generic module lessons endpoint)
+  async getInstructorLessonsByModule(moduleId: string): Promise<BackendLesson[]> {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('Authentication required');
+
+      const endpoints = [
+        `${API_BASE_URL}/instructor/modules/${moduleId}/lessons`,
+        `${API_BASE_URL}/lessons/module/${moduleId}`,
+      ];
+
+      for (let i = 0; i < endpoints.length; i++) {
+        const response = await fetch(endpoints[i], {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await handleResponse(response);
+          return data.lessons || data.data || [];
+        }
+
+        const shouldTryFallback = i === 0 && (response.status === 404 || response.status === 405);
+        if (!shouldTryFallback) {
+          await handleResponse(response);
+        }
+      }
+
+      return [];
+    } catch (error) {
+      console.error(`Failed to fetch instructor lessons for module ${moduleId}:`, error);
+      throw error;
+    }
+  },
+
   // Get single lesson
   async getLessonById(id: string): Promise<BackendLesson | null> {
     try {
