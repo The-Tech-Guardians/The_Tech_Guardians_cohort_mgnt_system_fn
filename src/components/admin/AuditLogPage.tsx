@@ -142,6 +142,18 @@ export default function AuditLogPage() {
       setLoading(true);
       const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
       
+      // Debug: Check current user info from token
+      let currentUserId = null;
+      try {
+        if (token) {
+          const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+          currentUserId = tokenPayload.uuid;
+          console.log('[DEBUG] Current user ID from token:', currentUserId);
+        }
+      } catch (e) {
+        console.log('[DEBUG] Could not parse token:', e);
+      }
+      
       const queryParams = new URLSearchParams({
         limit: '20',
         offset: ((currentPage - 1) * 20).toString()
@@ -153,9 +165,18 @@ export default function AuditLogPage() {
       // Only send actorId if it's explicitly set by the user (not empty string)
       if (filters.actorId && filters.actorId.trim() !== '') {
         queryParams.append('actorId', filters.actorId);
+        console.log('[DEBUG] Adding actorId filter:', filters.actorId);
+      } else {
+        console.log('[DEBUG] No actorId filter being sent');
       }
 
-      const response = await fetch(`${API_URL}/audit-logs/logs?${queryParams}`, {
+      const queryString = queryParams.toString();
+      console.log('[DEBUG] API Request:', `${API_URL}/audit-logs/logs?${queryString}`);
+      console.log('[DEBUG] Filters being sent:', filters);
+      console.log('[DEBUG] Query params:', queryString);
+      console.log('[DEBUG] Current user ID:', currentUserId);
+
+      const response = await fetch(`${API_URL}/audit-logs/logs?${queryString}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -164,6 +185,10 @@ export default function AuditLogPage() {
       if (!response.ok) throw new Error('Failed to fetch audit logs');
 
       const data = await response.json();
+      console.log('[DEBUG] API Response:', data);
+      console.log('[DEBUG] Logs received:', data.logs?.length || 0);
+      console.log('[DEBUG] Total logs in DB:', data.pagination?.total);
+      
       if (data.success) {
         setLogs(data.logs);
         setTotalLogs(data.pagination.total);
