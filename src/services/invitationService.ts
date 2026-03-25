@@ -136,6 +136,31 @@ class InvitationService {
     }
   }
 
+  // Renew an expired invitation
+  async renewInvitation(invitationId: string): Promise<Invitation> {
+    try {
+      const response = await adminApi.renewInvitation(invitationId);
+      
+      // Send email notification for renewed invitation
+      await this.sendRenewalEmail({
+        to: response.invitation.email,
+        subject: 'Invitation Renewed',
+        template: 'invitation',
+        data: {
+          invitedBy: this.getCurrentUser()?.firstName + ' ' + this.getCurrentUser()?.lastName || 'Admin',
+          role: response.invitation.role,
+          invitationLink: this.generateInvitationLink(response.invitation.id),
+          expiryDate: new Date(response.invitation.expiresAt).toLocaleDateString(),
+        },
+      });
+
+      return response.invitation;
+    } catch (error) {
+      console.error('Failed to renew invitation:', error);
+      throw error;
+    }
+  }
+
   // Resend invitation
   async resendInvitation(invitationId: string): Promise<void> {
     try {
@@ -217,11 +242,36 @@ class InvitationService {
   }
 
   // Private helper methods
-  private async sendInvitationEmail(emailData: EmailNotificationData): Promise<void> {
+  // Send invitation email
+  async sendInvitationEmail(data: EmailNotificationData): Promise<void> {
     try {
-      await emailService.sendEmail(emailService.templates.invitation(emailData.data));
+      const emailData = emailService.templates.invitation({
+        ...data.data,
+        invitationLink: data.to // Pass email as invitationLink for template to parse
+      });
+      // Override the to field with actual email
+      emailData.to = data.to;
+      await emailService.sendEmail(emailData);
     } catch (error) {
-      console.error('Send invitation email error:', error);
+      console.error('Failed to send invitation email:', error);
+      // Don't throw error - invitation should still be created even if email fails
+    }
+  }
+
+  // Send renewal email
+  async sendRenewalEmail(data: EmailNotificationData): Promise<void> {
+    try {
+      const emailData = emailService.templates.invitation({
+        ...data.data,
+        subject: data.subject,
+        invitationLink: data.to // Pass email as invitationLink for template to parse
+      });
+      // Override the to field with actual email
+      emailData.to = data.to;
+      await emailService.sendEmail(emailData);
+    } catch (error) {
+      console.error('Failed to send renewal email:', error);
+      // Don't throw error - renewal should still work even if email fails
     }
   }
 

@@ -251,6 +251,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
     { id: "modules", label: "Modules", icon: Layers, href: "/instructor/modules" },
     { id: "lessons", label: "Lessons", icon: FileText, href: "/instructor/lessons" },
     { id: "assessments", label: "Assessments", icon: Shield, href: "/instructor/assessments" },
+    { id: "moderation", label: "Moderation", icon: Shield, href: "/instructor/moderation" },
     { 
       id: "reports", 
       label: "Reports", 
@@ -275,6 +276,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
     modules: "Module Management",
     lessons: "Lesson Management",
     assessments: "Assessment Management",
+    moderation: "Moderation",
     reports: "Reports & Analytics",
     quiz: "Quiz Reports",
     assessment: "Assessment Reports",
@@ -291,6 +293,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
     modules: "Organize course content by modules",
     lessons: "Create and edit lesson content",
     assessments: "Create and manage assessments",
+    moderation: "Review learner ban requests and submit feedback",
     reports: "Generate comprehensive reports and insights",
     quiz: "Quiz performance and analytics",
     assessment: "Assessment results and analysis",

@@ -149,9 +149,9 @@ export const adminApi = {
     }
   },
 
-  async searchUsers(query: string): Promise<User[]> {
+  async searchUsers(query: string): Promise<any> {
     try {
-      const response = await fetch(`${API_BASE_URL}/users/Search?query=${encodeURIComponent(query)}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users/search?q=${encodeURIComponent(query)}`, {
         method: 'GET',
         headers: getHeaders(),
       });
@@ -160,8 +160,7 @@ export const adminApi = {
         throw new Error('Failed to search users');
       }
 
-      const data: ApiResponse<User[]> = await response.json();
-      return data.users || [];
+      return await response.json();
     } catch (error) {
       console.error('Search users error:', error);
       throw error;
@@ -619,9 +618,28 @@ const data = await response.json() as ApiResponse<Lesson[]>;
       }
 
       const data = await response.json();
-      return data.stats || {};
+      return data; // Return the data directly, not data.stats
     } catch (error) {
       console.error('Get invitation stats error:', error);
+      throw error;
+    }
+  },
+
+  async renewInvitation(invitationId: string): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/invitations/${invitationId}/renew`, {
+        method: 'POST',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to renew invitation');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Renew invitation error:', error);
       throw error;
     }
   },
@@ -678,6 +696,203 @@ const data = await response.json() as ApiResponse<Lesson[]>;
     }
   },
 
+  // Moderation Management
+  async getModerationReports(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<any> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.status) queryParams.append('status', params.status);
+
+      const response = await fetch(`${API_BASE_URL}/moderation/reports?${queryParams}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch moderation reports');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Get moderation reports error:', error);
+      throw error;
+    }
+  },
+
+  async reviewModerationReport(reportId: string, data: {
+    status: string;
+    banDuration?: number;
+    reviewNote?: string;
+  }): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/moderation/reports/${reportId}/review`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to review moderation report');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Review moderation report error:', error);
+      throw error;
+    }
+  },
+
+  async getUserReports(userId: string, params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<any> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+
+      const response = await fetch(`${API_BASE_URL}/moderation/users/${userId}/reports?${queryParams}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch user reports');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Get user reports error:', error);
+      throw error;
+    }
+  },
+
+  async approveInstructorBan(reportId: string): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/moderation/reports/${reportId}/instructor-approve`, {
+        method: 'POST',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to approve instructor ban');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Approve instructor ban error:', error);
+      throw error;
+    }
+  },
+
+  async denyInstructorBan(reportId: string, reason?: string): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/moderation/reports/${reportId}/instructor-deny`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ reason }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to deny instructor ban');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Deny instructor ban error:', error);
+      throw error;
+    }
+  },
+
+  async submitModerationFeedback(feedback: string): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/moderation/feedback`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ feedback }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit feedback');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Submit feedback error:', error);
+      throw error;
+    }
+  },
+
+  async getCurrentUser(): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch current user');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Get current user error:', error);
+      throw error;
+    }
+  },
+
+  async getPendingInstructorApprovals(params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<any> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+
+      const response = await fetch(`${API_BASE_URL}/moderation/pending-approvals?${queryParams}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch pending instructor approvals');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Get pending instructor approvals error:', error);
+      throw error;
+    }
+  },
+
+  async directBanUser(userId: string, data: {
+    reason: string;
+    banDuration?: number;
+  }): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/moderation/direct-ban/${userId}`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to direct ban user');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Direct ban user error:', error);
+      throw error;
+    }
+  },
+
   async sendEmail(emailData: any): Promise<boolean> {
     try {
       const response = await fetch(`${API_BASE_URL}/email/send`, {
@@ -705,6 +920,42 @@ const data = await response.json() as ApiResponse<Lesson[]>;
     } catch (error) {
       console.error('Send bulk email error:', error);
       return false;
+    }
+  },
+
+  // Get all cohorts
+  async getCohorts() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/cohorts`, {
+        headers: getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch cohorts');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Get cohorts error:', error);
+      throw error;
+    }
+  },
+
+  // Get all courses
+  async getCourses() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/courses`, {
+        headers: getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch courses');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Get courses error:', error);
+      throw error;
     }
   },
 };

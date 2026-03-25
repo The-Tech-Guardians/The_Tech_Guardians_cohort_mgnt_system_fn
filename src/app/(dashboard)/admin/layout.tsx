@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight, X, Layers, TrendingUp, ChevronDown, Mail } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight, X, Layers, TrendingUp, ChevronDown, Mail, Megaphone } from "lucide-react";
 import Logo from "@/components/ui/navbar/Logo";
 import { tokenManager } from "@/lib/auth";
 import { notificationService, Notification } from "@/services/notificationService";
@@ -268,6 +268,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { id: "modules", label: "Modules", icon: Layers, href: "/admin/modules" },
     { id: "lessons", label: "Lessons", icon: FileText, href: "/admin/lessons" },
     { id: "assessments", label: "Assessments", icon: FileText, href: "/admin/assessments" },
+    { id: "announcements", label: "Announcements", icon: Megaphone, href: "/admin/announcements" },
     { id: "moderation", label: "Moderation", icon: Shield, href: "/admin/moderation" },
     { id: "logs", label: "Audit Logs", icon: FileText, href: "/admin/logs" },
     { 
@@ -295,6 +296,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     courses: "Course Management",
     modules: "Modules Management",
     lessons: "Lessons Management",
+    assessments: "Assessments Management",
+    announcements: "Announcements & Notifications",
     moderation: "Content Moderation",
     logs: "Audit Logs",
   };
@@ -307,6 +310,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     courses: "Manage course content",
     modules: "View modules grouped by course",
     lessons: "Create and manage lessons",
+    assessments: "Create and manage assessments",
+    announcements: "Create and manage announcements & notifications",
     moderation: "Review flagged content",
     logs: "System activity logs",
   };
