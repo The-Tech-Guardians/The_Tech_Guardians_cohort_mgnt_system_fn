@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { invitationService, Invitation, InvitationStats, CreateInvitationData } from '@/services/invitationService';
-import Button from '@/components/ui/Button';
 import { User } from '@/types/user';
 import { tokenManager } from '@/lib/auth';
 
@@ -151,9 +150,9 @@ export default function InvitationManagement({ onError, onSuccess }: InvitationM
         {canManageInvitations && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm text-sm"
+            className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-all shadow-sm text-xs"
           >
-            Send Invitation
+            + Invite
           </button>
         )}
       </div>
@@ -233,38 +232,38 @@ export default function InvitationManagement({ onError, onSuccess }: InvitationM
                       <div className="flex space-x-2">
                         {invitation.status === 'PENDING' && (
                           <>
-                            <Button
+                            <button
                               onClick={() => handleResendInvitation(invitation.id)}
-                              variant="outline"
-                              className="px-3 py-1 text-xs"
+                              className="px-2 py-0.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50"
+                              title="Resend"
                             >
-                              Resend
-                            </Button>
-                            <Button
+                              ↻
+                            </button>
+                            <button
                               onClick={() => handleCancelInvitation(invitation.id)}
-                              variant="outline"
-                              className="px-3 py-1 text-xs text-red-600 border-red-600 hover:bg-red-50"
+                              className="px-2 py-0.5 text-xs text-red-600 bg-white border border-red-300 rounded hover:bg-red-50"
+                              title="Cancel"
                             >
-                              Cancel
-                            </Button>
+                              ✕
+                            </button>
                           </>
                         )}
                         {invitation.status === 'EXPIRED' && (
-                          <Button
+                          <button
                             onClick={() => handleRenewInvitation(invitation.id)}
-                            variant="outline"
-                            className="px-3 py-1 text-xs text-green-600 border-green-600 hover:bg-green-50"
+                            className="px-2 py-0.5 text-xs text-green-600 bg-white border border-green-300 rounded hover:bg-green-50"
+                            title="Renew"
                           >
-                            Renew
-                          </Button>
+                            ↻
+                          </button>
                         )}
-                        <Button
+                        <button
                           onClick={() => setSelectedInvitation(invitation)}
-                          variant="outline"
-                          className="px-3 py-1 text-xs"
+                          className="px-2 py-0.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50"
+                          title="View"
                         >
-                          View
-                        </Button>
+                          👁
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -278,20 +277,20 @@ export default function InvitationManagement({ onError, onSuccess }: InvitationM
         {totalPages > 1 && (
           <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
             <div className="flex-1 flex justify-between sm:hidden">
-              <Button
+              <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                variant="outline"
+                className="px-3 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
               >
-                Previous
-              </Button>
-              <Button
+                Prev
+              </button>
+              <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                variant="outline"
+                className="px-3 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
               >
                 Next
-              </Button>
+              </button>
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
@@ -302,22 +301,20 @@ export default function InvitationManagement({ onError, onSuccess }: InvitationM
               </div>
               <div>
                 <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                  <Button
+                  <button
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    variant="outline"
-                    className="px-3 py-1 text-xs rounded-l-md"
+                    className="px-3 py-1 text-xs bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50"
                   >
-                    Previous
-                  </Button>
-                  <Button
+                    Prev
+                  </button>
+                  <button
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    variant="outline"
-                    className="px-3 py-1 text-xs rounded-r-md"
+                    className="px-3 py-1 text-xs bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50"
                   >
                     Next
-                  </Button>
+                  </button>
                 </nav>
               </div>
             </div>
@@ -398,9 +395,13 @@ function CreateInvitationModal({ onClose, onSubmit }: {
               </select>
             </div>
             <div className="flex justify-end pt-4">
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Sending...' : 'Send Invitation'}
-              </Button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              >
+                {loading ? 'Sending...' : 'Send'}
+              </button>
             </div>
           </form>
         </div>
@@ -454,9 +455,12 @@ function InvitationDetailsModal({ invitation, onClose }: {
             )}
           </div>
           <div className="flex justify-end mt-6">
-            <Button onClick={onClose}>
+            <button
+              onClick={onClose}
+              className="px-3 py-1.5 bg-gray-200 text-gray-800 rounded-lg text-sm font-medium hover:bg-gray-300"
+            >
               Close
-            </Button>
+            </button>
           </div>
         </div>
       </div>
