@@ -1,5 +1,5 @@
 // Notification service for API interactions
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 export interface Notification {
   id: string;
@@ -44,22 +44,44 @@ const getAuthHeaders = (): HeadersInit => {
 export const notificationService = {
   // Get all notifications for the current user
   getNotifications: async (page: number = 1, limit: number = 20): Promise<NotificationsResponse> => {
-    const response = await fetch(
-      `${API_BASE_URL}/notifications?page=${page}&limit=${limit}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/notifications?page=${page}&limit=${limit}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders(),
+          },
+        }
+      );
+
+      if (!response.ok) {
+        return {
+          notifications: [],
+          unreadCount: 0,
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            pages: 0,
+          },
+        };
       }
-    );
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch notifications');
+
+      return response.json();
+    } catch {
+      return {
+        notifications: [],
+        unreadCount: 0,
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          pages: 0,
+        },
+      };
     }
-    
-    return response.json();
   },
 
   // Get unread notification count

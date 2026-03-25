@@ -1,6 +1,6 @@
 import type { CreateAssessment, UpdateAssessment, Assessment } from '@/types/assessment';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/backend';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 export interface PaginationInfo {
   page: number;
@@ -129,12 +129,28 @@ export const assessmentService = {
     const token = getAuthToken();
     if (!token) throw new Error('No authentication token found');
 
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+
+    const detailedResponse = await fetch(`${API_BASE_URL}/assessments/${assessmentId}/with-questions`, {
+      method: 'GET',
+      headers,
+    });
+
+    if (detailedResponse.ok) {
+      const detailedData = await handleResponse(detailedResponse);
+      return {
+        assessment: detailedData.assessment,
+        questions: detailedData.questions || [],
+        options: detailedData.options || []
+      };
+    }
+
     const response = await fetch(`${API_BASE_URL}/assessments/${assessmentId}`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     const data = await handleResponse(response);
@@ -457,8 +473,8 @@ export const assessmentService = {
         const modules = modulesData.modules || [];
 
         // Get assessments for each module
-        for (const module of modules) {
-          const assessmentsResponse = await fetch(`${API_BASE_URL}/assessments/module/${module.id}`, {
+        for (const courseModule of modules) {
+          const assessmentsResponse = await fetch(`${API_BASE_URL}/assessments/module/${courseModule.id}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',

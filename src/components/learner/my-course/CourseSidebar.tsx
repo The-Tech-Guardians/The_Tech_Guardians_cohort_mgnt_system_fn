@@ -14,10 +14,11 @@ interface CourseSidebarProps {
 }
 
 export default function CourseSidebar({ course, modules, lessons, selectedModuleId, onModuleSelect, onLessonSelect }: CourseSidebarProps) {
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set(modules.map(m => m.id)));
+  const [expandedModules, setExpandedModules] = useState<Set<string> | null>(null);
 
   const toggleModule = (moduleId: string) => {
-    const newExpanded = new Set(expandedModules);
+    const currentlyExpanded = expandedModules ?? new Set(modules.map((module) => module.id));
+    const newExpanded = new Set(currentlyExpanded);
     if (newExpanded.has(moduleId)) {
       newExpanded.delete(moduleId);
     } else {
@@ -28,6 +29,13 @@ export default function CourseSidebar({ course, modules, lessons, selectedModule
 
   const getLessonsForModule = (moduleId: string) => {
     return lessons.filter(l => l.moduleId === moduleId).sort((a, b) => a.orderIndex - b.orderIndex);
+  };
+
+  const isModuleExpanded = (moduleId: string) => {
+    if (expandedModules === null) {
+      return true;
+    }
+    return expandedModules.has(moduleId);
   };
 
   return (
@@ -57,7 +65,7 @@ export default function CourseSidebar({ course, modules, lessons, selectedModule
                 <ChevronDown
                   size={16}
                   className={`flex-shrink-0 transition-transform ${
-                    expandedModules.has(module.id) ? 'rotate-0' : '-rotate-90'
+                    isModuleExpanded(module.id) ? 'rotate-0' : '-rotate-90'
                   }`}
                 />
                 <span className="font-semibold text-sm text-gray-900 min-w-0 flex-1 whitespace-normal break-words leading-tight" title={module.title}>
@@ -70,7 +78,7 @@ export default function CourseSidebar({ course, modules, lessons, selectedModule
               
 
               {/* Lessons */}
-              {expandedModules.has(module.id) && (
+              {isModuleExpanded(module.id) && (
                 <div className="ml-6 space-y-1">
                   {getLessonsForModule(module.id).length === 0 ? (
                     <p className="text-xs text-gray-400 py-2">No lessons</p>
@@ -78,6 +86,10 @@ export default function CourseSidebar({ course, modules, lessons, selectedModule
                     getLessonsForModule(module.id).map(lesson => (
                       <button
                         key={lesson.id}
+                        onClick={() => {
+                          onModuleSelect(module.id);
+                          onLessonSelect(lesson.id);
+                        }}
                         className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 transition-colors text-left group"
                       >
                         <span className="text-xs font-semibold text-gray-400 group-hover:text-blue-600">

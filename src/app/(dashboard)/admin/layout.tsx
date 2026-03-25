@@ -4,8 +4,19 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight, X, Layers, TrendingUp, ChevronDown, Mail } from "lucide-react";
 import Logo from "@/components/ui/navbar/Logo";
+import { useTranslation } from "@/components/i18n/LanguageProvider";
 import { tokenManager } from "@/lib/auth";
 import { notificationService, Notification } from "@/services/notificationService";
+
+type NavChildItem = {
+  id: string;
+  label: string;
+  href: string;
+};
+
+type NavRouter = {
+  push: (href: string) => void;
+};
 
 function NavItem({ 
   icon: Icon, 
@@ -14,7 +25,7 @@ function NavItem({
   onClick, 
   collapsed, 
   isExpandable, 
-  children, 
+  items, 
   expanded,
   onToggleExpand,
   router,
@@ -28,10 +39,10 @@ function NavItem({
   onClick: () => void;
   collapsed: boolean;
   isExpandable?: boolean;
-  children?: any[];
+  items?: NavChildItem[];
   expanded?: boolean;
   onToggleExpand?: () => void;
-  router: any;
+  router: NavRouter;
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   currentReportPath: string;
@@ -77,9 +88,9 @@ function NavItem({
         )}
       </button>
       
-      {isExpandable && !collapsed && expanded && children && (
+      {isExpandable && !collapsed && expanded && items && (
         <div className="ml-4 mt-1 space-y-1">
-          {children.map((child) => (
+          {items.map((child) => (
             <button
               key={child.id}
               onClick={() => {
@@ -129,6 +140,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const { t } = useTranslation();
 
   // Fetch notifications from backend
   const fetchNotifications = async () => {
@@ -256,59 +268,75 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (isReportsPath && !expandedMenus.includes('reports')) {
       setExpandedMenus(['reports']);
     }
-  }, [isReportsPath]);
+  }, [expandedMenus, isReportsPath]);
 
   const nav = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
-    { id: "users", label: "Users", icon: Users, href: "/admin/users" },
-    { id: "invitations", label: "Invitations", icon: Mail, href: "/admin/invitations" },
-    { id: "applications", label: "Applications", icon: Users, href: "/admin/applications" },
-    { id: "cohorts", label: "Cohorts", icon: Calendar, href: "/admin/cohorts" },
-    { id: "courses", label: "Courses", icon: BookOpen, href: "/admin/courses" },
-    { id: "modules", label: "Modules", icon: Layers, href: "/admin/modules" },
-    { id: "lessons", label: "Lessons", icon: FileText, href: "/admin/lessons" },
-    { id: "assessments", label: "Assessments", icon: FileText, href: "/admin/assessments" },
-    { id: "moderation", label: "Moderation", icon: Shield, href: "/admin/moderation" },
-    { id: "logs", label: "Audit Logs", icon: FileText, href: "/admin/logs" },
+    { id: "dashboard", label: t("admin.nav.dashboard"), icon: LayoutDashboard, href: "/admin" },
+    { id: "users", label: t("admin.nav.users"), icon: Users, href: "/admin/users" },
+    { id: "invitations", label: t("admin.nav.invitations"), icon: Mail, href: "/admin/invitations" },
+    { id: "applications", label: t("admin.nav.applications"), icon: Users, href: "/admin/applications" },
+    { id: "cohorts", label: t("admin.nav.cohorts"), icon: Calendar, href: "/admin/cohorts" },
+    { id: "courses", label: t("admin.nav.courses"), icon: BookOpen, href: "/admin/courses" },
+    { id: "modules", label: t("admin.nav.modules"), icon: Layers, href: "/admin/modules" },
+    { id: "lessons", label: t("admin.nav.lessons"), icon: FileText, href: "/admin/lessons" },
+    { id: "assessments", label: t("admin.nav.assessments"), icon: FileText, href: "/admin/assessments" },
+    { id: "moderation", label: t("admin.nav.moderation"), icon: Shield, href: "/admin/moderation" },
+    { id: "logs", label: t("admin.nav.logs"), icon: FileText, href: "/admin/logs" },
     { 
       id: "reports", 
-      label: "Reports", 
+      label: t("admin.nav.reports"), 
       icon: TrendingUp, 
       href: "/admin/reports",
       isExpandable: true,
       children: [
-        { id: "quiz", label: "Quiz Reports", href: "/admin/reports/quiz" },
-        { id: "assessment", label: "Assessment Reports", href: "/admin/reports/assessment" },
-        { id: "performance", label: "Performance Reports", href: "/admin/reports/performance" },
-        { id: "learner", label: "Learner Reports", href: "/admin/reports/learner" },
-        { id: "course", label: "Course Reports", href: "/admin/reports/course" },
-        { id: "engagement", label: "Engagement Reports", href: "/admin/reports/engagement" },
+        { id: "quiz", label: t("instructor.report.quiz"), href: "/admin/reports/quiz" },
+        { id: "assessment", label: t("instructor.report.assessment"), href: "/admin/reports/assessment" },
+        { id: "performance", label: t("instructor.report.performance"), href: "/admin/reports/performance" },
+        { id: "learner", label: t("instructor.report.learner"), href: "/admin/reports/learner" },
+        { id: "course", label: t("instructor.report.course"), href: "/admin/reports/course" },
+        { id: "engagement", label: t("instructor.report.engagement"), href: "/admin/reports/engagement" },
       ]
     },
   ];
 
   const titles: Record<string, string> = {
-    dashboard: "Analytics Dashboard",
-    users: "User Management",
-    invitations: "Invitation Management",
-    cohorts: "Cohort Management",
-    courses: "Course Management",
-    modules: "Modules Management",
-    lessons: "Lessons Management",
-    moderation: "Content Moderation",
-    logs: "Audit Logs",
+    dashboard: t("admin.title.dashboard"),
+    users: t("admin.title.users"),
+    invitations: t("admin.title.invitations"),
+    applications: t("admin.title.applications"),
+    cohorts: t("admin.title.cohorts"),
+    courses: t("admin.title.courses"),
+    modules: t("admin.title.modules"),
+    lessons: t("admin.title.lessons"),
+    assessments: t("admin.title.assessments"),
+    moderation: t("admin.title.moderation"),
+    logs: t("admin.title.logs"),
+    quiz: t("admin.title.quiz"),
+    assessment: t("admin.title.assessment"),
+    performance: t("admin.title.performance"),
+    learner: t("admin.title.learner"),
+    course: t("admin.title.course"),
+    engagement: t("admin.title.engagement"),
   };
 
   const subtitles: Record<string, string> = {
-    dashboard: "Overview of platform metrics",
-    users: "Manage platform users",
-    invitations: "Send and manage user invitations",
-    cohorts: "Create and manage cohorts",
-    courses: "Manage course content",
-    modules: "View modules grouped by course",
-    lessons: "Create and manage lessons",
-    moderation: "Review flagged content",
-    logs: "System activity logs",
+    dashboard: t("admin.subtitle.dashboard"),
+    users: t("admin.subtitle.users"),
+    invitations: t("admin.subtitle.invitations"),
+    applications: t("admin.subtitle.applications"),
+    cohorts: t("admin.subtitle.cohorts"),
+    courses: t("admin.subtitle.courses"),
+    modules: t("admin.subtitle.modules"),
+    lessons: t("admin.subtitle.lessons"),
+    assessments: t("admin.subtitle.assessments"),
+    moderation: t("admin.subtitle.moderation"),
+    logs: t("admin.subtitle.logs"),
+    quiz: t("admin.subtitle.quiz"),
+    assessment: t("admin.subtitle.assessment"),
+    performance: t("admin.subtitle.performance"),
+    learner: t("admin.subtitle.learner"),
+    course: t("admin.subtitle.course"),
+    engagement: t("admin.subtitle.engagement"),
   };
 
   const SidebarContent = (
@@ -335,7 +363,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="mx-4 h-px bg-gray-100" />
 
       <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
-        {!collapsed && <NavSection label="Admin Panel" />}
+        {!collapsed && <NavSection label={t("admin.section.panel")} />}
         {nav.map(item => (
           <NavItem
             key={item.id}
@@ -344,7 +372,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             active={view === item.id || (item.isExpandable && isReportsPath ? true : false)}
             collapsed={collapsed}
             isExpandable={item.isExpandable}
-            children={item.children}
+            items={item.children}
             expanded={item.isExpandable && expandedMenus.includes(item.id)}
             onToggleExpand={() => item.isExpandable && toggleMenu(item.id)}
             router={router}
@@ -393,7 +421,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-200"
           >
             <LogOut size={13} strokeWidth={1.8} />
-            <span>Sign Out</span>
+            <span>{t("common.signOut")}</span>
           </button>
         )}
       </div>
@@ -417,7 +445,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4" style={{ zIndex: 10000 }}>
 
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Confirm Logout</h3>
+              <h3 className="text-lg font-bold text-gray-900">{t("admin.logout.confirmTitle")}</h3>
               <button 
                 onClick={() => setLogoutPopupOpen(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
@@ -426,21 +454,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </button>
             </div>
             <p className="text-sm text-gray-600 mb-6">
-              Are you sure you want to logout? Your session will be ended and you'll need to login again.
+              {t("admin.logout.confirmBody")}
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setLogoutPopupOpen(false)}
                 className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 onClick={handleLogout}
                 className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 <LogOut size={16} />
-                Logout
+                {t("common.logout")}
               </button>
             </div>
           </div>
@@ -509,8 +537,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
                     <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                       <div>
-                        <h3 className="font-bold text-gray-900 text-sm">Notifications</h3>
-                        <p className="text-xs text-gray-500 mt-0.5">{unreadCount} unread</p>
+                        <h3 className="font-bold text-gray-900 text-sm">{t("common.notifications")}</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">{t("common.unreadCount", { count: unreadCount })}</p>
                       </div>
                       <button 
                         onClick={() => setNotificationsOpen(false)}
@@ -521,7 +549,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </div>
                     <div className="max-h-96 overflow-y-auto">
                       {notificationsLoading ? (
-                        <div className="p-4 text-center text-gray-500">Loading...</div>
+                        <div className="p-4 text-center text-gray-500">{t("common.loading")}</div>
                       ) : notifications.length > 0 ? (
                         notifications.map((notif) => (
                           <div 
@@ -543,12 +571,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                           </div>
                         ))
                       ) : (
-                        <div className="p-4 text-center text-gray-500">No notifications</div>
+                        <div className="p-4 text-center text-gray-500">{t("common.noNotifications")}</div>
                       )}
                     </div>
                     <div className="p-3 border-t border-gray-100">
                       <button className="w-full text-center text-xs font-semibold text-indigo-600 hover:text-indigo-700 py-2 rounded-lg hover:bg-indigo-50 transition-colors">
-                        View all notifications
+                        {t("common.viewAllNotifications")}
                       </button>
                     </div>
                   </div>

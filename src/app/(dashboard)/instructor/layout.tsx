@@ -2,14 +2,24 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight, X, Layers, TrendingUp, ChevronDown } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight, X, Layers, TrendingUp, ChevronDown } from "lucide-react";
 
 import Logo from "@/components/ui/navbar/Logo";
+import { useTranslation } from "@/components/i18n/LanguageProvider";
 import { tokenManager } from "@/lib/auth";
 import { notificationService, Notification } from "@/services/notificationService";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 
+type NavChildItem = {
+  id: string;
+  label: string;
+  href: string;
+};
+
+type NavRouter = {
+  push: (href: string) => void;
+};
 
 function NavItem({ 
   icon: Icon, 
@@ -18,7 +28,7 @@ function NavItem({
   onClick, 
   collapsed, 
   isExpandable, 
-  children, 
+  items, 
   expanded,
   onToggleExpand,
   router,
@@ -32,10 +42,10 @@ function NavItem({
   onClick: () => void;
   collapsed: boolean;
   isExpandable?: boolean;
-  children?: any[];
+  items?: NavChildItem[];
   expanded?: boolean;
   onToggleExpand?: () => void;
-  router: any;
+  router: NavRouter;
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   currentReportPath: string;
@@ -81,9 +91,9 @@ function NavItem({
         )}
       </button>
       
-      {isExpandable && !collapsed && expanded && children && (
+      {isExpandable && !collapsed && expanded && items && (
         <div className="ml-4 mt-1 space-y-1">
-          {children.map((child) => (
+          {items.map((child) => (
             <button
               key={child.id}
               onClick={() => {
@@ -133,6 +143,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const { t } = useTranslation();
 
   // Fetch notifications from backend
   const fetchNotifications = async () => {
@@ -242,62 +253,62 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
     if (isReportsPath && !expandedMenus.includes('reports')) {
       setExpandedMenus(['reports']);
     }
-  }, [isReportsPath]);
+  }, [expandedMenus, isReportsPath]);
 
   const nav = [
-    { id: "overview", label: "Dashboard", icon: LayoutDashboard, href: "/instructor" },
-    { id: "courses", label: "My Courses", icon: BookOpen, href: "/instructor/courses" },
-    { id: "learners", label: "Learners", icon: Users, href: "/instructor/learners" },
-    { id: "modules", label: "Modules", icon: Layers, href: "/instructor/modules" },
-    { id: "lessons", label: "Lessons", icon: FileText, href: "/instructor/lessons" },
-    { id: "assessments", label: "Assessments", icon: Shield, href: "/instructor/assessments" },
+    { id: "overview", label: t("instructor.nav.dashboard"), icon: LayoutDashboard, href: "/instructor" },
+    { id: "courses", label: t("instructor.nav.myCourses"), icon: BookOpen, href: "/instructor/courses" },
+    { id: "learners", label: t("instructor.nav.learners"), icon: Users, href: "/instructor/learners" },
+    { id: "modules", label: t("instructor.nav.modules"), icon: Layers, href: "/instructor/modules" },
+    { id: "lessons", label: t("instructor.nav.lessons"), icon: FileText, href: "/instructor/lessons" },
+    { id: "assessments", label: t("instructor.nav.assessments"), icon: Shield, href: "/instructor/assessments" },
     { 
       id: "reports", 
-      label: "Reports", 
+      label: t("instructor.nav.reports"), 
       icon: TrendingUp, 
       href: "/instructor/reports",
       isExpandable: true,
       children: [
-        { id: "quiz", label: "Quiz Reports", href: "/instructor/reports/quiz" },
-        { id: "assessment", label: "Assessment Reports", href: "/instructor/reports/assessment" },
-        { id: "performance", label: "Performance Reports", href: "/instructor/reports/performance" },
-        { id: "learner", label: "Learner Reports", href: "/instructor/reports/learner" },
-        { id: "course", label: "Course Reports", href: "/instructor/reports/course" },
-        { id: "engagement", label: "Engagement Reports", href: "/instructor/reports/engagement" },
+        { id: "quiz", label: t("instructor.report.quiz"), href: "/instructor/reports/quiz" },
+        { id: "assessment", label: t("instructor.report.assessment"), href: "/instructor/reports/assessment" },
+        { id: "performance", label: t("instructor.report.performance"), href: "/instructor/reports/performance" },
+        { id: "learner", label: t("instructor.report.learner"), href: "/instructor/reports/learner" },
+        { id: "course", label: t("instructor.report.course"), href: "/instructor/reports/course" },
+        { id: "engagement", label: t("instructor.report.engagement"), href: "/instructor/reports/engagement" },
       ]
     },
   ];
 
   const titles: Record<string, string> = {
-    overview: "Instructor Dashboard",
-    courses: "Course Management",
-    learners: "Learner Management",
-    modules: "Module Management",
-    lessons: "Lesson Management",
-    assessments: "Assessment Management",
-    reports: "Reports & Analytics",
-    quiz: "Quiz Reports",
-    assessment: "Assessment Reports",
-    performance: "Performance Reports",
-    learner: "Learner Reports",
-    course: "Course Reports",
-    engagement: "Engagement Reports",
+    overview: t("instructor.title.overview"),
+    courses: t("instructor.title.courses"),
+    learners: t("instructor.title.learners"),
+    modules: t("instructor.title.modules"),
+    lessons: t("instructor.title.lessons"),
+    assessments: t("instructor.title.assessments"),
+    reports: t("instructor.title.reports"),
+    quiz: t("instructor.title.quiz"),
+    assessment: t("instructor.title.assessment"),
+    performance: t("instructor.title.performance"),
+    learner: t("instructor.title.learner"),
+    course: t("instructor.title.course"),
+    engagement: t("instructor.title.engagement"),
   };
 
   const subtitles: Record<string, string> = {
-    overview: "Welcome back! Here's what's happening with your courses",
-    courses: "Manage and organize your course content",
-    learners: "Track learner progress and performance",
-    modules: "Organize course content by modules",
-    lessons: "Create and edit lesson content",
-    assessments: "Create and manage assessments",
-    reports: "Generate comprehensive reports and insights",
-    quiz: "Quiz performance and analytics",
-    assessment: "Assessment results and analysis",
-    performance: "Overall performance metrics and trends",
-    learner: "Individual learner progress and analytics",
-    course: "Course completion and engagement metrics",
-    engagement: "User engagement and activity analytics",
+    overview: t("instructor.subtitle.overview"),
+    courses: t("instructor.subtitle.courses"),
+    learners: t("instructor.subtitle.learners"),
+    modules: t("instructor.subtitle.modules"),
+    lessons: t("instructor.subtitle.lessons"),
+    assessments: t("instructor.subtitle.assessments"),
+    reports: t("instructor.subtitle.reports"),
+    quiz: t("instructor.subtitle.quiz"),
+    assessment: t("instructor.subtitle.assessment"),
+    performance: t("instructor.subtitle.performance"),
+    learner: t("instructor.subtitle.learner"),
+    course: t("instructor.subtitle.course"),
+    engagement: t("instructor.subtitle.engagement"),
   };
 
   const formatNotificationTime = (createdAt: string) => {
@@ -332,7 +343,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
       <div className="mx-4 h-px bg-gray-100" />
 
       <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
-        {!collapsed && <NavSection label="Instructor Panel" />}
+        {!collapsed && <NavSection label={t("instructor.section.panel")} />}
         {nav.map(item => (
           <NavItem
             key={item.id}
@@ -341,7 +352,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
             active={view === item.id || (item.isExpandable && isReportsPath ? true : false)}
             collapsed={collapsed}
             isExpandable={item.isExpandable}
-            children={item.children}
+            items={item.children}
             expanded={item.isExpandable && expandedMenus.includes(item.id)}
             onToggleExpand={() => item.isExpandable && toggleMenu(item.id)}
             router={router}
@@ -390,7 +401,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
             className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-200"
           >
             <LogOut size={13} strokeWidth={1.8} />
-            <span>Sign Out</span>
+            <span>{t("common.signOut")}</span>
           </button>
         )}
       </div>
@@ -416,7 +427,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
           <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4" style={{ zIndex: 10000 }}>
 
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Confirm Logout</h3>
+              <h3 className="text-lg font-bold text-gray-900">{t("instructor.logout.confirmTitle")}</h3>
               <button 
                 onClick={() => setLogoutPopupOpen(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
@@ -425,21 +436,21 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
               </button>
             </div>
             <p className="text-sm text-gray-600 mb-6">
-              Are you sure you want to logout? Your session will be ended and you'll need to login again.
+              {t("instructor.logout.confirmBody")}
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setLogoutPopupOpen(false)}
                 className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 onClick={handleLogout}
                 className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 <LogOut size={16} />
-                Logout
+                {t("common.logout")}
               </button>
             </div>
           </div>
@@ -508,8 +519,8 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
                   <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
                     <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                       <div>
-                        <h3 className="font-bold text-gray-900 text-sm">Notifications</h3>
-                        <p className="text-xs text-gray-500 mt-0.5">{unreadCount} unread</p>
+                        <h3 className="font-bold text-gray-900 text-sm">{t("common.notifications")}</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">{t("common.unreadCount", { count: unreadCount })}</p>
                       </div>
                       <button 
                         onClick={() => setNotificationsOpen(false)}
@@ -520,7 +531,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
                     </div>
                     <div className="max-h-96 overflow-y-auto">
                       {notificationsLoading ? (
-                        <div className="p-4 text-center text-gray-500">Loading...</div>
+                        <div className="p-4 text-center text-gray-500">{t("common.loading")}</div>
                       ) : notifications.length > 0 ? (
                         notifications.map((notif) => (
                           <div 
@@ -542,12 +553,12 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
                           </div>
                         ))
                       ) : (
-                        <div className="p-4 text-center text-gray-500">No notifications</div>
+                        <div className="p-4 text-center text-gray-500">{t("common.noNotifications")}</div>
                       )}
                     </div>
                     <div className="p-3 border-t border-gray-100">
                       <button className="w-full text-center text-xs font-semibold text-indigo-600 hover:text-indigo-700 py-2 rounded-lg hover:bg-indigo-50 transition-colors">
-                        View all notifications
+                        {t("common.viewAllNotifications")}
                       </button>
                     </div>
                   </div>

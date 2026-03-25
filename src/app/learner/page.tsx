@@ -3,8 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSidebar } from "@/components/ui/SideBarContext";
+import { useTranslation } from "@/components/i18n/LanguageProvider";
 import { Users, BookMarked, GraduationCap, Calendar, CheckCircle } from "lucide-react";
 import { authAPI, tokenManager } from "@/lib/auth";
+import { cohortService } from "@/services/cohortService";
+import { courseService } from "@/services/courseService";
 
 type User = {
   name: string;
@@ -20,6 +23,18 @@ type Course = {
   progress: number;
 };
 
+type LearnerCourseApiItem = {
+  id?: string;
+  courseId?: string;
+  _id?: string;
+  title?: string;
+  cohortId?: string;
+  isPublished?: boolean;
+};
+
+const getLearnerCourseId = (course: LearnerCourseApiItem) =>
+  course.courseId || course.id || course._id || "";
+
 type Cohort = {
   cohortId: string;
   name: string;
@@ -28,12 +43,52 @@ type Cohort = {
   startDate: string;
   currentStudents: number;
   maxStudents: number;
+  isActive?: boolean;
+  enrollmentOpenDate?: string;
+  enrollmentCloseDate?: string;
+  extensionDate?: string;
 };
+
+const getCohortId = (cohort: Partial<Cohort> & { id?: string }) =>
+  cohort.cohortId || cohort.id || "";
+
+const getEndOfDay = (value: string) => {
+  const date = new Date(value);
+  date.setHours(23, 59, 59, 999);
+  return date;
+};
+
+const isEnrollmentAvailable = (cohort: Partial<Cohort>) => {
+  if (cohort.isActive === false) return false;
+
+  const now = new Date();
+  const openDate = cohort.enrollmentOpenDate ? new Date(cohort.enrollmentOpenDate) : null;
+  const closeSource = cohort.extensionDate || cohort.enrollmentCloseDate;
+  const closeDate = closeSource ? getEndOfDay(closeSource) : null;
+
+  if (openDate && now < openDate) return false;
+  if (closeDate && now > closeDate) return false;
+
+  return true;
+};
+
+const normalizeAvailableCohorts = (cohorts: Array<Partial<Cohort> & { id?: string }>, enrolledCohortId?: string | null) =>
+  cohorts
+    .map((cohort) => ({
+      ...cohort,
+      cohortId: getCohortId(cohort),
+      currentStudents: Number(cohort.currentStudents ?? 0),
+      maxStudents: Number(cohort.maxStudents ?? 0),
+      status: cohort.status || "upcoming",
+    }))
+    .filter((cohort): cohort is Cohort => Boolean(cohort.cohortId && cohort.name && isEnrollmentAvailable(cohort)))
+    .filter((cohort) => cohort.cohortId !== enrolledCohortId);
 
 export default function LearnerDashboardPage() {
   const { collapsed } = useSidebar();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useTranslation();
 
   const [user, setUser] = useState<User>({ name: "Loading...", initials: "L" });
   const [myCourses, setMyCourses] = useState<Course[]>([]);
@@ -50,10 +105,10 @@ export default function LearnerDashboardPage() {
 
         if (userData) {
           const name =
-            (userData as any).firstName || (userData as any).lastName
-              ? `${(userData as any).firstName || ""} ${(userData as any).lastName || ""}`.trim()
-              : (userData as any).name ||
-                (userData as any).email?.split("@")[0] ||
+            userData.firstName || userData.lastName
+              ? `${userData.firstName || ""} ${userData.lastName || ""}`.trim()
+              : userData.name ||
+                userData.email?.split("@")[0] ||
                 "User";
 
           const initials =
@@ -67,27 +122,56 @@ export default function LearnerDashboardPage() {
         }
 
         const coursesRes = await authAPI.getLearnerCohortCourses();
-        console.log('Courses API response:', coursesRes); // Debug
-        if (coursesRes?.success && Array.isArray(coursesRes.data)) {
-          setMyCourses(coursesRes.data.map((course: any) => ({
-            id: course.id || course._id || '',
-            title: course.title || 'Untitled Course',
-            progress: 0
-          })));
-        } else {
-          console.warn('No courses data:', coursesRes);
-        }
-
         const cohortRes = await authAPI.getLearnerCohort();
         console.log('Cohort API response:', cohortRes); // Debug
+        let enrolledCohortId: string | null = null;
         if (cohortRes?.success && cohortRes.data !== null) {
           setCurrentCohort(cohortRes.data as Cohort);
+          enrolledCohortId = (cohortRes.data as Partial<Cohort> & { id?: string }).cohortId || (cohortRes.data as { id?: string }).id || null;
         }
 
-        const availableRes = await authAPI.getAvailableCohorts();
-        if (availableRes?.success) {
-          setAvailableCohorts(availableRes.data || []);
-        }
+        console.log('Courses API response:', coursesRes); // Debug
+        const cohortCourses = coursesRes?.success && Array.isArray(coursesRes.data)
+          ? coursesRes.data as LearnerCourseApiItem[]
+          : [];
+        const allCoursesRes = await courseService.getAllCourses(1, 100);
+        const exactCohortCourses = allCoursesRes.courses.filter((course) => {
+          if (course.isPublished === false) return false;
+          if (!enrolledCohortId) return false;
+          return course.cohortId === enrolledCohortId;
+        });
+
+        const mergedCourseMap = new Map<string, LearnerCourseApiItem>();
+        [...cohortCourses, ...exactCohortCourses].forEach((course) => {
+          const courseId = getLearnerCourseId(course);
+          if (!courseId) return;
+          mergedCourseMap.set(courseId, { ...mergedCourseMap.get(courseId), ...course });
+        });
+
+        setMyCourses(
+          Array.from(mergedCourseMap.values()).map((course) => ({
+            id: getLearnerCourseId(course),
+            title: course.title || 'Untitled Course',
+            progress: 0,
+          }))
+        );
+
+        const [availableRes, allCohortsRes] = await Promise.all([
+          authAPI.getAvailableCohorts(),
+          cohortService.getAllCohorts(1, 50),
+        ]);
+
+        const normalizedFromAvailable = availableRes?.success
+          ? normalizeAvailableCohorts(availableRes.data || [], enrolledCohortId)
+          : [];
+        const normalizedFromAll = normalizeAvailableCohorts(allCohortsRes.cohorts || [], enrolledCohortId);
+
+        const cohortMap = new Map<string, Cohort>();
+        [...normalizedFromAvailable, ...normalizedFromAll].forEach((cohort) => {
+          cohortMap.set(cohort.cohortId, cohort);
+        });
+
+        setAvailableCohorts(Array.from(cohortMap.values()));
       } catch (error) {
         console.error("Dashboard error:", error);
       } finally {
@@ -126,20 +210,34 @@ export default function LearnerDashboardPage() {
 
       if (response?.success) {
         const cohortRes = await authAPI.getLearnerCohort();
+        let enrolledCohortId: string | null = cohortId;
         if (cohortRes?.success && cohortRes.data !== null) {
           setCurrentCohort(cohortRes.data as Cohort);
+          enrolledCohortId = (cohortRes.data as Partial<Cohort> & { id?: string }).cohortId || (cohortRes.data as { id?: string }).id || cohortId;
         }
 
-        const availableRes = await authAPI.getAvailableCohorts();
-        if (availableRes?.success) {
-          setAvailableCohorts(availableRes.data || []);
-        }
+        const [availableRes, allCohortsRes] = await Promise.all([
+          authAPI.getAvailableCohorts(),
+          cohortService.getAllCohorts(1, 50),
+        ]);
+
+        const normalizedFromAvailable = availableRes?.success
+          ? normalizeAvailableCohorts(availableRes.data || [], enrolledCohortId)
+          : [];
+        const normalizedFromAll = normalizeAvailableCohorts(allCohortsRes.cohorts || [], enrolledCohortId);
+
+        const cohortMap = new Map<string, Cohort>();
+        [...normalizedFromAvailable, ...normalizedFromAll].forEach((cohort) => {
+          cohortMap.set(cohort.cohortId, cohort);
+        });
+
+        setAvailableCohorts(Array.from(cohortMap.values()));
       } else {
-        alert(response?.message || "Failed to join cohort");
+        alert(response?.message || t("learner.dashboard.joinFailed"));
       }
     } catch (error) {
       console.error("Enroll error:", error);
-      alert("Failed to join cohort");
+      alert(t("learner.dashboard.joinFailed"));
     } finally {
       setEnrolling(null);
     }
@@ -156,7 +254,7 @@ export default function LearnerDashboardPage() {
   if (loading) {
     return (
       <div className="p-6 text-center">
-        <p>Loading dashboard...</p>
+        <p>{t("learner.dashboard.loading")}</p>
       </div>
     );
   }
@@ -172,10 +270,10 @@ export default function LearnerDashboardPage() {
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Congratulations!
+                {t("learner.dashboard.congratsTitle")}
               </h2>
               <p className="text-gray-600 mb-6">
-                Your application for this cohort has been APPROVED. Welcome to the cohort!
+                {t("learner.dashboard.congratsBody")}
               </p>
             </div>
             
@@ -183,7 +281,7 @@ export default function LearnerDashboardPage() {
               onClick={handleContinueToDashboard}
               className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
-              Continue to Learner Dashboard
+              {t("learner.dashboard.continue")}
             </button>
           </div>
         </div>
@@ -199,16 +297,16 @@ export default function LearnerDashboardPage() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <GraduationCap className="w-5 h-5" />
-                <span className="text-sm font-medium text-white/80">Enrolled Cohort</span>
+                <span className="text-sm font-medium text-white/80">{t("learner.dashboard.enrolledCohort")}</span>
               </div>
-              <h1 className="text-xl font-black">{currentCohort?.name || 'No Cohort'}</h1>
+              <h1 className="text-xl font-black">{currentCohort?.name || t("learner.dashboard.noCohort")}</h1>
             </div>
             {currentCohort && (
               <div className="flex items-center gap-6 text-sm">
                 <div className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
                   <span>
-                    {currentCohort.currentStudents} / {currentCohort.maxStudents} Students
+                    {t("learner.dashboard.students", { current: currentCohort.currentStudents, max: currentCohort.maxStudents })}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -224,7 +322,7 @@ export default function LearnerDashboardPage() {
 
         {myCourses.length > 0 ? (
           <div className="bg-white rounded-xl p-5 border">
-            <h2 className="font-bold mb-4">My Courses</h2>
+            <h2 className="font-bold mb-4">{t("learner.dashboard.myCourses")}</h2>
 
             {myCourses.slice(0, 4).map((course) => (
               <div key={course.id} className="mb-3">
@@ -238,14 +336,14 @@ export default function LearnerDashboardPage() {
                 </div>
 
                 <p className="text-xs text-gray-500">
-                  {course.progress}% complete
+                  {t("learner.dashboard.complete", { progress: course.progress })}
                 </p>
               </div>
             ))}
           </div>
         ) : (
           <div className="bg-white p-6 rounded-xl border text-center">
-            No courses yet
+            {t("learner.dashboard.noCourses")}
           </div>
         )}
       </div>
@@ -254,7 +352,7 @@ export default function LearnerDashboardPage() {
       <div className="w-[300px] space-y-4">
 
         <div>
-          <h2 className="font-bold text-lg">Hi, {user.name}</h2>
+          <h2 className="font-bold text-lg">{t("learner.dashboard.hi", { name: user.name })}</h2>
           <p className="text-xs text-gray-500">
             {dayName} · {dateStr}
           </p>
@@ -264,7 +362,7 @@ export default function LearnerDashboardPage() {
           <div className="bg-white rounded-xl p-4 border">
             <h3 className="font-bold flex items-center gap-2 mb-3">
               <BookMarked size={14} />
-              Available Cohorts
+              {t("learner.dashboard.availableCohorts")}
             </h3>
 
             {availableCohorts.slice(0, 3).map((cohort) => (
@@ -280,8 +378,8 @@ export default function LearnerDashboardPage() {
                   className="text-blue-600 text-sm font-semibold"
                 >
                   {enrolling === cohort.cohortId
-                    ? "Enrolling..."
-                    : "Enroll"}
+                    ? t("learner.dashboard.enrolling")
+                    : t("learner.dashboard.enroll")}
                 </button>
               </div>
             ))}

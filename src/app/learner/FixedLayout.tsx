@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { BookOpen, TrendingUp, Megaphone, Home, Menu, Bell, LogOut, ChevronRight, Users } from "lucide-react";
 import ProfileSidebar from '@/components/profile/learner-profile/ProfileSidebar';
 import Logo from "@/components/ui/navbar/Logo";
+import { useTranslation } from "@/components/i18n/LanguageProvider";
 import { tokenManager } from "@/lib/auth";
 import { notificationService, Notification } from "@/services/notificationService";
 
@@ -77,6 +78,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [hasProfile, setHasProfile] = useState(true);
   const [checkingProfile, setCheckingProfile] = useState(true);
+  const { t } = useTranslation();
 
   // ALL HOOKS AT TOP LEVEL BEFORE ANY EARLY RETURNS
   useEffect(() => {
@@ -153,7 +155,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
 
   // EARLY RETURNS AFTER ALL HOOKS
   if (checkingProfile) {
-    return <div className="flex items-center justify-center min-h-screen bg-gray-50">Checking profile...</div>;
+    return <div className="flex items-center justify-center min-h-screen bg-gray-50">{t("learner.checkingProfile")}</div>;
   }
 
   if (!hasProfile) {
@@ -170,10 +172,10 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24) return `${diffHours} h ago`;
-    if (diffDays < 7) return `${diffDays} d ago`;
+    if (diffMins < 1) return t("common.justNow");
+    if (diffMins < 60) return t("common.minAgo", { count: diffMins });
+    if (diffHours < 24) return diffHours === 1 ? t("common.hourAgo", { count: diffHours }) : t("common.hoursAgo", { count: diffHours });
+    if (diffDays < 7) return diffDays === 1 ? t("common.dayAgo", { count: diffDays }) : t("common.daysAgo", { count: diffDays });
     return date.toLocaleDateString();
   };
 
@@ -186,27 +188,27 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
   const view = pathname.split('/').pop() || 'learner';
 
   const nav = [
-    { id: "learner",       label: "Home",          icon: Home      },
-    { id: "cohorts",       label: "Cohorts",       icon: Users     },
-    { id: "my-courses",    label: "My Courses",    icon: BookOpen  },
-    { id: "progress",      label: "Progress",      icon: TrendingUp},
-    { id: "announcements", label: "Announcements", icon: Megaphone },
+    { id: "learner",       label: t("learner.nav.home"),          icon: Home      },
+    { id: "cohorts",       label: t("learner.nav.cohorts"),       icon: Users     },
+    { id: "my-courses",    label: t("learner.nav.myCourses"),     icon: BookOpen  },
+    { id: "progress",      label: t("learner.nav.progress"),      icon: TrendingUp},
+    { id: "announcements", label: t("learner.nav.announcements"), icon: Megaphone },
   ];
 
   const titles: Record<string, string> = {
-    learner:       "Dashboard",
-    cohorts:       "Available Cohorts",
-    "my-courses":  "My Courses",
-    progress:      "My Progress",
-    announcements: "Announcements",
+    learner:       t("learner.title.dashboard"),
+    cohorts:       t("learner.title.availableCohorts"),
+    "my-courses":  t("learner.title.myCourses"),
+    progress:      t("learner.title.myProgress"),
+    announcements: t("learner.title.announcements"),
   };
 
   const subtitles: Record<string, string> = {
-    learner:       `Welcome back, ${user.name.split(' ')[0]}`,
-    cohorts:       "Browse and join available cohorts",
-    "my-courses":  "Browse your enrolled courses",
-    progress:      "Track your learning journey",
-    announcements: "Stay up to date",
+    learner:       t("learner.subtitle.dashboard", { name: user.name.split(' ')[0] }),
+    cohorts:       t("learner.subtitle.availableCohorts"),
+    "my-courses":  t("learner.subtitle.myCourses"),
+    progress:      t("learner.subtitle.myProgress"),
+    announcements: t("learner.subtitle.announcements"),
   };
 
   const SidebarContent = (
@@ -228,7 +230,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
       <div className="mx-4 h-px bg-gray-100" />
 
       <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
-        {!collapsed && <NavSection label="Navigate" />}
+        {!collapsed && <NavSection label={t("learner.section.navigate")} />}
         {nav.map(item => (
           <NavItem
             key={item.id}
@@ -262,7 +264,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
             <>
               <div className="flex-1 text-left min-w-0">
                 <div className="text-gray-900 text-xs font-semibold truncate leading-tight">{user.name}</div>
-                <div className="text-gray-400 text-[10px] mt-0.5 font-medium">Active · Online</div>
+                <div className="text-gray-400 text-[10px] mt-0.5 font-medium">{t("learner.profile.activeOnline")}</div>
               </div>
 
               <ChevronRight
@@ -279,7 +281,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
             className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200"
           >
             <LogOut size={13} strokeWidth={1.8} />
-            <span>Sign Out</span>
+            <span>{t("common.signOut")}</span>
           </button>
         )}
       </div>
@@ -333,7 +335,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
                   {titles[view]}
                 </h1>
                 <span className="hidden sm:inline-flex items-center text-[10px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                  Online
+                  {t("common.online")}
                 </span>
               </div>
               <p className="text-xs text-gray-400 hidden sm:block mt-0.5 font-medium">
@@ -361,13 +363,13 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
                     <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
                       <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                         <div>
-                          <h3 className="font-bold text-gray-900 text-sm">Notifications</h3>
-                          <p className="text-xs text-gray-500 mt-0.5">{unreadCount} unread</p>
+                          <h3 className="font-bold text-gray-900 text-sm">{t("common.notifications")}</h3>
+                          <p className="text-xs text-gray-500 mt-0.5">{t("common.unreadCount", { count: unreadCount })}</p>
                         </div>
                       </div>
                       <div className="max-h-96 overflow-y-auto">
                         {notificationsLoading ? (
-                          <div className="p-4 text-center text-gray-500">Loading...</div>
+                          <div className="p-4 text-center text-gray-500">{t("common.loading")}</div>
                         ) : notifications.length > 0 ? (
                           notifications.map((notif) => (
                             <div 
@@ -389,7 +391,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
                             </div>
                           ))
                         ) : (
-                          <div className="p-4 text-center text-gray-500">No notifications</div>
+                          <div className="p-4 text-center text-gray-500">{t("common.noNotifications")}</div>
                         )}
                       </div>
                       <div className="p-3 border-t border-gray-100">
@@ -400,7 +402,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
                           }}
                           className="w-full text-center text-xs font-semibold text-indigo-600 hover:text-indigo-700 py-2 rounded-lg hover:bg-indigo-50 transition-colors"
                         >
-                          View all announcements
+                          {t("learner.notifications.viewAllAnnouncements")}
                         </button>
                       </div>
                     </div>
@@ -435,21 +437,21 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowLogoutModal(false)} />
             <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full">
-              <h2 className="text-lg font-bold text-gray-900 mb-2">Sign Out</h2>
-              <p className="text-sm text-gray-600 mb-6">Are you sure you want to sign out? You will need to log in again to access your account.</p>
+              <h2 className="text-lg font-bold text-gray-900 mb-2">{t("learner.logout.confirmTitle")}</h2>
+              <p className="text-sm text-gray-600 mb-6">{t("learner.logout.confirmBody")}</p>
               
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowLogoutModal(false)}
                   className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold text-sm transition-all"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   onClick={handleLogout}
                   className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold text-sm transition-all"
                 >
-                  Sign Out
+                  {t("common.signOut")}
                 </button>
               </div>
             </div>

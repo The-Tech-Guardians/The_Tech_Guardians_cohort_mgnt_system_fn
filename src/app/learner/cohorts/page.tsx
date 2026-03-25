@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSidebar } from "../FixedLayout";
 import { cohortService, type Cohort } from "@/services/cohortService";
-import { Users, Calendar, BookOpen, Loader2, ChevronDown, LogOut, GraduationCap } from "lucide-react";
+import { Users, Calendar, BookOpen, Loader2, ChevronDown, LogOut } from "lucide-react";
 
 export default function LearnerCohortsPage() {
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
@@ -67,7 +67,8 @@ export default function LearnerCohortsPage() {
 
     const now = new Date();
     const openDate = new Date(cohort.enrollmentOpenDate);
-    const closeDate = new Date(cohort.enrollmentCloseDate);
+    const closeDate = new Date(cohort.extensionDate || cohort.enrollmentCloseDate);
+    closeDate.setHours(23, 59, 59, 999);
 
     return now >= openDate && now <= closeDate;
   };
@@ -134,9 +135,6 @@ export default function LearnerCohortsPage() {
       setUnenrolling(false);
     }
   };
-
-  // Get the enrolled cohort details
-  const enrolledCohort = enrolledCohortId ? cohorts.find(c => c.id === enrolledCohortId) : null;
 
   // Filter cohorts: show only enrolled cohort if enrolled, otherwise show all
   const displayedCohorts = enrolledCohortId 
@@ -276,7 +274,7 @@ export default function LearnerCohortsPage() {
                       Enrolled ✓
                     </button>
                     <p className="text-xs text-center text-gray-500">
-                      Click "Unenroll Options" above to leave this cohort
+                      Click &quot;Unenroll Options&quot; above to leave this cohort
                     </p>
                   </div>
                 ) : (
