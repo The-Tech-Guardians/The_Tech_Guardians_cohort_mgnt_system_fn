@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Filter, Calendar, User, Activity, AlertCircle, CheckCircle, XCircle, Shield, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
 interface AuditLog {
@@ -71,6 +71,11 @@ export default function AuditLogPage() {
     endDate: ''
   });
 
+  useEffect(() => {
+    loadLogs();
+    loadStats();
+  }, [currentPage, filters]);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
       year: 'numeric',
@@ -95,47 +100,6 @@ export default function AuditLogPage() {
     });
     setCurrentPage(1);
   };
-
-  // Auto-refresh every minute - only fetch new entries
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
-        
-        // Only fetch the most recent log to check for new entries
-        const response = await fetch(`${API_URL}/audit-logs/logs?limit=1&offset=0`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.logs.length > 0) {
-            const newLog = data.logs[0];
-            
-            // Check if this is a new log (different from current first log)
-            if (logs.length === 0 || newLog.uuid !== logs[0].uuid) {
-              setNewLogDetected(true);
-              setTimeout(() => setNewLogDetected(false), 3000); // Reset after 3 seconds
-              // Fetch all logs to update the list
-              loadLogs();
-              loadStats();
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error checking for new logs:', error);
-      }
-    }, 60000); // 1 minute = 60000ms
-
-    return () => clearInterval(interval);
-  }, [logs]); // Include logs in dependency to check against current logs
-
-  useEffect(() => {
-    loadLogs();
-    loadStats();
-  }, [currentPage, filters]);
 
   const loadLogs = async () => {
     try {
@@ -257,9 +221,25 @@ export default function AuditLogPage() {
 return (
 <div className="min-h-screen bg-gray-50 p-6">
 <div className="max-w-7xl mx-auto">
-{/* Header */}
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
+            {newLogDetected && (
+              <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full animate-pulse">
+                New entries detected!
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { loadLogs(); loadStats(); }}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              title="Refresh now"
+            >
+              <RefreshCw className="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
         </div>
 
 {/* Stats Cards */}

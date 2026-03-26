@@ -271,6 +271,101 @@ export const adminApi = {
     }
   },
 
+  async updateAssessment(assessmentId: string, updates: any): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/assessments/${assessmentId}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(updates),
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Failed to update assessment:', error);
+      return false;
+    }
+  },
+
+  // Questions Management
+  async getQuestionsByAssessment(assessmentId: string): Promise<any[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/assessments/${assessmentId}/questions`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch questions');
+      }
+
+      const data = await response.json();
+      return data.questions || [];
+    } catch (error) {
+      console.error('Get questions error:', error);
+      return [];
+    }
+  },
+
+  async createQuestion(assessmentId: string, questionData: {
+    questionText: string;
+    type: 'MCQ' | 'TRUE_FALSE' | 'SHORT_ANSWER' | 'ESSAY';
+    points: number;
+    orderIndex?: number;
+    options?: { optionText: string; isCorrect: boolean; orderIndex: number }[];
+  }): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/assessments/${assessmentId}/questions`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(questionData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create question');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Create question error:', error);
+      throw error;
+    }
+  },
+
+  async updateQuestion(questionId: string, updates: {
+    questionText?: string;
+    type?: 'MCQ' | 'TRUE_FALSE' | 'SHORT_ANSWER' | 'ESSAY';
+    points?: number;
+    orderIndex?: number;
+    options?: { optionText: string; isCorrect: boolean; orderIndex: number }[];
+  }): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/assessments/questions/${questionId}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(updates),
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Update question error:', error);
+      return false;
+    }
+  },
+
+  async deleteQuestion(questionId: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/assessments/questions/${questionId}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Delete question error:', error);
+      return false;
+    }
+  },
+
   // Courses
   async listCourses(page: number = 1, limit: number = 10): Promise<PaginatedResponse<Course>> {
     try {

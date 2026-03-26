@@ -232,6 +232,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const view = pathname === '/admin' ? 'dashboard' : 
            pathname.startsWith('/admin/invitations') ? 'invitations' :
+           pathname.startsWith('/admin/applications') ? 'applications' :
+           pathname.startsWith('/admin/cohorts') ? 'cohorts' :
+           pathname.startsWith('/admin/courses') ? 'courses' :
+           pathname.startsWith('/admin/modules') ? 'modules' :
+           pathname.startsWith('/admin/lessons') ? 'lessons' :
+           pathname.startsWith('/admin/assessments') ? 'assessments' :
+           pathname.startsWith('/admin/users') ? 'users' :
+           pathname.startsWith('/admin/moderation') ? 'moderation' :
+           pathname.startsWith('/admin/logs') ? 'logs' :
+           pathname.startsWith('/admin/reports') ? 'reports' :
            pathname.split('/').pop() || 'dashboard';
 
   // Helper.split('/').pop function to format notification time
