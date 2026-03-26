@@ -44,11 +44,11 @@ export default function Button({
 
   const variants = {
     primary:
-      "bg-[#4F46E5] hover:bg-[#4338CA] text-white shadow-lg shadow-indigo-500/25",
+      "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/25",
     outline:
-      "border-2 border-[#4F46E5] text-[#4F46E5] hover:bg-indigo-50 bg-transparent",
+      "border-2 border-blue-600 text-blue-600 hover:bg-cyan-50 bg-transparent",
     ghost:
-      "text-gray-500 hover:text-[#4F46E5] bg-transparent border-none shadow-none",
+      "text-gray-500 hover:text-blue-600 bg-transparent border-none shadow-none",
     default:
       "bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300"
   };

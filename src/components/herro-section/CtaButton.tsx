@@ -16,7 +16,7 @@ export default function CTAButton({ children, primary, onClick }: { children: Re
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2 bg-white text-slate-700  font-semibold text-[14.5px] px-7 py-3.5 rounded-xl border border-slate-200 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50 transition-all duration-200 shadow-sm"
+      className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold text-[14.5px] px-7 py-3.5 rounded-xl transition-all duration-200 shadow-md shadow-blue-500/20"
     >
       {children}
     </button>

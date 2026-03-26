@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { Bold, Italic, Underline, List, Link, Code, Quote, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
+import { Bold, Italic, Underline, List, Link, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 
 interface FormattedTextEditorProps {
   content: string;
@@ -11,6 +11,38 @@ interface FormattedTextEditorProps {
   className?: string;
   minHeight?: string;
   showToolbar?: boolean;
+}
+
+interface ToolbarButtonProps {
+  onClick: () => void;
+  isActive?: boolean;
+  title: string;
+  children: ReactNode;
+}
+
+function ToolbarButton({
+  onClick,
+  isActive = false,
+  title,
+  children,
+}: ToolbarButtonProps) {
+  return (
+    <button
+      type="button"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onClick}
+      className={`p-2 rounded hover:bg-gray-100 transition-colors ${
+        isActive ? 'bg-gray-200 text-blue-600' : 'text-gray-700'
+      }`}
+      title={title}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ToolbarDivider() {
+  return <div className="w-px h-6 bg-gray-300" />;
 }
 
 export default function FormattedTextEditor({ 
@@ -30,7 +62,7 @@ export default function FormattedTextEditor({
   const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (editorRef.current) {
+    if (editorRef.current && editorRef.current.innerHTML !== content) {
       editorRef.current.innerHTML = content;
     }
   }, [content]);
@@ -50,6 +82,7 @@ export default function FormattedTextEditor({
   const insertLink = () => {
     const url = prompt('Enter URL:');
     if (url && editorRef.current) {
+      editorRef.current.focus();
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
@@ -64,35 +97,8 @@ export default function FormattedTextEditor({
     handleContentChange();
   };
 
-  const ToolbarButton = ({ 
-    onClick, 
-    isActive = false, 
-    title, 
-    children 
-  }: { 
-    onClick: () => void; 
-    isActive?: boolean; 
-    title: string; 
-    children: React.ReactNode 
-  }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`p-2 rounded hover:bg-gray-100 transition-colors ${
-        isActive ? 'bg-gray-200 text-blue-600' : 'text-gray-700'
-      }`}
-      title={title}
-    >
-      {children}
-    </button>
-  );
-
-  const ToolbarDivider = () => (
-    <div className="w-px h-6 bg-gray-300" />
-  );
-
   return (
-    <div className={`border border-gray-300 rounded-lg overflow-hidden ${className}`}>
+    <div className={`relative border border-gray-300 rounded-lg overflow-hidden ${className}`}>
       {/* Toolbar */}
       {editable && showToolbar && (
         <div className="border-b border-gray-200 bg-gray-50 p-2 flex items-center gap-1 flex-wrap">
@@ -204,19 +210,16 @@ export default function FormattedTextEditor({
       <div
         ref={editorRef}
         contentEditable={editable}
-        className={`min-h-[${minHeight}] p-4 focus:outline-none prose prose-sm max-w-none ${
+        className={`p-4 focus:outline-none prose prose-sm max-w-none ${
           editable ? 'cursor-text' : ''
         }`}
         style={{ minHeight }}
         onInput={handleContentChange}
-        onKeyUp={handleContentChange}
-        onMouseUp={handleContentChange}
         suppressContentEditableWarning={true}
-        dangerouslySetInnerHTML={{ __html: '' }}
       />
       
       {/* Hidden input for placeholder */}
-      {editable && content === '' && (
+      {editable && !content && (
         <div 
           className="absolute top-4 left-4 text-gray-400 pointer-events-none"
           contentEditable={false}

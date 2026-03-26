@@ -18,7 +18,7 @@ export const Badge = ({ variant = 'gray', children }: { variant?: 'gray' | 'gree
 export const ProgressBar = ({ value = 0 }: { value: number }) => (
   <div className="w-full bg-gray-200 rounded-full h-2">
     <div 
-      className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full transition-all" 
+      className="bg-gradient-to-r from-blue-600 to-cyan-500 h-2 rounded-full transition-all" 
       style={{ width: `${Math.min(100, value)}%` }}
     />
   </div>
@@ -34,8 +34,8 @@ export const Btn = ({ variant = 'indigo', size = 'md', children, type, disabled 
   <button 
     type={type || 'button'}
     disabled={disabled}
-    className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-colors ${
-      variant === 'indigo' ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : ''
+    className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
+      variant === 'indigo' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-500/20' : ''
     } ${size === 'xs' ? 'px-2 py-1 text-xs' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
   >
     {children}

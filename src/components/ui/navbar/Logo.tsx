@@ -19,7 +19,7 @@ const Logo: FC<LogoProps> = ({ textMain }) => {
       </div>
       <div className="flex flex-col leading-none">
         <span className={`font-brand text-[20px] ${textMain} tracking-tight`}>CohortLMS</span>
-        <span className="text-[9.5px] font-semibold tracking-[0.14em] uppercase text-cyan-500 mt-[3px]">Learning Platform</span>
+        <span className="text-[9.5px] font-semibold tracking-[0.14em] uppercase  mt-[3px]">Learning Platform</span>
       </div>
     </div>
   );

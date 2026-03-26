@@ -122,6 +122,25 @@ function getModuleName(moduleId: string, modules: Module[]): string {
 
 }
 
+function getLessonPreview(content?: string, maxLength: number = 150): string {
+
+  if (!content) return "";
+
+  const plainText = content
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return plainText.length > maxLength ? `${plainText.substring(0, maxLength)}...` : plainText;
+
+}
+
 
 
 // Child Components
@@ -206,7 +225,7 @@ function LessonCard({ lesson, modules, onEdit, onDelete }: LessonCardProps) {
 
         <div className="text-sm text-gray-600 leading-relaxed mb-3 whitespace-pre-wrap">
 
-          {lesson.contentBody.substring(0, 150)}...
+          {getLessonPreview(lesson.contentBody)}
 
         </div>
 
@@ -216,7 +235,7 @@ function LessonCard({ lesson, modules, onEdit, onDelete }: LessonCardProps) {
 
         <div className="text-sm text-gray-600 leading-relaxed mb-3 whitespace-pre-wrap max-h-24 overflow-y-auto">
 
-          {lesson.contentBody}
+          {getLessonPreview(lesson.contentBody, 600)}
 
         </div>
 

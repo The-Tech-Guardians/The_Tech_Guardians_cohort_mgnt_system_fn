@@ -311,7 +311,7 @@ export default function ForgotPasswordPage() {
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <span className="inline-block bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-full px-3 py-1 text-xs font-bold mb-2">
-                    📧 Email OTP
+                     Email OTP
                   </span>
                   <h1 className="text-xl font-extrabold text-[#111827] mb-1">Enter OTP Code</h1>
                   <p className="text-sm text-gray-500 max-w-[240px] leading-relaxed">

@@ -14,7 +14,7 @@ export default function HeroSection() {
     <>
       <main className="hero-font pt-24">
         <section className="hero-bg min-h-screen flex items-center">
-          <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20 lg:py-28 w-full">
+          <div className="max-w-7xl  mx-auto px-6 lg:px-8 py-20 lg:py-28 w-full">
             <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-20">
               <div className="flex-1 flex flex-col gap-7 text-center lg:text-left items-center lg:items-start">
                 <div className="flex flex-wrap items-center gap-2 justify-center lg:justify-start">

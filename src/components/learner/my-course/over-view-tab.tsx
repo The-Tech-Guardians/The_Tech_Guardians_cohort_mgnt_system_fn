@@ -27,9 +27,10 @@ export default function OverviewTab({ lesson }: OverviewTabProps) {
 
       {lesson.contentBody ? (
         <div className="rounded-2xl border border-gray-200 bg-white p-5">
-          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-gray-700">
-            {lesson.contentBody}
-          </div>
+          <div
+            className="prose prose-sm max-w-none text-gray-700"
+            dangerouslySetInnerHTML={{ __html: lesson.contentBody }}
+          />
         </div>
       ) : (
         <p className="text-gray-600">No written lesson notes were added for this lesson.</p>

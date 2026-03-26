@@ -144,7 +144,7 @@ export default function AuthButtons({
             {user?.role.toUpperCase() === "INSTRUCTOR" && (
               <button
                 onClick={() => router.push("/instructor")}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-purple-600 hover:bg-purple-50 transition-all"
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-blue-600 hover:bg-purple-50 transition-all"
               >
                 <User size={16} className="flex-shrink-0" />
                 {t("navbar.auth.instructorDashboard")}
