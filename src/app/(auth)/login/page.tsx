@@ -107,7 +107,7 @@ export default function LoginPage() {
             <div className="space-y-3">
               <h2 className="text-4xl font-bold text-white leading-tight pt-4">
                 Learn together,<br />
-                <span className="text-white/75">grow together.</span>
+                <span className="text-gray-900">grow together.</span>
               </h2>
               <p className="text-white/60 text-base leading-relaxed max-w-xs">
                 A cohort-based learning platform built for structured, collaborative education.
@@ -190,7 +190,7 @@ export default function LoginPage() {
               {/* Password input */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-[#111827]">Password</label>
+                  <label className="text-sm font-medium text-gray-900">Password</label>
                   <Link href="/login/forgot-password" className="text-xs text-blue-600 hover:underline font-medium">
                     Forgot password?
                   </Link>
@@ -201,7 +201,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="w-full pl-10 pr-11 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition"
+                    className="w-full pl-10 pr-11 py-3 rounded-xl border border-gray-200 text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition"
                     required
                   />
                   <button
@@ -241,7 +241,7 @@ export default function LoginPage() {
 
             <p className="text-center text-sm text-gray-500">
               Learners can{" "}
-              <Link href="/register" className="text-[#4F46E5] font-semibold hover:underline">
+              <Link href="/register" className="text-blue-600 font-semibold hover:underline">
                 sign up here
               </Link>{" "}
               during open enrollment.
