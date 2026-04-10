@@ -70,14 +70,26 @@ export default function LoginPage() {
         
         // Role from token (instant, reliable)
         const tokenRole = (tokenManager.getRoleFromToken() || '').toUpperCase() as 'ADMIN' | 'INSTRUCTOR' | 'LEARNER';
-        const rolePath = {
-          ADMIN: '/admin',
-          INSTRUCTOR: '/instructor',
-          LEARNER: '/learner'
-        }[tokenRole] || tokenManager.getRedirectPath({ redirect: redirectPath });
         
-        console.log(`[LOGIN] Role: ${tokenRole} → ${rolePath}`);
-        setSuccess('✅ Login successful!');
+        let rolePath: string;
+        if (tokenRole === 'LEARNER') {
+          // Check if learner has approved application
+          const applicationStatus = (result as any).applicationStatus;
+          if (applicationStatus === 'APPROVED') {
+            rolePath = '/learner'; // Direct to dashboard for approved learners
+          } else {
+            rolePath = '/application_process'; // To application process for pending/new learners
+          }
+        } else {
+          rolePath = {
+            ADMIN: '/admin',
+            INSTRUCTOR: '/instructor',
+            LEARNER: '/learner'
+          }[tokenRole] || tokenManager.getRedirectPath({ redirect: redirectPath });
+        }
+        
+        console.log(`[LOGIN] Role: ${tokenRole} -> ${rolePath} (Application Status: ${(result as any).applicationStatus || 'N/A'})`);
+        setSuccess('Login successful!');
         setTimeout(() => router.push(rolePath), 1000);
       } else {
         setError((result as any)?.error || result.message || 'Invalid response');

@@ -117,23 +117,35 @@ export default function TwoFAPage() {
         if (token) tokenManager.setToken(token);
         if (userObj) tokenManager.setUser(userObj);
 
-// Role-based dashboard redirect (default)
-  const tokenRole = (tokenManager.getRoleFromToken() || 'LEARNER').toUpperCase() as 'ADMIN' | 'INSTRUCTOR' | 'LEARNER';
-  const rolePath = {
-    ADMIN: '/admin',
-    INSTRUCTOR: '/instructor',
-    LEARNER: '/application_process'
-  }[tokenRole] || '/application_process';
-  
-  // Allow URL param override only for dashboard paths
-  const urlParams = new URLSearchParams(window.location.search);
-  const redirectParam = urlParams.get("redirect");
-  let finalRedirect = rolePath;
-  if (redirectParam && ['/admin','/instructor','/learner'].includes(redirectParam)) {
-    finalRedirect = redirectParam;
-  }
-  
-  console.log(`[2FA SUCCESS] Role: ${tokenRole} → ${finalRedirect}`);
+        // Role-based dashboard redirect (default)
+        const tokenRole = (tokenManager.getRoleFromToken() || 'LEARNER').toUpperCase() as 'ADMIN' | 'INSTRUCTOR' | 'LEARNER';
+        
+        let rolePath: string;
+        if (tokenRole === 'LEARNER') {
+          // Check if learner has approved application
+          const applicationStatus = (response as any).applicationStatus;
+          if (applicationStatus === 'APPROVED') {
+            rolePath = '/learner'; // Direct to dashboard for approved learners
+          } else {
+            rolePath = '/application_process'; // To application process for pending/new learners
+          }
+        } else {
+          rolePath = {
+            ADMIN: '/admin',
+            INSTRUCTOR: '/instructor',
+            LEARNER: '/application_process'
+          }[tokenRole] || '/application_process';
+        }
+        
+        // Allow URL param override only for dashboard paths
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectParam = urlParams.get("redirect");
+        let finalRedirect = rolePath;
+        if (redirectParam && ['/admin','/instructor','/learner'].includes(redirectParam)) {
+          finalRedirect = redirectParam;
+        }
+        
+        console.log(`[2FA SUCCESS] Role: ${tokenRole} -> ${finalRedirect} (Application Status: ${(response as any).applicationStatus || 'N/A'})`);
         
         // Sync refresh for navbar cache
         try {
