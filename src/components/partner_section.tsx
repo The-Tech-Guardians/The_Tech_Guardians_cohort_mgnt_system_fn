@@ -41,7 +41,7 @@ const partners = [
 function PartnerCard({ p }) {
   return (
     <div
-      className={`flex-1 group border border-gray-200 ${p.borderHover} rounded-2xl bg-white overflow-hidden transition-all duration-300 hover:shadow-lg`}
+      className={`flex-1 group border border-gray-200 ${p.borderHover} rounded-2xl bg-white overflow-hidden transition-all duration-300 `}
     >
       {/* Logo area */}
       <div
@@ -49,19 +49,17 @@ function PartnerCard({ p }) {
       >
         {/* Background pattern */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-2 left-4 w-16 h-16 rounded-full bg-white" />
-          <div className="absolute bottom-2 right-4 w-10 h-10 rounded-full bg-white" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-white" />
         </div>
 
         {/* Initials */}
-        <span className="relative z-10 text-white text-3xl font-extrabold tracking-tight drop-shadow">
+        <span className="relative z-10 text-white text-3xl font-extrabold">
           {p.initials}
         </span>
 
         {/* Placeholder badge */}
         <span className="absolute top-2 right-2 text-[10px] text-white/70 border border-white/30 rounded-full px-2 py-0.5 backdrop-blur-sm bg-black/10">
-          Logo placeholder
+          {p.initials}
         </span>
       </div>
 
@@ -91,9 +89,6 @@ export function PartnersSection() {
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
           Organizations that believe in this work
         </h2>
-        <p className="text-xs text-gray-400">
-          High-resolution logos will replace these placeholders soon.
-        </p>
       </div>
 
       {/* Partner cards */}

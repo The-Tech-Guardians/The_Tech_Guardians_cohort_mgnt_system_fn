@@ -4,9 +4,33 @@
 import { ChevronLeft, ChevronRight, Quote, Star } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface Testimonial {
+  id: number;
+  name: string;
+  role: string;
+  initials: string;
+  avatarBg: string;
+  quote: string;
+  stars: number;
+}
+
+interface TestimonialCardProps {
+  t: Testimonial;
+  position: number;
+  onClick: () => void;
+}
+
+interface ProgressBarProps {
+  active: number;
+  total: number;
+  duration: number;
+}
+
 // ── Data ──────────────────────────────────────────────────────────────────────
 
-const testimonials = [
+const testimonials: Testimonial[] = [
   {
     id: 1,
     name: "John Doe",
@@ -75,7 +99,7 @@ export function StarRow({ count = 5 }) {
 
 // ── ProgressBar ───────────────────────────────────────────────────────────────
 
-function ProgressBar({ active, total, duration }) {
+function ProgressBar({ active, total, duration }: ProgressBarProps) {
   return (
     <div className="flex gap-1.5 items-center">
       {Array.from({ length: total }).map((_, i) => (
@@ -101,7 +125,7 @@ function ProgressBar({ active, total, duration }) {
 // ── TestimonialCard ───────────────────────────────────────────────────────────
 // position: -1 (prev peek), 0 (active center), 1 (next peek), other (hidden)
 
-function TestimonialCard({ t, position, onClick }) {
+function TestimonialCard({ t, position, onClick }: TestimonialCardProps) {
   const isCenter = position === 0;
   const isPeek = position === -1 || position === 1;
 
@@ -185,11 +209,11 @@ export function TestimonialsSection() {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const [key, setKey] = useState(0);
-  const timerRef = useRef(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const n = testimonials.length;
 
   const go = useCallback(
-    (dir) => {
+    (dir: number) => {
       setActive((prev) => (prev + dir + n) % n);
       setKey((k) => k + 1);
       setPaused(false);
@@ -197,7 +221,7 @@ export function TestimonialsSection() {
     [n]
   );
 
-  const goTo = (i) => {
+  const goTo = (i: number) => {
     setActive(i);
     setKey((k) => k + 1);
     setPaused(false);
@@ -206,7 +230,11 @@ export function TestimonialsSection() {
   useEffect(() => {
     if (paused) return;
     timerRef.current = setInterval(() => go(1), AUTOPLAY_MS);
-    return () => clearInterval(timerRef.current);
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
   }, [paused, go, key]);
 
   return (
