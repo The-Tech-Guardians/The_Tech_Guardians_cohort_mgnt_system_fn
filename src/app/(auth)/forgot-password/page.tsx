@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Logo from "@/components/ui/navbar/Logo";
+import Logo from "@/components/ui/Logo";
 import { authAPI } from "@/lib/auth";
 
 export default function ForgotPasswordPage() {

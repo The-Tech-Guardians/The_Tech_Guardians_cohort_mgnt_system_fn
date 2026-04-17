@@ -5,7 +5,7 @@ import { Users, GraduationCap, BookOpen, TrendingUp, Activity, Clock, ArrowUp, A
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { instructorApi } from '@/lib/instructorApi';
 
-const COLORS = ['#2563EB', '#06B6D4', '#10B981', '#F59E0B'];
+const COLORS = ['#059669', '#0d9488', '#0891b2'];
 
 interface StatCardProps {
   title: string;

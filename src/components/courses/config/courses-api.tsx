@@ -2,12 +2,12 @@ import { Course } from "@/types/courses";
 import { BarChart2, Code2, HeartPulse, Megaphone, Rocket, Sparkles } from "lucide-react";
 
 export const CATEGORIES = [
-  { slug: "computer-programming",  label: "Computer Programming",  icon: Code2,      grad: ["#3b82f6", "#06b6d4"] },
-  { slug: "entrepreneurship",       label: "Entrepreneurship",       icon: Rocket,     grad: ["#f59e0b", "#ef4444"] },
-  { slug: "srhr",                   label: "SRHR",                   icon: HeartPulse, grad: ["#f43f5e", "#a855f7"] },
-  { slug: "marketing",              label: "Marketing",              icon: Megaphone,  grad: ["#8b5cf6", "#ec4899"] },
-  { slug: "data-science",           label: "Data Science",           icon: BarChart2,  grad: ["#10b981", "#3b82f6"] },
-  { slug: "social-media-branding",  label: "Social Media Branding",  icon: Sparkles,   grad: ["#ec4899", "#f97316"] },
+  { slug: "computer-programming",  label: "Computer Programming",  icon: Code2,      grad: ["#059669", "#0891b2"] },
+  { slug: "entrepreneurship",       label: "Entrepreneurship",       icon: Rocket,     grad: ["#059669", "#0891b2"] },
+  { slug: "srhr",                   label: "SRHR",                   icon: HeartPulse, grad: ["#0d9488", "#059669"] },
+  { slug: "marketing",              label: "Marketing",              icon: Megaphone,  grad: ["#0891b2", "#0d9488"] },
+  { slug: "data-science",           label: "Data Science",           icon: BarChart2,  grad: ["#059669", "#0d9488"] },
+  { slug: "social-media-branding",  label: "Social Media Branding",  icon: Sparkles,   grad: ["#0d9488", "#0891b2"] },
 ];
 
 // ─── All courses ──────────────────────────────────────────────────────────────
@@ -44,6 +44,6 @@ export const ALL_COURSES: Course[] = [
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 export const LEVEL_BADGE: Record<string, string> = {
   Beginner:     "bg-emerald-100 text-emerald-700 border-emerald-200",
-  Intermediate: "bg-blue-100 text-blue-700 border-blue-200",
-  Advanced:     "bg-rose-100 text-rose-700 border-rose-200",
+  Intermediate: "bg-teal-100 text-teal-700 border-teal-200",
+  Advanced:     "bg-cyan-100 text-cyan-700 border-cyan-200",
 };

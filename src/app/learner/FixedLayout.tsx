@@ -4,7 +4,7 @@ import { useState, createContext, useContext, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { BookOpen, TrendingUp, Megaphone, Home, Menu, Bell, LogOut, ChevronRight, Users } from "lucide-react";
 import ProfileSidebar from '@/components/profile/learner-profile/ProfileSidebar';
-import Logo from "@/components/ui/navbar/Logo";
+import Logo from "@/components/ui/Logo";
 import { useTranslation } from "@/components/i18n/LanguageProvider";
 import { tokenManager } from "@/lib/auth";
 import { notificationService, Notification } from "@/services/notificationService";

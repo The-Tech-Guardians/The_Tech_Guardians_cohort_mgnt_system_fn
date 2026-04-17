@@ -37,7 +37,7 @@ interface AnalyticsData {
   };
 }
 
-const COLORS = ['#4F46E5', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+const COLORS = ['#059669', '#0d9488', '#0891b2'];
 
 export default function InvitationAnalytics() {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
@@ -336,8 +336,8 @@ export default function InvitationAnalytics() {
               <Tooltip />
               <Legend />
               <Area type="monotone" dataKey="sent" stackId="1" stroke="#4F46E5" fill="#4F46E5" name="Sent" />
-              <Area type="monotone" dataKey="accepted" stackId="1" stroke="#10B981" fill="#10B981" name="Accepted" />
-              <Area type="monotone" dataKey="expired" stackId="1" stroke="#EF4444" fill="#EF4444" name="Expired" />
+              <Area type="monotone" dataKey="accepted" stackId="1" stroke="#0d9488" fill="#0d9488" name="Accepted" />
+              <Area type="monotone" dataKey="expired" stackId="1" stroke="#0891b2" fill="#0891b2" name="Expired" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -377,7 +377,7 @@ export default function InvitationAnalytics() {
               <Tooltip />
               <Legend />
               <Bar dataKey="invitations" fill="#4F46E5" name="Invitations" />
-              <Bar dataKey="acceptances" fill="#10B981" name="Acceptances" />
+              <Bar dataKey="acceptances" fill="#0d9488" name="Acceptances" />
             </BarChart>
           </ResponsiveContainer>
         </div>

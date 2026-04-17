@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { BookCopy, ChartColumnStacked, GraduationCap, Trophy } from "lucide-react";
-import Logo from "@/components/ui/navbar/Logo";
+import Logo from "@/components/ui/Logo";
 
 const API_BASE_URL = "http://localhost:3000/api";
 
@@ -118,7 +118,7 @@ function RegisterForm() {
             <p className="text-sm text-gray-400 mb-6">Redirecting to login page...</p>
             <Link
               href="/login"
-              className="inline-block w-full bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold py-3 rounded-xl transition text-sm shadow-lg shadow-indigo-500/25"
+              className="inline-block w-full bg-[#059669] hover:bg-[#047857] text-white font-semibold py-3 rounded-xl transition text-sm shadow-lg shadow-emerald-500/25"
             >
               Go to Login Now
             </Link>
@@ -313,10 +313,10 @@ function RegisterForm() {
         <div className="w-full max-w-md">
           <div className="flex lg:hidden items-center gap-2 mb-8 justify-center">
             <svg viewBox="0 0 40 40" className="w-8 h-8" fill="none">
-              <circle cx="14" cy="10" r="5" fill="#4F46E5" />
+              <circle cx="14" cy="10" r="5" fill="#059669" />
               <circle cx="26" cy="10" r="5" fill="#2563EB" />
               <circle cx="20" cy="6" r="5" fill="#06B6D4" />
-              <path d="M4 28 Q20 18 36 28" stroke="#4F46E5" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+              <path d="M4 28 Q20 18 36 28" stroke="#059669" strokeWidth="2.5" fill="none" strokeLinecap="round" />
               <path d="M6 33 Q20 23 34 33" stroke="#2563EB" strokeWidth="2" fill="none" strokeLinecap="round" />
               <path d="M9 38 Q20 30 31 38" stroke="#06B6D4" strokeWidth="1.5" fill="none" strokeLinecap="round" />
             </svg>
@@ -411,7 +411,7 @@ function RegisterForm() {
                     </svg>
                   </div>
                   <input type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder="Re-enter your password"
-                    className={`w-full pl-10 pr-4 py-3 rounded-xl border text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition ${
+                    className={`w-full pl-10 pr-4 py-3 rounded-xl border text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition ${
                       form.confirmPassword && form.password !== form.confirmPassword ? "border-red-300 bg-red-50"
                       : form.confirmPassword && form.password === form.confirmPassword ? "border-green-300 bg-green-50"
                       : "border-gray-200"}`} required />
@@ -431,7 +431,7 @@ function RegisterForm() {
               <label className="flex items-start gap-3 cursor-pointer group">
                 <div className="relative mt-0.5">
                   <input type="checkbox" name="agreeTerms" checked={form.agreeTerms} onChange={handleChange} className="sr-only" />
-                  <div className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${form.agreeTerms ? "bg-[#4F46E5] border-[#4F46E5]" : "border-gray-300 group-hover:border-[#4F46E5]"}`}>
+                  <div className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${form.agreeTerms ? "bg-[#059669] border-[#059669]" : "border-gray-300 group-hover:border-[#059669]"}`}>
                     {form.agreeTerms && (
                       <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />

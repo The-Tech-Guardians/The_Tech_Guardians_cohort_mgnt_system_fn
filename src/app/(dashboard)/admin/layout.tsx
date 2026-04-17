@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { LayoutDashboard, Users, Calendar, BookOpen, Shield, FileText, Menu, Bell, LogOut, ChevronRight, X, Layers, TrendingUp, ChevronDown, Mail, Megaphone } from "lucide-react";
-import Logo from "@/components/ui/navbar/Logo";
+import Logo from "@/components/ui/Logo";
 import { useTranslation } from "@/components/i18n/LanguageProvider";
 import { tokenManager } from "@/lib/auth";
 import { notificationService, Notification } from "@/services/notificationService";

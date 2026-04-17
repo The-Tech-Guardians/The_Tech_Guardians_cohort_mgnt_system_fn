@@ -96,21 +96,74 @@ export default function HeroSection() {
                 </div>
               </div>
 
-              <div className="flex-1 w-full max-w-lg lg:max-w-none flex items-center justify-center px-4 lg:px-0">
-                <div className="blob-wrap">
-                  <div className="blob-blue" />
-                  <div className="blob-peach" />
-                  <div className="blob-photo">
-                    <Image
-                      src="/image.png"
-                      alt="hero-image"
-                      width={500}
-                      height={500}
-                      priority
-                    />
-                  </div>
-                </div>
-              </div>
+             {/* Replace your blob-wrap div with this */}
+<div className="flex-1 w-full max-w-lg lg:max-w-none flex items-center justify-center px-4 lg:px-0">
+  <div className="relative w-full max-w-[400px] h-[440px]">
+
+    {/* Floating badge — top */}
+    <div className="absolute -top-3 right-6 z-20 flex items-center gap-2 bg-white rounded-full px-3 py-1.5 shadow-md text-[11px] font-semibold text-emerald-600 whitespace-nowrap">
+      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+      2,400+ learners active
+    </div>
+
+    {/* Card 1 — Individual learner (back-left, blue) */}
+    <div
+      className="absolute top-[12px] left-0 w-[200px] h-[240px] rounded-[20px] overflow-hidden border-[3px] border-white shadow-xl z-[1]"
+      style={{ transform: "rotate(-4deg)" }}
+    >
+      <img
+        src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=300&fit=crop&crop=faces"
+        alt="Individual learner studying online"
+        className="w-full h-full object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
+      <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 text-white text-[10px] font-semibold tracking-widest uppercase">
+        <span className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
+        Individual
+      </div>
+    </div>
+
+    {/* Card 2 — Group collaboration (middle-right, peach) */}
+    <div
+      className="absolute top-[55px] right-0 w-[220px] h-[260px] rounded-[20px] overflow-hidden border-[3px] border-white shadow-xl z-[2]"
+      style={{ transform: "rotate(3deg)" }}
+    >
+      <img
+        src="https://images.unsplash.com/photo-1543269664-7eef42226a21?w=400&h=320&fit=crop&crop=faces"
+        alt="Small collaborative group learning"
+        className="w-full h-full object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
+      <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 text-white text-[10px] font-semibold tracking-widest uppercase">
+        <span className="w-2 h-2 rounded-full bg-orange-300 flex-shrink-0" />
+        Group
+      </div>
+    </div>
+
+    {/* Card 3 — Team / Cohort (front-center, teal) */}
+    <div
+      className="absolute bottom-0 left-[40px] w-[210px] h-[245px] rounded-[20px] overflow-hidden border-[3px] border-white shadow-xl z-[3]"
+      style={{ transform: "rotate(-1.5deg)" }}
+    >
+      <img
+        src="https://images.unsplash.com/photo-1531482615713-2afd69097998?w=400&h=300&fit=crop&crop=faces"
+        alt="Full team cohort working together"
+        className="w-full h-full object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
+      <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 text-white text-[10px] font-semibold tracking-widest uppercase">
+        <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
+        Team / Cohort
+      </div>
+    </div>
+
+    {/* Floating badge — bottom */}
+    <div className="absolute -bottom-3 right-10 z-20 flex items-center gap-2 bg-white rounded-full px-3 py-1.5 shadow-md text-[11px] font-semibold text-sky-600 whitespace-nowrap">
+      🎓 Cohort-based learning
+    </div>
+
+  </div>
+</div>
             </div>
           </div>
         </section>

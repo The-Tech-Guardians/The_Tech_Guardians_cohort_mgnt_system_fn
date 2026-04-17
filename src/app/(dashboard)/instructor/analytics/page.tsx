@@ -35,7 +35,7 @@ import {
 } from 'recharts';
 import { instructorApi } from "@/lib/instructorApi";
 
-const COLORS = ['#2563EB', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+const COLORS = ['#059669', '#0d9488', '#0891b2'];
 
 interface AnalyticsCardProps {
   title: string;
@@ -251,7 +251,7 @@ export default function InstructorAnalyticsPage() {
               <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} />
               <Tooltip />
               <Area type="monotone" dataKey="enrollments" stackId="1" stroke="#2563EB" fill="#2563EB" fillOpacity={0.6} />
-              <Area type="monotone" dataKey="completions" stackId="1" stroke="#10B981" fill="#10B981" fillOpacity={0.6} />
+              <Area type="monotone" dataKey="completions" stackId="1" stroke="#059669" fill="#059669" fillOpacity={0.6} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -266,7 +266,7 @@ export default function InstructorAnalyticsPage() {
               <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} />
               <Tooltip />
               <Bar dataKey="enrollments" fill="#2563EB" />
-              <Bar dataKey="completion" fill="#10B981" />
+              <Bar dataKey="completion" fill="#059669" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -308,7 +308,7 @@ export default function InstructorAnalyticsPage() {
               <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} />
               <Tooltip />
               <Line type="monotone" dataKey="engagement" stroke="#2563EB" strokeWidth={2} dot={{ fill: '#2563EB', r: 4 }} />
-              <Line type="monotone" dataKey="completion" stroke="#10B981" strokeWidth={2} dot={{ fill: '#10B981', r: 4 }} />
+              <Line type="monotone" dataKey="completion" stroke="#059669" strokeWidth={2} dot={{ fill: '#059669', r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>

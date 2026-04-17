@@ -164,6 +164,11 @@ export default function InstructorOverviewPage() {
                           <Badge variant={m.published?"green":"amber"}>{m.published?"Live":"Draft"}</Badge>
                           <button className="text-gray-400 hover:text-gray-700 transition-colors"><Icon d={I.edit} size={13}/></button>
                         </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -171,8 +176,6 @@ export default function InstructorOverviewPage() {
     </div>
   );
 };
-
-                )}
               </div>
             </div>
             ))}

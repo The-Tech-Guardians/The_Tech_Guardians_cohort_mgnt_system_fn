@@ -304,9 +304,9 @@ export const COURSES = [
 
 // ── Config ──────────────────────────────────────────────────
 export const TYPE_CONFIG = {
-  development: { label: "Development",     color: "bg-blue-50 text-blue-600",     icon: <Computer className="w-3 h-3"/> },
-  design:      { label: "Design",          color: "bg-violet-50 text-violet-600", icon: <Palette className="w-3 h-3"/> },
-  data:        { label: "Data Science",    color: "bg-emerald-50 text-emerald-600",icon: <BarChartBigIcon className="w-3 h-3"/> },
-  business:    { label: "Business",        color: "bg-amber-50 text-amber-600",   icon: <ChartLine className="w-3 h-3"/> },
-  personal:    { label: "Personal Growth", color: "bg-sky-50 text-sky-600",       icon: <Sprout className="w-3 h-3"/> },
+  development: { label: "Development",     color: "bg-emerald-50 text-emerald-600",     icon: <Computer className="w-3 h-3"/> },
+  design:      { label: "Design",          color: "bg-teal-50 text-teal-600", icon: <Palette className="w-3 h-3"/> },
+  data:        { label: "Data Science",    color: "bg-cyan-50 text-cyan-600",icon: <BarChartBigIcon className="w-3 h-3"/> },
+  business:    { label: "Business",        color: "bg-emerald-50 text-emerald-600",   icon: <ChartLine className="w-3 h-3"/> },
+  personal:    { label: "Personal Growth", color: "bg-teal-50 text-teal-600",       icon: <Sprout className="w-3 h-3"/> },
 };

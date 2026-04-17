@@ -5,7 +5,7 @@ import Link from "next/link";
 import AuthButtons from "./navbar/AuthButtons";
 import CategoryBar from "./navbar/CategoryBar";
 import LanguageSelector from "./navbar/LanguageSelector";
-import Logo from "./navbar/Logo";
+import Logo from "./Logo";
 import MobileMenu from "./navbar/MobileMenu";
 import MobileMenuButton from "./navbar/MobileMenuButton";
 import ThemeToggle from "./navbar/ThemeToggle";
@@ -152,7 +152,7 @@ export default function Header() {
         >
           <div className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
             <Link href="/">
-              <Logo textMain={textMain} />
+              <Logo variant={isDark ? "dark" : "light"} />
             </Link>
 
             <AuthButtons

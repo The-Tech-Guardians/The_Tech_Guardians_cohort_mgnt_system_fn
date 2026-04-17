@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import Logo from "@/components/ui/navbar/Logo";
+import Logo from "@/components/ui/Logo";
 import { authAPI, tokenManager } from "@/lib/auth";
 import type { User } from '@/types/user';
 

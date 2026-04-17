@@ -158,9 +158,9 @@ class EmailService {
         <style>
           body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #4F46E5; color: white; padding: 20px; text-align: center; }
+          .header { background: #059669; color: white; padding: 20px; text-align: center; }
           .content { padding: 20px; background: #f9f9f9; }
-          .button { display: inline-block; padding: 12px 24px; background: #4F46E5; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .button { display: inline-block; padding: 12px 24px; background: #059669; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
           .footer { padding: 20px; text-align: center; color: #666; font-size: 12px; }
           .expiry { color: #e74c3c; font-weight: bold; }
         </style>

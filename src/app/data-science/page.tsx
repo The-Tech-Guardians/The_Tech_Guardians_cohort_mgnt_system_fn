@@ -89,17 +89,17 @@ export default function DataSciencePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map(course => (
               <article key={course.id} className="group  rounded-2xl border border-emerald-50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col">
-                <div className="h-40 flex items-center justify-center relative" style={{ background: "linear-gradient(135deg, #10b98115, #3b82f615)" }}>
-                  <BarChart2 size={56} color="#10b981" strokeWidth={1} opacity={0.5} />
+                <div className="h-40 flex items-center justify-center relative" style={{ background: "linear-gradient(135deg, #05966915, #0891b215)" }}>
+                  <BarChart2 size={56} color="#059669" strokeWidth={1} opacity={0.5} />
                   {course.featured && <span className="absolute top-3 right-3 flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-amber-900"><Award size={10} /> Featured</span>}
                   <span className={`absolute top-3 left-3 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${LEVEL_COLOR[course.level]}`}>{course.level}</span>
                 </div>
                 <div className="flex flex-col flex-1 p-5 gap-3">
-                  <div className="flex flex-wrap gap-1.5">{course.tags.map(t => <span key={t} className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium">{t}</span>)}</div>
+                  <div className="flex flex-wrap gap-1.5">{course.tags.map(t => <span key={t} className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-medium">{t}</span>)}</div>
                   <h3 className="text-[14.5px] font-semibold text-slate-900 leading-snug line-clamp-2">{course.title}</h3>
                   <p className="text-[12.5px] text-slate-500 leading-relaxed line-clamp-2">{course.description}</p>
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg, #10b981, #3b82f6)" }}>{course.avatar}</span>
+                    <span className="w-6 h-6 rounded-full text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg, #059669, #0891b2)" }}>{course.avatar}</span>
                     <span className="text-[12px] text-slate-500">{course.instructor}</span>
                   </div>
                   <div className="flex gap-3 text-[12px] text-slate-400">
@@ -116,7 +116,7 @@ export default function DataSciencePage() {
                     <span className="text-[15px] font-bold">
                       {course.price === 0 ? <span className="text-emerald-600 flex items-center gap-1"><BadgeCheck size={14} />Free</span> : <span className="text-slate-900">${course.price}</span>}
                     </span>
-                    <Link href={`/courses/${course.id}`} className="text-[12.5px] font-semibold px-4 py-1.5 rounded-lg text-white transition-all hover:opacity-90 active:scale-95 flex items-center gap-1" style={{ background: "linear-gradient(135deg, #10b981, #3b82f6)", boxShadow: "0 4px 14px #10b98133" }}>
+                    <Link href={`/courses/${course.id}`} className="text-[12.5px] font-semibold px-4 py-1.5 rounded-lg text-white transition-all hover:opacity-90 active:scale-95 flex items-center gap-1" style={{ background: "linear-gradient(135deg, #059669, #0891b2)", boxShadow: "0 4px 14px #05966933" }}>
                       Enroll Now <TrendingUp size={12} />
                     </Link>
                   </div>
