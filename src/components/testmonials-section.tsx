@@ -247,9 +247,6 @@ export function TestimonialsSection() {
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
           Words from our community
         </h2>
-        <p className="text-xs text-gray-400">
-          Placeholder content — real stories arrive after Cohort 1.
-        </p>
       </div>
 
       {/* ── Carousel stage ──

@@ -35,7 +35,7 @@ const Logo: FC<LogoProps> = ({ variant = "light", showText = true, className = "
         <div
           className="relative w-full h-full rounded-[13px] flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-[1.04]"
           style={{
-            background: "linear-gradient(145deg, #059669 0%, #0d9488 55%, #0891b2 100%)",
+           background: "linear-gradient(135deg, #2563EB, #0EA5E9)",
             boxShadow: "0 1px 2px rgba(0,0,0,0.12), 0 4px 16px rgba(5,150,105,0.28), inset 0 1px 0 rgba(255,255,255,0.22)",
           }}
         >
@@ -92,23 +92,13 @@ const Logo: FC<LogoProps> = ({ variant = "light", showText = true, className = "
                 fontSize: 21,
                 fontWeight: 400,
                 letterSpacing: "-0.02em",
-                color: isDark ? "rgba(255,255,255,0.88)" : "#1a2e2b",
                 fontFamily: 'DM Sans, sans-serif',
               }}
             >
               safe
             </span>
             <span
-              style={{
-                fontSize: 21,
-                fontWeight: 700,
-                letterSpacing: "-0.02em",
-                background: "linear-gradient(135deg, #059669 30%, #0d9488 80%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                fontFamily: 'DM Sans, sans-serif',
-              }}
+            className=" text-[#0EA5E9] text-xl font-bold"
             >
               ED
             </span>
@@ -121,7 +111,7 @@ const Logo: FC<LogoProps> = ({ variant = "light", showText = true, className = "
                 width: 14,
                 height: 1.5,
                 borderRadius: 2,
-                background: "linear-gradient(90deg, #059669, #0d9488)",
+               background: "linear-gradient(135deg, #2563EB, #0EA5E9)",
                 flexShrink: 0,
               }}
             />
@@ -131,7 +121,7 @@ const Logo: FC<LogoProps> = ({ variant = "light", showText = true, className = "
                 fontWeight: 600,
                 letterSpacing: "0.16em",
                 textTransform: "uppercase",
-                color: isDark ? "rgba(255,255,255,0.38)" : "#6b7280",
+              
                 fontFamily: 'DM Sans, sans-serif',
               }}
             >

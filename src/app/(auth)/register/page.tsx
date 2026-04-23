@@ -147,14 +147,14 @@ function RegisterForm() {
         {/* Soft white glow — bottom left */}
         <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
 
-        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
+        <div className="relative z-10   fixed px-12 py-4 w-full">
 
           {/* Logo */}
-          <Logo  textMain="LearnHub"  />
+          <Logo  />
 
-          <div className="space-y-8">
-            <div>
-              <div className="w-10 h-1 bg-white/60 rounded-full mb-4" />
+          <div >
+            <div className="pt-10">
+           
               <h2 className="text-4xl font-bold text-white leading-tight">
                 Your learning<br />
                 <span className="text-white/75">journey starts here.</span>
@@ -163,14 +163,12 @@ function RegisterForm() {
                 Join an active cohort and gain access to structured courses, expert instructors, and a community of learners.
               </p>
             </div>
-            <div className="flex justify-center">
+            <div className="flex justify-center py-4">
               <svg viewBox="0 0 480 280" fill="none" xmlns="http://www.w3.org/2000/svg"
                 className="w-full max-w-sm drop-shadow-xl">
                 <ellipse cx="240" cy="274" rx="170" ry="6" fill="rgba(0,0,0,0.12)" />
                 <rect x="60" y="30" width="260" height="180" rx="12" fill="white" fillOpacity="0.15" stroke="white" strokeOpacity="0.3" strokeWidth="1.5" />
 
-
-               
                 <rect x="60" y="30" width="260" height="32" rx="12" fill="white" fillOpacity="0.2" />
                 <circle cx="82" cy="46" r="5" fill="white" fillOpacity="0.5" />
                 <circle cx="97" cy="46" r="5" fill="white" fillOpacity="0.5" />
@@ -216,7 +214,7 @@ function RegisterForm() {
                 {/* Head */}
                 <circle cx="375" cy="138" r="26" fill="#FDE68A" />
                 {/* Hair */}
-                <path d="M349 130 Q375 108 401 130 Q401 114 375 110 Q349 114 349 130Z" fill="#7C3AED" />
+                <path d="M349 130 Q375 108 401 130 Q401 114 375 110 Q349 114 349 130Z" fill="#0863f7c1" />
                 {/* Eyes */}
                 <circle cx="367" cy="138" r="3" fill="#1E293B" />
                 <circle cx="383" cy="138" r="3" fill="#1E293B" />
@@ -230,12 +228,11 @@ function RegisterForm() {
                 {/* Right arm — holding something */}
                 <path d="M400 185 Q416 196 414 210" stroke="#FDE68A" strokeWidth="14" strokeLinecap="round" />
                 {/* Legs */}
-                <rect x="358" y="226" width="14" height="40" rx="7" fill="#7C3AED" fillOpacity="0.7" />
-                <rect x="378" y="226" width="14" height="40" rx="7" fill="#7C3AED" fillOpacity="0.7" />
+                <rect x="358" y="226" width="14" height="40" rx="7" fill="cyan-500" fillOpacity="0.7" />
+                <rect x="378" y="226" width="14" height="40" rx="7" fill="cyan-500" fillOpacity="0.7" />
                 {/* Shoes */}
                 <ellipse cx="365" cy="266" rx="12" ry="6" fill="#1E293B" fillOpacity="0.7" />
                 <ellipse cx="385" cy="266" rx="12" ry="6" fill="#1E293B" fillOpacity="0.7" />
-
                 {/* Pointer / stick */}
                 <line x1="296" y1="163" x2="230" y2="145" stroke="white" strokeOpacity="0.6" strokeWidth="2" strokeDasharray="4 3" />
 
@@ -247,7 +244,7 @@ function RegisterForm() {
                   <rect x="62" y="34" width="80" height="6" rx="3" fill="#1E3A5F" fillOpacity="0.65" />
                   <rect x="62" y="45" width="60" height="5" rx="2.5" fill="#1E3A5F" fillOpacity="0.3" />
                   <rect x="22" y="72" width="124" height="5" rx="2.5" fill="#EDE9FE" />
-                  <rect x="22" y="72" width="88" height="5" rx="2.5" fill="#7C3AED" fillOpacity="0.75" />
+                  <rect x="22" y="72" width="88" height="5" rx="2.5" fill="blue" fillOpacity="0.75" />
                 </g>
 
                 {/* ── Floating badge: Streak ── */}
@@ -285,42 +282,17 @@ function RegisterForm() {
                 </defs>
               </svg>
             </div>
-
-            {/* Feature list */}
-            <div className=" grid grid-cols-2 gap-2">
-              {[
-                { icon: <GraduationCap size={18} />, title: "Structured Cohort Learning", desc: "Learn alongside peers on a shared schedule" },
-                { icon: <BookCopy size={18} />, title: "Expert-led Courses", desc: "Coding, Content Creation and more" },
-                { icon: <ChartColumnStacked size={18} />, title: "Track Your Progress", desc: "Visual progress through every module" },
-                { icon: <Trophy size={18} />, title: "Earn Credentials", desc: "Completion badges and certificates" },
-              ].map((item) => (
-                <div key={item.title} className="flex items-center gap-3 bg-white/10 backdrop-blur border border-white/20 rounded-xl px-4 py-3">
-                  <span className="text-white/80">{item.icon}</span>
-                  <div>
-                    <div className="text-white text-sm font-medium">{item.title}</div>
-                    <div className="text-white/50 text-xs">{item.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
 
-          <div className="text-white/40 text-xs">&copy; {new Date().getFullYear()} CohortLMS. All rights reserved.</div>
+          <div className="text-white/40 text-xs">&copy; {new Date().getFullYear()} SafeED. All rights reserved.</div>
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-[#F9FAFB]">
+      <div className="flex-1 flex items-center py-4 overflow justify-center px-6  bg-[#F9FAFB]">
         <div className="w-full max-w-md">
           <div className="flex lg:hidden items-center gap-2 mb-8 justify-center">
-            <svg viewBox="0 0 40 40" className="w-8 h-8" fill="none">
-              <circle cx="14" cy="10" r="5" fill="#059669" />
-              <circle cx="26" cy="10" r="5" fill="#2563EB" />
-              <circle cx="20" cy="6" r="5" fill="#06B6D4" />
-              <path d="M4 28 Q20 18 36 28" stroke="#059669" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-              <path d="M6 33 Q20 23 34 33" stroke="#2563EB" strokeWidth="2" fill="none" strokeLinecap="round" />
-              <path d="M9 38 Q20 30 31 38" stroke="#06B6D4" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-            </svg>
-            <span className="font-bold text-[#111827] text-xl">CohortLMS</span>
+           
+           <Logo/>
           </div>
 
           <div className="bg-white rounded-3xl shadow-xl shadow-black/5 border border-gray-100 p-8">
@@ -343,12 +315,12 @@ function RegisterForm() {
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-[#111827]">First name</label>
                   <input type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder="Olivier"
-                    className="w-full px-3.5 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition" required />
+                    className="w-full px-3.5 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring focus:ring-cyan-500 focus:border-transparent transition" required />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-[#111827]">Last name</label>
                   <input type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Nduwayesu"
-                    className="w-full px-3.5 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition" required />
+                    className="w-full px-3.5 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring focus:ring-cyan-500 focus:border-transparent transition" required />
                 </div>
               </div>
 
@@ -361,7 +333,7 @@ function RegisterForm() {
                     </svg>
                   </div>
                   <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="olivier@gmail.com"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition" required />
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring focus:ring-cyan-500 focus:border-transparent transition" required />
                 </div>
               </div>
 
@@ -374,7 +346,7 @@ function RegisterForm() {
                     </svg>
                   </div>
                   <input type={showPassword ? "text" : "password"} name="password" value={form.password} onChange={handleChange} placeholder="Min. 8 characters"
-                    className="w-full pl-10 pr-11 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition" required />
+                    className="w-full pl-10 pr-11 py-3 rounded-xl border border-gray-200 text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring focus:ring-cyan-500 focus:border-transparent transition" required />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
                     {showPassword ? (
@@ -411,7 +383,7 @@ function RegisterForm() {
                     </svg>
                   </div>
                   <input type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder="Re-enter your password"
-                    className={`w-full pl-10 pr-4 py-3 rounded-xl border text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent transition ${
+                    className={`w-full pl-10 pr-4 py-3 rounded-xl border text-[#111827] text-sm placeholder:text-gray-400 focus:outline-none focus:ring focus:ring-cyan-500 focus:border-transparent transition ${
                       form.confirmPassword && form.password !== form.confirmPassword ? "border-red-300 bg-red-50"
                       : form.confirmPassword && form.password === form.confirmPassword ? "border-green-300 bg-green-50"
                       : "border-gray-200"}`} required />
@@ -441,15 +413,15 @@ function RegisterForm() {
                 </div>
                 <span className="text-sm text-gray-600 leading-tight">
                   I agree to the{" "}
-                  <a href="#" className="text-[#4F46E5] font-medium hover:underline">Terms of Service</a>
+                  <a href="#" className="text-blue-500  font-medium hover:underline">Terms of Service</a>
                   {" "}and{" "}
-                  <a href="#" className="text-[#4F46E5] font-medium hover:underline">Privacy Policy</a>
+                  <a href="#" className="text-blue-500  font-medium hover:underline">Privacy Policy</a>
                 </span>
               </label>
 
               <button type="submit"
                 disabled={loading || !form.agreeTerms || form.password !== form.confirmPassword}
-                className="w-full bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold py-3 rounded-xl transition-all duration-200 text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed mt-2">
+                className="w-full bg-gradient-to-br from-blue-600 to-cyan-500 hover:bg-[#4338CA] text-white font-semibold py-3 rounded-xl transition-all duration-200 text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed mt-2">
                 {loading ? (
                   <>
                     <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -469,13 +441,13 @@ function RegisterForm() {
             </div>
 
             <Link href="/login"
-              className="block w-full text-center text-sm font-semibold text-gradient-to-br from-blue-600 to-cyan-500 border border-[#4F46E5] rounded-xl py-3 hover:bg-indigo-50 transition">
+              className="block w-full text-center text-sm font-semibold  border border-cyan-500 rounded-xl py-3 hover:bg-blue-50 transition">
               Sign in instead
             </Link>
           </div>
 
           <p className="text-center text-xs text-gray-400 mt-6">
-            &copy; {new Date().getFullYear()} CohortLMS · <a href="#" className="hover:underline">Privacy</a> · <a href="#" className="hover:underline">Terms</a>
+            &copy; {new Date().getFullYear()} SafeED · <a href="#" className="hover:underline">Privacy</a> · <a href="#" className="hover:underline">Terms</a>
           </p>
         </div>
       </div>

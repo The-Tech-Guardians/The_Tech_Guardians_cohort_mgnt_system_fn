@@ -50,7 +50,7 @@ export default function OtpVerifyForm({
     <>
       <div className="flex items-start justify-between mb-6">
         <div>
-          <span className="inline-block bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-full px-3 py-1 text-xs font-bold mb-2">
+          <span className="inline-block bg-blue-50 border border-blue-200 text-blue-700 rounded-full px-3 py-1 text-xs font-bold mb-2">
             {methodMeta.icon} {methodMeta.label}
           </span>
           <h1 className="text-xl font-extrabold text-[#111827] mb-1">Enter your code</h1>

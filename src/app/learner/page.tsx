@@ -292,7 +292,7 @@ export default function LearnerDashboardPage() {
       {/* LEFT SECTION */}
       <div className="flex-1 space-y-5">
 
-        <div className="bg-gradient-to-r from-indigo-500 to-blue-600 rounded-2xl p-6 text-white mb-6">
+        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-6 text-white mb-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">

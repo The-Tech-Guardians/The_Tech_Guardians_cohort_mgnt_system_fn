@@ -355,7 +355,7 @@ const [showPassword, setShowPassword] = useState(false);
           </div>
 
           <p className="text-center text-xs text-gray-400 mt-6">
-            © {new Date().getFullYear()} CohortLMS ·{" "}
+            © {new Date().getFullYear()} SafeED ·{" "}
             <a href="#" className="hover:underline">Privacy</a> ·{" "}
             <a href="#" className="hover:underline">Terms</a>
           </p>

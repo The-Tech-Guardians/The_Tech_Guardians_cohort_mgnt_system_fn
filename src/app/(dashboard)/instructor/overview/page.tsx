@@ -176,8 +176,6 @@ export default function InstructorOverviewPage() {
     </div>
   );
 };
-              </div>
-            </div>
             ))}
           </div>
         </div>

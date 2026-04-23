@@ -283,7 +283,7 @@ export default function TwoFAPage() {
                         <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-lg font-bold flex-shrink-0 transition-colors ${
                           isLoadingMethod 
                             ? 'bg-gray-300' 
-                            : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white'
+                            : 'bg-gradient-to-br from-blue-500 to-cyan-600 text-white'
                         }`}>
                           {method.icon}
                         </div>
@@ -306,7 +306,7 @@ export default function TwoFAPage() {
               ) : (
                 <>
                   {qrDataUrl && (
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100 mb-4 text-center">
+                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-xl border border-blue-100 mb-4 text-center">
                       <p className="text-sm font-medium text-blue-900 mb-2">Authenticator App Setup</p>
                       <div className="flex justify-center mb-2">
                         <QRCodeSVG value={qrDataUrl} size={160} />

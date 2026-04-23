@@ -81,7 +81,7 @@ export default function AuthButtons({
           <Btn variant="outline">{t("common.signUp")}</Btn>
         </Link>
         <Link href="/login">
-          <Btn className="relative">
+          <Btn >
             <span className="relative">{t("common.logIn")} -&gt;</span>
           </Btn>
         </Link>
@@ -97,7 +97,7 @@ export default function AuthButtons({
         onClick={() => setDropdownOpen(!dropdownOpen)}
         className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-gray-300 transition-all group"
       >
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md group-hover:shadow-lg">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-[#0EA5E9] flex items-center justify-center text-white font-bold text-sm shadow-md group-hover:shadow-lg">
           {user?.initials}
         </div>
         <span className="text-sm font-semibold max-w-[120px] truncate">

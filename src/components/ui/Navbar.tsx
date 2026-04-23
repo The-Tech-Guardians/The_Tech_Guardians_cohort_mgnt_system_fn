@@ -9,6 +9,8 @@ import Logo from "./Logo";
 import MobileMenu from "./navbar/MobileMenu";
 import MobileMenuButton from "./navbar/MobileMenuButton";
 import ThemeToggle from "./navbar/ThemeToggle";
+import { CATEGORIES } from "@/components/courses/config/courses-api";
+import { formatCourseType } from "@/services/courseService";
 import {
   PLATFORM_LANGUAGES,
   useLanguage,
@@ -19,8 +21,7 @@ type CategoryItem = {
   href: string;
 };
 
-type CohortRecord = {
-  isActive?: boolean;
+type CourseRecord = {
   courseType?: string;
 };
 
@@ -33,7 +34,7 @@ export default function Header() {
   const { activeLanguage, setLanguage } = useLanguage();
 
   useEffect(() => {
-    const fetchCohorts = async () => {
+    const fetchCourseCategories = async () => {
       try {
         const token =
           localStorage.getItem("token") || localStorage.getItem("auth_token");
@@ -45,36 +46,49 @@ export default function Header() {
           headers.Authorization = `Bearer ${token}`;
         }
 
-        const response = await fetch("http://localhost:3000/api/cohorts", {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+        const response = await fetch(`${apiUrl}/api/courses?page=1&limit=100`, {
           headers,
+          cache: "no-store",
         });
+
         if (!response.ok) {
-          throw new Error("Failed to fetch");
+          throw new Error("Failed to fetch course categories");
         }
 
         const data = await response.json();
-        const cohorts = (data.cohorts || []) as CohortRecord[];
-        const activeCohorts = cohorts.filter((cohort) => cohort.isActive);
-        const categoryItems = activeCohorts
-          .filter((cohort) => typeof cohort.courseType === "string")
-          .map((cohort) => ({
-            label:
-              cohort.courseType!.charAt(0).toUpperCase() +
-              cohort.courseType!
-                .slice(1)
-                .replace(/-/g, " ")
-                .replace(/_/g, " "),
-            href: `/${cohort.courseType!.toLowerCase().replace(/_/g, "-")}`,
-          }));
+        const courses = (data.courses || data.data || []) as CourseRecord[];
+        const uniqueTypes = Array.from(
+          new Set(
+            courses
+              .map((course) => course.courseType)
+              .filter((type): type is string => typeof type === "string")
+          )
+        );
+
+        const categoryItems = [{
+          label: "All Courses",
+          href: "/courses",
+        },
+        ...uniqueTypes.map((courseType) => ({
+          label: formatCourseType(courseType),
+          href: `/${courseType.toLowerCase().replace(/_/g, "-")}`,
+        }))];
 
         setCategories(categoryItems);
       } catch (error: unknown) {
-        console.warn("Failed to fetch cohorts:", error);
-        setCategories([]);
+        console.warn("Failed to fetch course categories:", error);
+        setCategories([
+          { label: "All Courses", href: "/courses" },
+          ...CATEGORIES.map((category) => ({
+            label: category.label,
+            href: `/${category.slug}`,
+          })),
+        ]);
       }
     };
 
-    fetchCohorts();
+    fetchCourseCategories();
   }, []);
 
   useEffect(() => {

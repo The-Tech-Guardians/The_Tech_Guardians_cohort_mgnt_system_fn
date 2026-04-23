@@ -105,19 +105,12 @@ export default function LoginPage() {
     <div className="min-h-screen bg-white flex">
       {/* Left side / illustration */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-blue-600 to-cyan-500">
-        <div className="absolute inset-0 opacity-[0.08]"
-          style={{
-            backgroundImage: `radial-gradient(circle, #ffffff 1px, transparent 1px)`,
-            backgroundSize: "28px 28px",
-          }}
-        />
-        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
-        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-          <Logo textMain="text-white" />
+      
+        <div className=" flex flex-col justify-between mx-12 my-8 w-full">
+          <Logo  />
           <div className="space-y-8">
             <div className="space-y-3">
-              <h2 className="text-4xl font-bold text-white leading-tight pt-4">
+              <h2 className="text-4xl font-bold text-white leading-tight pt-4-">
                 Learn together,<br />
                 <span className="text-gray-900">grow together.</span>
               </h2>
@@ -125,17 +118,11 @@ export default function LoginPage() {
                 A cohort-based learning platform built for structured, collaborative education.
               </p>
             </div>
-            <div className="flex justify-center">
-              {/* SVG illustration */}
-              <svg viewBox="0 0 480 300" fill="none" xmlns="http://www.w3.org/2000/svg"
-                className="w-full max-w-sm drop-shadow-xl">
-                {/* … all existing SVG elements remain unchanged … */}
-              </svg>
-            </div>
+          
           </div>
           <div className="rounded-2xl p-5 bg-white/10 backdrop-blur border border-white/20">
             <p className="text-white/80 text-sm italic leading-relaxed">
-              &quot;CohortLMS transformed how our team learns. The structured cohort model keeps everyone accountable.&quot;
+              &quot;SafeED transformed how our team learns. The structured cohort model keeps everyone accountable.&quot;
             </p>
             <div className="flex items-center gap-3 mt-4">
               <div className="w-8 h-8 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white text-xs font-bold">
@@ -157,7 +144,7 @@ export default function LoginPage() {
             <svg viewBox="0 0 40 40" className="w-8 h-8" fill="none">
               {/* … SVG for mobile logo remains … */}
             </svg>
-            <span className="font-bold text-[#111827] text-xl">CohortLMS</span>
+          <Logo/>
           </div>
 
           <div className="bg-white rounded-3xl shadow-xl shadow-black/5 border border-gray-100 p-8">
@@ -229,7 +216,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-br from-blue-600 to-cyan-500  text-white font-semibold py-3 rounded-xl transition-all duration-200 text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 disabled:opacity-70"
+                className="w-full bg-gradient-to-br from-blue-600 to-cyan-500  text-white font-semibold py-3 rounded-xl  text-sm flex items-center justify-center gap-2  "
               >
                 {loading ? (
                   <>
@@ -247,7 +234,7 @@ export default function LoginPage() {
 
             <div className="flex items-center gap-3 my-6">
               <div className="flex-1 h-px bg-gray-100" />
-              <span className="text-xs text-gray-400 font-medium">New to CohortLMS?</span>
+              <span className="text-xs text-gray-400 font-medium">New to SafeED?</span>
               <div className="flex-1 h-px bg-gray-100" />
             </div>
 
